@@ -1,0 +1,13 @@
+*.pyc
+wav
+mp3
+*.wav
+*.mp3
+.DS_Store
+*.cnf
+plots
+.vscode
+env_with_system
+dejavu-m*
+molasses-m*
+*.mp4
