@@ -5,6 +5,8 @@ import multiprocessing
 import os
 import traceback
 import sys
+import itertools
+import json
 
 
 class Dejavu(object):
@@ -19,6 +21,8 @@ class Dejavu(object):
     def __init__(self): #, config):
         super(Dejavu, self).__init__()
 
+        #--------------------------------------------------
+
         #self.config = config
 
         # initialize db
@@ -27,15 +31,24 @@ class Dejavu(object):
         #self.db = db_cls(**config.get("database", {}))
         #self.db.setup()
 
+        #---------------------------------------------
+
         # if we should limit seconds fingerprinted,
         # None|-1 means use entire track
         #self.limit = self.config.get("fingerprint_limit", None)
         #if self.limit == -1:  # for JSON compatibility
         #    self.limit = None
-        #self.get_fingerprinted_songs()
+        self.limit = None
         self.songhashes_set = set()
+        self.get_fingerprinted_songs()
+        
+    def save_fingerprinted_songs(self, list_of_songs_and_hashes):
+        with open('fingerprint_list.json', 'w') as f:
+            json.dump(f, list_of_songs_and_hashes)
 
-    """def get_fingerprinted_songs(self):
+    def get_fingerprinted_songs(self):
+        pass
+    """
         # get songs previously indexed
         self.songs = self.db.get_songs()
         self.songhashes_set = set()  # to know which ones we've computed before
@@ -45,15 +58,15 @@ class Dejavu(object):
 
     def fingerprint_directory(self, path, extensions, nprocesses=None):
         # Try to use the maximum amount of processes if not given.
-        try:
-            nprocesses = nprocesses or multiprocessing.cpu_count()
-            #nprocesses = 1
+        """try:
+            #nprocesses = nprocesses or multiprocessing.cpu_count()
+            nprocesses = 1
         except NotImplementedError:
             nprocesses = 1
         else:
-            nprocesses = 1 if nprocesses <= 0 else nprocesses
+            nprocesses = 1 if nprocesses <= 0 else nprocesses"""
 
-        pool = multiprocessing.Pool(nprocesses)
+        #pool = multiprocessing.Pool(nprocesses)
 
         filenames_to_fingerprint = []
         for filename, _ in decoder.find_files(path, extensions):
@@ -63,14 +76,29 @@ class Dejavu(object):
                 print ("%s already fingerprinted, continuing..." % filename)
                 continue
 
-            filenames_to_fingerprint.append(filename)
+            filenames_to_fingerprint.append(filename) 
 
         # Prepare _fingerprint_worker input
         worker_input = zip(filenames_to_fingerprint,
                            [self.limit] * len(filenames_to_fingerprint))
 
+        list_song_and_hashes = []
+
+        for i in worker_input:
+            try:
+                song_name, hashes, file_hash = _fingerprint_worker(i)
+                list_song_and_hashes += [(song_name, hashes, file_hash)]
+            except:
+                print("Failed fingerprinting")
+                # Print traceback because we can't reraise it here
+                traceback.print_exc(file=sys.stdout)
+                
+        
+        return list_song_and_hashes
+
+        """
         # Send off our tasks
-        iterator = pool.imap_unordered(_fingerprint_worker,
+        iterator = pool.izip(_fingerprint_worker,
                                        worker_input)
 
         # Loop till we have all of them
@@ -94,6 +122,7 @@ class Dejavu(object):
 
         pool.close()
         pool.join()
+        """
 
     def fingerprint_file(self, filepath, song_name=None):
         songname = decoder.path_to_songname(filepath)
