@@ -8,11 +8,24 @@ from dejavu.recognize import FileRecognizer
 
 djv = Dejavu()
 
+djv.fingerprint_file("SUB.mp3")
+print(djv.fingerprinted_files)
+a = djv.fingerprinted_files
+b = a[0][1][0]
+print(b)
 
-print(djv.fingerprint_directory("mp3", [".mp3"]))
+
+#djv.fingerprint_directory("mp3", [".mp3"])
+#print(djv.fingerprinted_files)
+#djv.save_fingerprinted_songs('test_mp3s.json')
 
 
 
+"""
+song = djv.recognize(FileRecognizer, "mp3/Sean-Fournier--Falling-For-You.mp3")
+print(song)
+print ("From file we recognized: %s\n" % song)
+"""
 
 
 

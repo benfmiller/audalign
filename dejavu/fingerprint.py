@@ -7,6 +7,8 @@ from scipy.ndimage.morphology import (generate_binary_structure,
 import hashlib
 from operator import itemgetter
 
+#np.seterr(divide = 'ignore')
+
 IDX_FREQ_I = 0
 IDX_TIME_J = 1
 
@@ -129,6 +131,7 @@ def get_2D_peaks(arr2D, plot=False, amp_min=DEFAULT_AMP_MIN):
         plt.gca().invert_yaxis()
         plt.show()
 
+
     return zip(frequency_idx, time_idx)
 
 
@@ -138,6 +141,7 @@ def generate_hashes(peaks, fan_value=DEFAULT_FAN_VALUE):
        sha1_hash[0:20]    time_offset
     [(e05b341a9b77a51fd26, 32), ... ]
     """
+    final_hashes = []
     if PEAK_SORT:
         sorted(peaks, key=itemgetter(1))
 
@@ -154,4 +158,5 @@ def generate_hashes(peaks, fan_value=DEFAULT_FAN_VALUE):
                 if t_delta >= MIN_HASH_TIME_DELTA and t_delta <= MAX_HASH_TIME_DELTA:
                     h = hashlib.sha1(
                         "%s|%s|%s" % (str(freq1), str(freq2), str(t_delta)))
-                    yield (h.hexdigest()[0:FINGERPRINT_REDUCTION], t1)
+                    final_hashes += (h.hexdigest()[0:FINGERPRINT_REDUCTION], t1)
+    return final_hashes
