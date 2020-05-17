@@ -67,7 +67,8 @@ def fingerprint(channel_samples, Fs=DEFAULT_FS,
                 wsize=DEFAULT_WINDOW_SIZE,
                 wratio=DEFAULT_OVERLAP_RATIO,
                 fan_value=DEFAULT_FAN_VALUE,
-                amp_min=DEFAULT_AMP_MIN):
+                amp_min=DEFAULT_AMP_MIN,
+                plot=False):
     """
     FFT the channel, log transform output, find local maxima, then return
     locally sensitive hashes.
@@ -85,7 +86,7 @@ def fingerprint(channel_samples, Fs=DEFAULT_FS,
     arr2D[arr2D == -np.inf] = 0  # replace infs with zeros
 
     # find local maxima
-    local_maxima = get_2D_peaks(arr2D, plot=False, amp_min=amp_min)
+    local_maxima = get_2D_peaks(arr2D, plot=plot, amp_min=amp_min)
 
     # return hashes
     return generate_hashes(local_maxima, fan_value=fan_value)
@@ -141,6 +142,7 @@ def generate_hashes(peaks, fan_value=DEFAULT_FAN_VALUE):
        sha1_hash[0:20]    time_offset
     [(e05b341a9b77a51fd26, 32), ... ]
     """
+    print(list(peaks))
     final_hashes = []
     if PEAK_SORT:
         sorted(peaks, key=itemgetter(1))
