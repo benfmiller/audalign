@@ -30,8 +30,9 @@ for channeln, channel in enumerate(channels):
     print("Finished channel %d/%d for %s" % (channeln + 1, channel_amount,
                                                 filepath))
     print("Hashes are: {}".format(hashes))
-    result |= hashes
-    print("Result is: {}".format(result))
+    result += hashes
+    print("Length is: {}, Result is: {}".format(len(result), result))
+    
 
 """
 
