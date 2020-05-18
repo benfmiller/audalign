@@ -142,12 +142,13 @@ def generate_hashes(peaks, fan_value=DEFAULT_FAN_VALUE):
        sha1_hash[0:20]    time_offset
     [(e05b341a9b77a51fd26, 32), ... ]
     """
-    print(list(peaks))
     final_hashes = []
+    peaks = list(peaks)
     if PEAK_SORT:
-        sorted(peaks, key=itemgetter(1))
+        sorted(peaks, key= lambda x : x[1])
+    print(len(list(peaks)))
 
-    for i in range(sum(1 for _ in peaks)):
+    for i in range(len(peaks)):
         for j in range(1, fan_value):
             if (i + j) < len(peaks):
 
@@ -158,7 +159,6 @@ def generate_hashes(peaks, fan_value=DEFAULT_FAN_VALUE):
                 t_delta = t2 - t1
 
                 if t_delta >= MIN_HASH_TIME_DELTA and t_delta <= MAX_HASH_TIME_DELTA:
-                    h = hashlib.sha1(
-                        "%s|%s|%s" % (str(freq1), str(freq2), str(t_delta)))
-                    final_hashes += (h.hexdigest()[0:FINGERPRINT_REDUCTION], t1)
+                    h = hashlib.sha1("{}|{}|{}".format(str(freq1), str(freq2), str(t_delta)).encode('utf-8'))
+                    final_hashes += ((h.hexdigest()[0:FINGERPRINT_REDUCTION], t1))
     return final_hashes
