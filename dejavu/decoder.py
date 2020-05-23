@@ -50,7 +50,7 @@ def read(filename, limit=None):
     try:
         print(filename)
         #AudioSegment.converter = "ffmpeg/bin/ffmpeg.exe"
-        audiofile = AudioSegment.from_file(filename, 'mp3')
+        audiofile = AudioSegment.from_file(filename)
 
         if limit:
             audiofile = audiofile[:limit * 1000]
