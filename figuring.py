@@ -45,7 +45,7 @@ djv.fingerprint_file("SUB.mp3")
 #b = a[0][1]
 #print(b)
 
-print("Beginning Recognizing")
+print("\nBeginning Recognizing")
 print(djv.recognize(FileRecognizer, "SUB.mp3"))
 
 #djv.save_fingerprinted_songs('test_mp3s.pickle')

@@ -85,8 +85,6 @@ def fingerprint(channel_samples, Fs=DEFAULT_FS,
     arr2D = 10 * np.log10(arr2D)
     arr2D[arr2D == -np.inf] = 0  # replace infs with zeros
 
-    arr2D.astype(np.int32)
-
     # find local maxima
     local_maxima = get_2D_peaks(arr2D, plot=plot, amp_min=amp_min)
 
@@ -144,7 +142,7 @@ def generate_hashes(peaks, fan_value=DEFAULT_FAN_VALUE):
        sha1_hash[0:20]    time_offset
     [(e05b341a9b77a51fd26, 32), ... ]
     """
-    fin_hashes = []
+    hash_dict = {}
     peaks = list(peaks)
     if PEAK_SORT:
         sorted(peaks, key= lambda x : x[1])
@@ -161,14 +159,10 @@ def generate_hashes(peaks, fan_value=DEFAULT_FAN_VALUE):
                 t_delta = t2 - t1
 
                 if t_delta >= MIN_HASH_TIME_DELTA and t_delta <= MAX_HASH_TIME_DELTA:
-                    h = hashlib.sha1("{}|{}|{}".format(str(freq1), str(freq2), str(t_delta)).encode('utf-8'))
-                    fin_hashes.append((h.hexdigest()[0:FINGERPRINT_REDUCTION], t1))
-    hash_dict = {}
-    
-    for hash_, offset in fin_hashes:
-        if hash_ not in hash_dict:
-            hash_dict[hash_] = [offset]
-        else:
-            hash_dict[hash_] += [offset]
+                    h = hashlib.sha1("{}|{}|{}".format(str(freq1), str(freq2), str(t_delta)).encode('utf-8')).hexdigest()[0:FINGERPRINT_REDUCTION]
+                    if h not in hash_dict:
+                        hash_dict[h] = [int(t1)]
+                    else:
+                        hash_dict[h] += [int(t1)]
 
     return hash_dict
