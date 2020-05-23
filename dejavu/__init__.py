@@ -178,7 +178,7 @@ class Dejavu(object):
         diff_counter = {}
         largest = 0
         largest_count = 0
-        song_id = -1
+        song_name = -1
         for tup in matches:
             sid, diff = tup
             if diff not in diff_counter:
@@ -190,15 +190,10 @@ class Dejavu(object):
             if diff_counter[diff][sid] > largest_count:
                 largest = diff
                 largest_count = diff_counter[diff][sid]
-                song_id = sid
+                song_name = sid
 
         # extract idenfication
-        song = self.db.get_song_by_id(song_id)
-        if song:
-            # TODO: Clarify what `get_song_by_id` should return.
-            songname = song.get(Dejavu.SONG_NAME, None)
-        else:
-            return None
+        song_id = self.get_file_id(song_name)
 
         # return match info
         nseconds = round(float(largest) / fingerprint.DEFAULT_FS *
@@ -206,7 +201,7 @@ class Dejavu(object):
                          fingerprint.DEFAULT_OVERLAP_RATIO, 5)
         song = {
             Dejavu.SONG_ID : song_id,
-            Dejavu.SONG_NAME : songname,
+            Dejavu.SONG_NAME : song_name,
             Dejavu.CONFIDENCE : largest_count,
             Dejavu.OFFSET : int(largest),
             Dejavu.OFFSET_SECS : nseconds,
@@ -217,6 +212,11 @@ class Dejavu(object):
     def recognize(self, recognizer, *options, **kwoptions):
         r = recognizer(self)
         return r.recognize(*options, **kwoptions)
+
+    def get_file_id(self, name):
+        for i in self.fingerprinted_files:
+            if i[0] == name:
+                return i[2]
 
 
 def _fingerprint_worker(filename, limit=None, song_name=None):
