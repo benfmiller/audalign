@@ -16,7 +16,7 @@ class Dejavu(object):
     SONG_NAME = 'song_name'
     CONFIDENCE = 'confidence'
     MATCH_TIME = 'match_time'                             
-    OFFSET = 'offset'
+    OFFSET_SAMPLES = 'offset_samples'
     OFFSET_SECS = 'offset_seconds'
 
     def __init__(self, *args): #, config):
@@ -192,8 +192,8 @@ class Dejavu(object):
         """
         # align by diffs
         diff_counter = {}
-        largest = 0
-        largest_count = 0
+        largest_match_offset = 0
+        largest_match_count = 0
         song_name = -1
         for pair in matches:
             sid, diff = pair
@@ -203,23 +203,23 @@ class Dejavu(object):
                 diff_counter[diff][sid] = 0
             diff_counter[diff][sid] += 1
 
-            if diff_counter[diff][sid] > largest_count:
-                largest = diff
-                largest_count = diff_counter[diff][sid]
+            if diff_counter[diff][sid] > largest_match_count:
+                largest_match_offset = diff
+                largest_match_count = diff_counter[diff][sid]
                 song_name = sid
 
         # extract idenfication
         song_id = self.get_file_id(song_name)
 
         # return match info
-        nseconds = round(float(largest) / fingerprint.DEFAULT_FS *
+        nseconds = round(float(largest_match_offset) / fingerprint.DEFAULT_FS *
                          fingerprint.DEFAULT_WINDOW_SIZE *
                          fingerprint.DEFAULT_OVERLAP_RATIO, 5)
         song = {
             Dejavu.SONG_ID : song_id,
             Dejavu.SONG_NAME : song_name,
-            Dejavu.CONFIDENCE : largest_count,
-            Dejavu.OFFSET : int(largest),
+            Dejavu.CONFIDENCE : largest_match_count,
+            Dejavu.OFFSET_SAMPLES : int(largest_match_offset),
             Dejavu.OFFSET_SECS : nseconds,
             #Database.FIELD_FILE_SHA1 : song.get(Database.FIELD_FILE_SHA1, None).encode("utf8"),
             }

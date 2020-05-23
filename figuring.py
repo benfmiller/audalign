@@ -35,7 +35,7 @@ for channeln, channel in enumerate(channels):
 
 djv = dj.Dejavu()
 
-#djv.fingerprint_file("SUB.mp3")
+djv.fingerprint_file("Rachel.mp4")
 #djv.save_fingerprinted_songs('Sub.json')
 #print(len(djv.fingerprinted_files))
 
@@ -45,8 +45,8 @@ djv = dj.Dejavu()
 #print(b)
 
 #print("\nBeginning Recognizing")
-print(djv.recognize(recognizer='MicrophoneRecognizer', seconds=10))
-#print(djv.recognize("SUB.mp3"))
+#print(djv.recognize(recognizer='MicrophoneRecognizer', seconds=10))
+print(djv.recognize("Paige.MOV"))
 
 #djv.save_fingerprinted_songs('test_mp3s.pickle')
 
