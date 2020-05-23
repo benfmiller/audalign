@@ -6,6 +6,7 @@ import os
 import traceback
 import sys
 import pickle
+import json
 
 
 class Dejavu(object):
@@ -17,13 +18,15 @@ class Dejavu(object):
     OFFSET = 'offset'
     OFFSET_SECS = 'offset_seconds'
 
-    def __init__(self): #, config):
+    def __init__(self, *args): #, config):
         #super(Dejavu, self).__init__()
 
         self.limit = None
         self.file_unique_hash = []
         self.fingerprinted_files = []
-        #TODO:self.get_fingerprinted_songs()
+        if len(args) > 0:
+            self.get_fingerprinted_songs(args[0])
+        
 
         #--------------------------------------------------
 
@@ -45,12 +48,24 @@ class Dejavu(object):
         
         
     def save_fingerprinted_songs(self, filename):
-        with open(filename, 'wb') as f:
-            pickle.dump(self.fingerprinted_files, f)
+        if filename.split('.')[-1] == 'pickle':
+            with open(filename, 'wb') as f:
+                pickle.dump(self.fingerprinted_files, f)
+        elif filename.split('.')[-1] == 'json':
+            with open(filename, 'w') as f:
+                json.dump(self.fingerprinted_files, f)
+        else:
+            print('File type must be either pickle or json')
 
     def get_fingerprinted_songs(self, filename):
-        with open(filename, 'rb') as f:
-            pickle.load(f)
+        if filename.split('.')[-1] == 'pickle':
+            with open(filename, 'rb') as f:
+                self.fingerprinted_files = pickle.load(f)
+        elif filename.split('.')[-1] == 'json':
+            with open(filename, 'r') as f:
+                self.fingerprinted_files = json.load(f)
+        else:
+            print('File type must be either pickle or json')
             
     """
         # get songs previously indexed
@@ -179,8 +194,8 @@ class Dejavu(object):
         largest = 0
         largest_count = 0
         song_name = -1
-        for tup in matches:
-            sid, diff = tup
+        for pair in matches:
+            sid, diff = pair
             if diff not in diff_counter:
                 diff_counter[diff] = {}
             if sid not in diff_counter[diff]:
