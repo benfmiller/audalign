@@ -8,7 +8,8 @@ from dejavu import Dejavu
 from dejavu.recognize import FileRecognizer
 from dejavu.fingerprint import fingerprint, get_2D_peaks
 
-filepath = "mp3/Brad-Sucks--Total-Breakdown.mp3"
+"""
+filepath = "SUB.mp3"
 
 songname = dejavu.decoder.path_to_songname(filepath)
 song_hash = dejavu.decoder.unique_hash(filepath)
@@ -22,36 +23,42 @@ channel_amount = len(channels)
 result = []
 
 for channeln, channel in enumerate(channels):
-    # TODO: Remove prints or change them into optional logging.
     print("Fingerprinting channel %d/%d for %s" % (channeln + 1,
                                                     channel_amount,
                                                     filepath))
-    hashes = dejavu.fingerprint.fingerprint(channel, Fs=Fs)
+    hashes = dejavu.fingerprint.fingerprint(channel, Fs=Fs, plot=False)
     print("Finished channel %d/%d for %s" % (channeln + 1, channel_amount,
                                                 filepath))
-    print("Hashes are: {}".format(hashes))
     result += hashes
-    print("Length is: {}, Result is: {}".format(len(result), result))
-    
-
+    print("Length is: {}".format(len(result)))
 """
+
+
 
 djv = Dejavu()
 
 djv.fingerprint_file("SUB.mp3")
-print(djv.fingerprinted_files)
-a = djv.fingerprinted_files
-b = a[0][1][0]
-print(b)
-"""
+#print(len(djv.fingerprinted_files))
 
+#print(djv.fingerprinted_files[0][0] + "  :  " + djv.fingerprinted_files[0][2])
+#a = djv.fingerprinted_files
+#b = a[0][1]
+#print(b)
+
+print("Beginning Recognizing")
+print(djv.recognize(FileRecognizer, "SUB.mp3"))
+
+#djv.save_fingerprinted_songs('test_mp3s.pickle')
+
+
+"""
 #djv.fingerprint_directory("mp3", [".mp3"])
 #print(djv.fingerprinted_files)
-#djv.save_fingerprinted_songs('test_mp3s.json')
 
 
 
-"""
+
+
 song = djv.recognize(FileRecognizer, "mp3/Sean-Fournier--Falling-For-You.mp3")
 print(song)
 print ("From file we recognized: %s\n" % song)

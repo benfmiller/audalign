@@ -12,10 +12,10 @@ class BaseRecognizer(object):
         self.dejavu = dejavu
         self.Fs = fingerprint.DEFAULT_FS
 
-    def _recognize(self, *data):
+    def _recognize(self, *channels_samples):
         matches = []
-        for d in data:
-            matches.extend(self.dejavu.find_matches(d, Fs=self.Fs))
+        for channel in channels_samples:
+            matches.extend(self.dejavu.find_matches(channel, Fs=self.Fs))
         return self.dejavu.align_matches(matches)
 
     def recognize(self):
@@ -27,10 +27,10 @@ class FileRecognizer(BaseRecognizer):
         super(FileRecognizer, self).__init__(dejavu)
 
     def recognize_file(self, filename):
-        frames, self.Fs, file_hash = decoder.read(filename, self.dejavu.limit)
+        channels_samples, self.Fs, file_hash = decoder.read(filename, self.dejavu.limit)
 
         t = time.time()
-        match = self._recognize(*frames)
+        match = self._recognize(*channels_samples)
         t = time.time() - t
 
         if match:
