@@ -175,7 +175,6 @@ class Dejavu(object):
             Returns a dictionary with match information.
         """
         # align by diffs
-        print(matches[:20])
         diff_counter = {}
         largest = 0
         largest_count = 0
@@ -192,7 +191,6 @@ class Dejavu(object):
                 largest = diff
                 largest_count = diff_counter[diff][sid]
                 song_id = sid
-        return sid
 
         # extract idenfication
         song = self.db.get_song_by_id(song_id)
@@ -208,7 +206,7 @@ class Dejavu(object):
                          fingerprint.DEFAULT_OVERLAP_RATIO, 5)
         song = {
             Dejavu.SONG_ID : song_id,
-            Dejavu.SONG_NAME : songname.encode("utf8"),
+            Dejavu.SONG_NAME : songname,
             Dejavu.CONFIDENCE : largest_count,
             Dejavu.OFFSET : int(largest),
             Dejavu.OFFSET_SECS : nseconds,
@@ -244,8 +242,8 @@ def _fingerprint_worker(filename, limit=None, song_name=None):
         print("Finished channel %d/%d for %s" % (channeln + 1, channel_amount,
                                                  filename))
         for hash_ in hashes.keys():
-            if hash_ not in result:
-                result[hash_] = [hashes[hash_]]
+            if hash_ not in result.keys():
+                result[hash_] = hashes[hash_]
             else:
                 result[hash_] += hashes[hash_]
 
