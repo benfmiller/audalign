@@ -1,6 +1,7 @@
 #from dejavu.database import get_database, Database
 import dejavu.decoder as decoder
 import dejavu.fingerprint as fingerprint
+import dejavu.recognize as recognize
 import multiprocessing
 import os
 import traceback
@@ -224,8 +225,15 @@ class Dejavu(object):
             }
         return song
 
-    def recognize(self, recognizer, *options, **kwoptions):
-        r = recognizer(self)
+    def recognize(self, *options, **kwoptions):
+        if 'recognizer' not in kwoptions.keys():
+            r = recognize.FileRecognizer(self)
+        elif kwoptions['recognizer'].lower() == 'microphonerecognizer':
+            r = recognize.MicrophoneRecognizer(self)
+            kwoptions.pop('recognizer')
+        elif kwoptions['recognizer'].lower() == 'filerecognizer':
+            r = recognize.FileRecognizer(self)
+            kwoptions.pop('recognizer')
         return r.recognize(*options, **kwoptions)
 
     def get_file_id(self, name):

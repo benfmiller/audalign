@@ -3,10 +3,8 @@ import json
 import molasses as mo
 warnings.filterwarnings("ignore")
 
-import dejavu
-from dejavu import Dejavu
-from dejavu.recognize import FileRecognizer
-from dejavu.fingerprint import fingerprint, get_2D_peaks
+import dejavu as dj
+
 
 """
 filepath = "SUB.mp3"
@@ -35,8 +33,7 @@ for channeln, channel in enumerate(channels):
 
 
 
-djv = Dejavu('Sub.json')
-print(djv.fingerprinted_files)
+djv = dj.Dejavu()
 
 #djv.fingerprint_file("SUB.mp3")
 #djv.save_fingerprinted_songs('Sub.json')
@@ -48,7 +45,8 @@ print(djv.fingerprinted_files)
 #print(b)
 
 #print("\nBeginning Recognizing")
-#print(djv.recognize(FileRecognizer, "SUB.mp3"))
+print(djv.recognize(recognizer='MicrophoneRecognizer', seconds=10))
+#print(djv.recognize("SUB.mp3"))
 
 #djv.save_fingerprinted_songs('test_mp3s.pickle')
 
@@ -76,7 +74,7 @@ print ("From file we recognized: %s\n" % song)
 
 # Or recognize audio from your microphone for `secs` seconds
 #secs = 5
-#song = djv.recognize(MicrophoneRecognizer, seconds=secs)
+song = djv.recognize(MicrophoneRecognizer, seconds=secs)
 if song is None:
     print ("Nothing recognized -- did you play the song out loud so your mic could hear it? :)")
 else:
