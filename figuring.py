@@ -35,7 +35,7 @@ for channeln, channel in enumerate(channels):
 
 djv = dj.Dejavu()
 
-djv.fingerprint_file("Rachel.mp4")
+djv.fingerprint_file("TestAudio/SUBstretch10perc.pkf")
 #djv.save_fingerprinted_songs('Sub.json')
 #print(len(djv.fingerprinted_files))
 
@@ -46,31 +46,27 @@ djv.fingerprint_file("Rachel.mp4")
 
 #print("\nBeginning Recognizing")
 #print(djv.recognize(recognizer='MicrophoneRecognizer', seconds=10))
-print(djv.recognize("Paige.MOV"))
+#print(djv.recognize("SUB.mp3"))
 
 #djv.save_fingerprinted_songs('test_mp3s.pickle')
 
 
-"""
-#djv.fingerprint_directory("mp3", [".mp3"])
+
+#djv.fingerprint_directory("mp3")
 #print(djv.fingerprinted_files)
 
 
 
 
 
-song = djv.recognize(FileRecognizer, "mp3/Sean-Fournier--Falling-For-You.mp3")
-print(song)
-print ("From file we recognized: %s\n" % song)
+#song = djv.recognize("mp3/Sean-Fournier--Falling-For-You.mp3")
+#print(song)
+#print ("From file we recognized: %s\n" % song)
+
+
+
+
 """
-
-
-
-"""
-# Recognize audio from a file
-song = djv.recognize(FileRecognizer, "mp3/Sean-Fournier--Falling-For-You.mp3")
-print(song)
-print ("From file we recognized: %s\n" % song)
 
 # Or recognize audio from your microphone for `secs` seconds
 #secs = 5
