@@ -76,7 +76,7 @@ class Dejavu(object):
             song_hash = song[Database.FIELD_FILE_SHA1]
             self.file_unique_hash.add(song_hash)"""
 
-    def fingerprint_directory(self, path, extensions, nprocesses=None):
+    def fingerprint_directory(self, path, extensions=[".mp3", ".wav", ".mp4", ".MOV"], nprocesses=None):
         # Try to use the maximum amount of processes if not given.
         """try:
             #nprocesses = nprocesses or multiprocessing.cpu_count()
@@ -242,7 +242,7 @@ class Dejavu(object):
                 return i[2]
 
 
-def _fingerprint_worker(filename, limit=None, song_name=None):
+def _fingerprint_worker(filename, limit=None, song_name=None, normalize=True):
     # Pool.imap sends arguments as tuples so we have to unpack
     # them ourself.
     try:
@@ -252,7 +252,7 @@ def _fingerprint_worker(filename, limit=None, song_name=None):
 
     songname, extension = os.path.splitext(os.path.basename(filename))
     song_name = song_name or songname
-    channels, Fs, file_hash = decoder.read(filename, limit)
+    channels, Fs, file_hash = decoder.read(filename, normalize, limit)
     result = {}
     channel_amount = len(channels)
 

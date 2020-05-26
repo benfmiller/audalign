@@ -34,7 +34,7 @@ def find_files(path, extensions):
                 yield (p, extension)
 
 
-def read(filename, limit=None):
+def read(filename, normalize=True, limit=None):
     """
     Reads any file supported by pydub (ffmpeg) and returns the data contained
     within. If file reading fails due to input being a 24-bit wav file,
@@ -51,6 +51,9 @@ def read(filename, limit=None):
         print(filename)
         #AudioSegment.converter = "ffmpeg/bin/ffmpeg.exe"
         audiofile = AudioSegment.from_file(filename)
+
+        if normalize:
+            audiofile.normalize()
 
         if limit:
             audiofile = audiofile[:limit * 1000]
