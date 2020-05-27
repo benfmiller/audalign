@@ -1,10 +1,10 @@
 import dejavu as dj
 
-
 #TODO: Rename vars
+#TODO: Rework Fingerprint Folder
 #TODO: Multiprocessing
 #TODO: Add plot as option to fingerprint
-#TODO: Not double add songs
+#TODO: Not double add files
 #TODO: Handle non audio files
 #TODO: Add precision optional adjustments to recognize
 #TODO: Optional change sample rate prior to fingerprinting
@@ -21,7 +21,7 @@ import dejavu as dj
 djv = dj.Dejavu()
 
 djv.fingerprint_file("TestAudio/SUBstretch10perc.pkf")
-#djv.save_fingerprinted_songs('Sub.json')
+#djv.save_fingerprinted_files('Sub.json')
 #print(len(djv.fingerprinted_files))
 
 #print(djv.fingerprinted_files[0][0] + "  :  " + djv.fingerprinted_files[0][2])
@@ -33,7 +33,7 @@ djv.fingerprint_file("TestAudio/SUBstretch10perc.pkf")
 #print(djv.recognize(recognizer='MicrophoneRecognizer', seconds=10))
 #print(djv.recognize("SUB.mp3"))
 
-#djv.save_fingerprinted_songs('test_mp3s.pickle')
+#djv.save_fingerprinted_files('test_mp3s.pickle')
 
 
 
@@ -44,18 +44,18 @@ djv.fingerprint_file("TestAudio/SUBstretch10perc.pkf")
 
 
 
-#song = djv.recognize("mp3/Sean-Fournier--Falling-For-You.mp3")
-#print(song)
-#print ("From file we recognized: %s\n" % song)
+#filen = djv.recognize("mp3/Sean-Fournier--Falling-For-You.mp3")
+#print(filen)
+#print ("From file we recognized: %s\n" % filen)
 
 """
 filepath = "SUB.mp3"
 
-songname = dejavu.decoder.path_to_songname(filepath)
-song_hash = dejavu.decoder.unique_hash(filepath)
-song_name = songname
+filename = dejavu.decoder.path_to_filename(filepath)
+file_hash = dejavu.decoder.unique_hash(filepath)
+file_name = filename
 # don't refingerprint already fingerprinted files
-#song_name, hashes, file_hash = dejavu._fingerprint_worker(filepath)
+#file_name, hashes, file_hash = dejavu._fingerprint_worker(filepath)
 #print(hashes)
 
 channels, Fs, file_hash = dejavu.decoder.read(filepath)

@@ -81,9 +81,9 @@ def read(filename, normalize=True, limit=None):
     return channels, audiofile.frame_rate, unique_hash(filename)
 
 
-def path_to_songname(path):
+def path_to_filename(path):
     """
-    Extracts song name from a filepath. Used to identify which songs
+    Extracts file name from a filepath. Used to identify which files
     have already been fingerprinted on disk.
     """
     return os.path.splitext(os.path.basename(path))[0]
