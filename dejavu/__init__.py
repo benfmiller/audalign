@@ -12,8 +12,8 @@ import json
 
 class Dejavu(object):
 
-    SONG_ID = "song_id"
-    SONG_NAME = 'song_name'
+    FILE_ID = "file_id"
+    FILE_NAME = 'file_name'
     CONFIDENCE = 'confidence'
     MATCH_TIME = 'match_time'                             
     OFFSET_SAMPLES = 'offset_samples'
@@ -26,7 +26,7 @@ class Dejavu(object):
         self.file_unique_hash = []
         self.fingerprinted_files = []
         if len(args) > 0:
-            self.get_fingerprinted_songs(args[0])
+            self.get_fingerprinted_files(args[0])
         
 
         #--------------------------------------------------
@@ -48,7 +48,7 @@ class Dejavu(object):
         #    self.limit = None
         
         
-    def save_fingerprinted_songs(self, filename):
+    def save_fingerprinted_files(self, filename):
         if filename.split('.')[-1] == 'pickle':
             with open(filename, 'wb') as f:
                 pickle.dump(self.fingerprinted_files, f)
@@ -58,7 +58,7 @@ class Dejavu(object):
         else:
             print('File type must be either pickle or json')
 
-    def get_fingerprinted_songs(self, filename):
+    def get_fingerprinted_files(self, filename):
         if filename.split('.')[-1] == 'pickle':
             with open(filename, 'rb') as f:
                 self.fingerprinted_files = pickle.load(f)
@@ -98,23 +98,25 @@ class Dejavu(object):
 
             filenames_to_fingerprint.append(filename) 
 
+        #TODO: Redo preparation
         # Prepare _fingerprint_worker input
         worker_input = zip(filenames_to_fingerprint,
                            [self.limit] * len(filenames_to_fingerprint))
 
-        list_song_and_hashes = []
+        list_file_and_hashes = []
 
         for i in worker_input:
             try:
-                song_name, hashes, file_hash = _fingerprint_worker(i)
-                list_song_and_hashes += [[song_name, hashes, file_hash]]
+                file_name, hashes, file_hash = _fingerprint_worker(i)
+                if file_name != None:
+                    list_file_and_hashes += [[file_name, hashes, file_hash]]
             except:
                 print("Failed fingerprinting")
                 # Print traceback because we can't reraise it here
                 traceback.print_exc(file=sys.stdout)
                 
         
-        self.fingerprinted_files += list_song_and_hashes
+        self.fingerprinted_files += list_file_and_hashes
 
         """
         # Send off our tasks
@@ -144,21 +146,22 @@ class Dejavu(object):
         pool.join()
         """
 
-    def fingerprint_file(self, filepath, normalize=True, song_name=None):
-        songname = decoder.path_to_songname(filepath)
-        song_hash = decoder.unique_hash(filepath)
-        song_name = song_name or songname
+    def fingerprint_file(self, filepath, normalize=True, file_name=None):
+        filename = decoder.path_to_filename(filepath)
+        file_hash = decoder.unique_hash(filepath)
+        file_name = file_name or filename
         # don't refingerprint already fingerprinted files
-        if song_hash in self.file_unique_hash:
-            print ("%s already fingerprinted, continuing..." % song_name)
+        if file_hash in self.file_unique_hash:
+            print ("%s already fingerprinted, continuing..." % file_name)
         else:
-            song_name, hashes, file_hash = _fingerprint_worker(
+            file_name, hashes, file_hash = _fingerprint_worker(
                 filepath,
                 self.limit,
                 normalize,
-                song_name=song_name
+                file_name=file_name
             )
-            self.fingerprinted_files += [[song_name, hashes, file_hash]]
+            if file_hash != None:
+                self.fingerprinted_files += [[file_name, hashes, file_hash]]
 
             """
             sid = self.db.insert_song(song_name, file_hash)
@@ -195,7 +198,7 @@ class Dejavu(object):
         diff_counter = {}
         largest_match_offset = 0
         largest_match_count = 0
-        song_name = -1
+        file_name = -1
         for pair in matches:
             sid, diff = pair
             if diff not in diff_counter:
@@ -207,24 +210,24 @@ class Dejavu(object):
             if diff_counter[diff][sid] > largest_match_count:
                 largest_match_offset = diff
                 largest_match_count = diff_counter[diff][sid]
-                song_name = sid
+                file_name = sid
 
         # extract idenfication
-        song_id = self.get_file_id(song_name)
+        file_id = self.get_file_id(file_name)
 
         # return match info
         nseconds = round(float(largest_match_offset) / fingerprint.DEFAULT_FS *
                          fingerprint.DEFAULT_WINDOW_SIZE *
                          fingerprint.DEFAULT_OVERLAP_RATIO, 5)
-        song = {
-            Dejavu.SONG_ID : song_id,
-            Dejavu.SONG_NAME : song_name,
+        audio_file = {
+            Dejavu.FILE_ID : file_id,
+            Dejavu.FILE_NAME : file_name,
             Dejavu.CONFIDENCE : largest_match_count,
             Dejavu.OFFSET_SAMPLES : int(largest_match_offset),
             Dejavu.OFFSET_SECS : nseconds,
             #Database.FIELD_FILE_SHA1 : song.get(Database.FIELD_FILE_SHA1, None).encode("utf8"),
             }
-        return song
+        return audio_file
 
     def recognize(self, *options, **kwoptions):
         if 'recognizer' not in kwoptions.keys():
@@ -243,7 +246,7 @@ class Dejavu(object):
                 return i[2]
 
 
-def _fingerprint_worker(filename, limit=None, song_name=None, normalize=True):
+def _fingerprint_worker(filename, normalize=True, limit=None, file_name=None):
     # Pool.imap sends arguments as tuples so we have to unpack
     # them ourself.
     try:
@@ -251,9 +254,13 @@ def _fingerprint_worker(filename, limit=None, song_name=None, normalize=True):
     except ValueError:
         pass
 
-    songname, extension = os.path.splitext(os.path.basename(filename))
-    song_name = song_name or songname
-    channels, Fs, file_hash = decoder.read(filename, normalize, limit)
+    filename, extension = os.path.splitext(os.path.basename(filename))
+    file_name = file_name or filename
+    try:
+        channels, Fs, file_hash = decoder.read(filename, normalize, limit)
+    except:
+        print(f"File \"{filename + extension}\" could not be decoded")
+        return None, None, None
     result = {}
     channel_amount = len(channels)
 
@@ -271,7 +278,7 @@ def _fingerprint_worker(filename, limit=None, song_name=None, normalize=True):
             else:
                 result[hash_] += hashes[hash_]
 
-    return song_name, result, file_hash
+    return file_name, result, file_hash
 
 
 def chunkify(lst, n):
