@@ -6,8 +6,10 @@ from scipy.ndimage.morphology import (generate_binary_structure,
                                       iterate_structure, binary_erosion)
 import hashlib
 from operator import itemgetter
+#import warnings
+#warnings.filterwarnings("ignore")
 
-#np.seterr(divide = 'ignore')
+np.seterr(divide = 'ignore')
 
 IDX_FREQ_I = 0
 IDX_TIME_J = 1
