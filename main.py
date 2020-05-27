@@ -1,53 +1,74 @@
-from os import path
-from pydub import AudioSegment
-import pydub
+import dejavu as dj
 
 
-#asd
-# files   "                                                                      
-src = "Street.mp3"
-dst = "Street.wav"
+#TODO: Rename vars
+#TODO: Multiprocessing
+#TODO: Add plot as option to fingerprint
+#TODO: Not double add songs
+#TODO: Handle non audio files
+#TODO: Add precision optional adjustments to recognize
+#TODO: Optional change sample rate prior to fingerprinting
+#TODO: Document
 
-# convert wav to mp3               
-#AudioSegment.converter = "C:\\Users\\benfm\\AppData\\Local\\Programs\\Python\\Python38\\Lib\\site-packages"                                             
-sound = AudioSegment.from_mp3(src)
-sound.export(dst, format="wav")
-
-
-import moviepy.editor
-import moviepy.audio
-import numpy as np
+#Tests:
+#TODO: Different Sample rates
+#TODO: Stretch
+#TODO: Transpose
+#TODO: wav vs mp3
 
 
 
-def conv_vid_to_aud(vid_name, aud_name):
-    # Replace the parameter with the location of the video
-    video = moviepy.editor.VideoFileClip(vid_name)
-    audio = video.audio
-    # Replace the parameter with the location along with filename
-    audio.write_audiofile(aud_name)
+djv = dj.Dejavu()
 
-#conv_vid_to_aud("SUB.mp4", "SUB.wav")
+djv.fingerprint_file("TestAudio/SUBstretch10perc.pkf")
+#djv.save_fingerprinted_songs('Sub.json')
+#print(len(djv.fingerprinted_files))
 
-#import soundfile as sf
+#print(djv.fingerprinted_files[0][0] + "  :  " + djv.fingerprinted_files[0][2])
+#a = djv.fingerprinted_files
+#b = a[0][1]
+#print(b)
 
-# Extract audio data and sampling rate from file 
-#data, fs = sf.read('SUB.wav') 
-# Save as FLAC file at correct sampling rate
-#sf.write('myfile.flac', data, fs)  
-#print(data)
+#print("\nBeginning Recognizing")
+#print(djv.recognize(recognizer='MicrophoneRecognizer', seconds=10))
+#print(djv.recognize("SUB.mp3"))
 
-#import wavio
-import librosa
+#djv.save_fingerprinted_songs('test_mp3s.pickle')
 
-#wavio.write("myfile.wav", my_np_array, fs, sampwidth=2)
+
+
+#djv.fingerprint_directory("mp3")
+#print(djv.fingerprinted_files)
+
+
+
+
+
+#song = djv.recognize("mp3/Sean-Fournier--Falling-For-You.mp3")
+#print(song)
+#print ("From file we recognized: %s\n" % song)
+
 """
-audio = moviepy.editor.AudioFileClip('Street.mp3')
-audionp = audio.to_soundarray()
-print(audionp[10000:11000])"""
+filepath = "SUB.mp3"
 
+songname = dejavu.decoder.path_to_songname(filepath)
+song_hash = dejavu.decoder.unique_hash(filepath)
+song_name = songname
+# don't refingerprint already fingerprinted files
+#song_name, hashes, file_hash = dejavu._fingerprint_worker(filepath)
+#print(hashes)
+
+channels, Fs, file_hash = dejavu.decoder.read(filepath)
+channel_amount = len(channels)
+result = []
+
+for channeln, channel in enumerate(channels):
+    print("Fingerprinting channel %d/%d for %s" % (channeln + 1,
+                                                    channel_amount,
+                                                    filepath))
+    hashes = dejavu.fingerprint.fingerprint(channel, Fs=Fs, plot=False)
+    print("Finished channel %d/%d for %s" % (channeln + 1, channel_amount,
+                                                filepath))
+    result += hashes
+    print("Length is: {}".format(len(result)))
 """
-from scipy.io.wavfile import read
-a = read("Street.wav")
-numpy.array(a[1],dtype=float)
-array([ 128.,  128.,  128., ...,  128.,  128.,  128.])"""

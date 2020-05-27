@@ -144,7 +144,7 @@ class Dejavu(object):
         pool.join()
         """
 
-    def fingerprint_file(self, filepath, song_name=None):
+    def fingerprint_file(self, filepath, normalize=True, song_name=None):
         songname = decoder.path_to_songname(filepath)
         song_hash = decoder.unique_hash(filepath)
         song_name = song_name or songname
@@ -155,6 +155,7 @@ class Dejavu(object):
             song_name, hashes, file_hash = _fingerprint_worker(
                 filepath,
                 self.limit,
+                normalize,
                 song_name=song_name
             )
             self.fingerprinted_files += [[song_name, hashes, file_hash]]
