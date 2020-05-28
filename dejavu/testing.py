@@ -1,6 +1,6 @@
 from __future__ import division
 from pydub import AudioSegment
-from dejavu.decoder import path_to_songname
+from dejavu.decoder import path_to_filename
 from dejavu import Dejavu
 from dejavu.fingerprint import *
 import traceback
@@ -118,7 +118,7 @@ class DejavuTest(object):
 
         self.test_folder = folder
         self.test_seconds = seconds
-        self.test_songs = []
+        self.test_files = []
 
         print ("test_seconds", self.test_seconds)
 
@@ -157,12 +157,12 @@ class DejavuTest(object):
             if secs == sec:
                 return i
 
-    def get_line_id (self, song):
-        for i, s in enumerate(self.test_songs):
-            if song == s:
+    def get_line_id (self, file):
+        for i, s in enumerate(self.test_files):
+            if file == s:
                 return i
-        self.test_songs.append(song)
-        return len(self.test_songs) - 1
+        self.test_files.append(file)
+        return len(self.test_files) - 1
 
     def create_plots(self, name, results, results_folder):
         for sec in range(0, len(self.test_seconds)):
@@ -183,7 +183,7 @@ class DejavuTest(object):
 
             labels = [0 for x in range(0, self.n_lines)]
             for x in range(0, self.n_lines):
-                labels[x] = "song %s" % (x+1)
+                labels[x] = "file %s" % (x+1)
             ax.set_xticklabels(labels)
 
             box = ax.get_position()
@@ -209,8 +209,8 @@ class DejavuTest(object):
             # get column 
             col = self.get_column_id(re.findall("[0-9]*sec", f)[0])
             # format: XXXX_offset_length.mp3
-            song = path_to_songname(f).split("_")[0]  
-            line = self.get_line_id(song)
+            file = path_to_filename(f).split("_")[0]  
+            line = self.get_line_id(file)
             result = subprocess.check_output([
                 "python", 
                 "dejavu.py",
@@ -232,13 +232,13 @@ class DejavuTest(object):
                 result = result.replace("\':", '":')
                 result = result.replace("\',", '",')
 
-                # which song did we predict?
+                # which file did we predict?
                 result = ast.literal_eval(result)
-                song_result = result["song_name"]
-                log_msg('song: %s' % song)
-                log_msg('song_result: %s' % song_result)
+                file_result = result["file_name"]
+                log_msg('file: %s' % file)
+                log_msg('file_result: %s' % file_result)
 
-                if song_result != song:
+                if file_result != file:
                     log_msg('invalid match')
                     self.result_match[line][col] = 'invalid'
                     self.result_matching_times[line][col] = 0
@@ -251,19 +251,19 @@ class DejavuTest(object):
                     self.result_query_duration[line][col] = round(result[Dejavu.MATCH_TIME],3)
                     self.result_match_confidence[line][col] = result[Dejavu.CONFIDENCE]
 
-                    song_start_time = re.findall("\_[^\_]+",f)
-                    song_start_time = song_start_time[0].lstrip("_ ")
+                    file_start_time = re.findall("\_[^\_]+",f)
+                    file_start_time = file_start_time[0].lstrip("_ ")
 
                     result_start_time = round((result[Dejavu.OFFSET] * DEFAULT_WINDOW_SIZE * 
                         DEFAULT_OVERLAP_RATIO) / (DEFAULT_FS), 0)
 
-                    self.result_matching_times[line][col] = int(result_start_time) - int(song_start_time)
+                    self.result_matching_times[line][col] = int(result_start_time) - int(file_start_time)
                     if (abs(self.result_matching_times[line][col]) == 1):
                         self.result_matching_times[line][col] = 0
 
                     log_msg('query duration: %s' % round(result[Dejavu.MATCH_TIME],3))
                     log_msg('confidence: %s' % result[Dejavu.CONFIDENCE])
-                    log_msg('song start_time: %s' % song_start_time)
+                    log_msg('file start_time: %s' % file_start_time)
                     log_msg('result start time: %s' % result_start_time)
                     if (self.result_matching_times[line][col] == 0):
                         log_msg('accurate match')

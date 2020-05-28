@@ -1,26 +1,26 @@
 import dejavu as dj
 
-#TODO: Rename vars
-#TODO: Rework Fingerprint Folder
+
+#TODO: Rework Fingerprint Directory
 #TODO: Multiprocessing
-#TODO: Add plot as option to fingerprint
 #TODO: Not double add files
 #TODO: Handle non audio files
 #TODO: Add precision optional adjustments to recognize
-#TODO: Optional change sample rate prior to fingerprinting
 #TODO: Document
 
 #Tests:
-#TODO: Different Sample rates
+#TODO: Different Sample rates? Needed?
 #TODO: Stretch
 #TODO: Transpose
 #TODO: wav vs mp3
+#TODO: is normalize needed
 
 
 
 djv = dj.Dejavu()
 
-djv.fingerprint_file("TestAudio/SUBstretch10perc.pkf")
+djv.fingerprint_file("SUB.wav", plot=False, normalize=False)
+print(len(djv.fingerprinted_files[0][1]))
 #djv.save_fingerprinted_files('Sub.json')
 #print(len(djv.fingerprinted_files))
 

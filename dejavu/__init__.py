@@ -146,7 +146,7 @@ class Dejavu(object):
         pool.join()
         """
 
-    def fingerprint_file(self, filepath, normalize=True, file_name=None):
+    def fingerprint_file(self, filepath, normalize=True, file_name=None, plot=False):
         filename = decoder.path_to_filename(filepath)
         file_hash = decoder.unique_hash(filepath)
         file_name = file_name or filename
@@ -156,9 +156,10 @@ class Dejavu(object):
         else:
             file_name, hashes, file_hash = _fingerprint_worker(
                 filepath,
-                self.limit,
                 normalize,
-                file_name=file_name
+                self.limit,
+                file_name,
+                plot
             )
             if file_hash != None:
                 self.fingerprinted_files += [[file_name, hashes, file_hash]]
@@ -246,7 +247,7 @@ class Dejavu(object):
                 return i[2]
 
 
-def _fingerprint_worker(filename, normalize=True, limit=None, file_name=None):
+def _fingerprint_worker(filename, normalize=True, limit=None, file_name=None, plot=False):
     # Pool.imap sends arguments as tuples so we have to unpack
     # them ourself.
     try:
@@ -256,11 +257,11 @@ def _fingerprint_worker(filename, normalize=True, limit=None, file_name=None):
 
     filename, extension = os.path.splitext(os.path.basename(filename))
     file_name = file_name or filename
-    try:
-        channels, Fs, file_hash = decoder.read(filename, normalize, limit)
-    except:
-        print(f"File \"{filename + extension}\" could not be decoded")
-        return None, None, None
+    #try:
+    channels, Fs, file_hash = decoder.read(filename + extension, normalize, limit)
+    #except:
+     #   print(f"File \"{filename + extension}\" could not be decoded")
+      #  return None, None, None
     result = {}
     channel_amount = len(channels)
 
@@ -269,7 +270,7 @@ def _fingerprint_worker(filename, normalize=True, limit=None, file_name=None):
         print("Fingerprinting channel %d/%d for %s" % (channeln + 1,
                                                        channel_amount,
                                                        filename))
-        hashes = fingerprint.fingerprint(channel, Fs=Fs)
+        hashes = fingerprint.fingerprint(channel, Fs=Fs, plot=plot)
         print("Finished channel %d/%d for %s" % (channeln + 1, channel_amount,
                                                  filename))
         for hash_ in hashes.keys():

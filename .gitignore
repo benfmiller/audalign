@@ -13,3 +13,5 @@ molasses-m*
 *.mp4
 *.MOV
 *.pkf
+fingerprint_graphs
+*.stackdump
