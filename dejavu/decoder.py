@@ -48,17 +48,19 @@ def read(filename, normalize=True, limit=None):
     """
     # pydub does not support 24-bit wav files, use wavio when this occurs
     try:
-        print(filename)
+        #print(f"{filename}, and limit is {limit}")
         #AudioSegment.converter = "ffmpeg/bin/ffmpeg.exe"
         audiofile = AudioSegment.from_file(filename)
 
         if normalize:
             audiofile.normalize()
+            print('normalized')
 
         if limit:
             audiofile = audiofile[:limit * 1000]
 
         data = np.fromstring(audiofile._data, np.int16)
+        #print(len(data))
 
         channels = []
         for chn in range(audiofile.channels):
