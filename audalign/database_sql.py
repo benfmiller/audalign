@@ -5,7 +5,7 @@ import queue
 import MySQLdb as mysql
 from MySQLdb.cursors import DictCursor
 
-from dejavu.database import Database
+from audalign.database import Database
 
 
 class SQLDatabase(Database):
@@ -149,7 +149,7 @@ class SQLDatabase(Database):
 
     def setup(self):
         """
-        Creates any non-existing tables required for dejavu to function.
+        Creates any non-existing tables required for audalign to function.
 
         This also removes all songs that have been added but have no
         fingerprints associated with them.
@@ -161,7 +161,7 @@ class SQLDatabase(Database):
 
     def empty(self):
         """
-        Drops tables created by dejavu and then creates them again
+        Drops tables created by audalign and then creates them again
         by calling `SQLDatabase.setup`.
 
         .. warning:

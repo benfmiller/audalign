@@ -42,7 +42,7 @@ DEFAULT_AMP_MIN = 10
 
 ######################################################################
 # Number of cells around an amplitude peak in the spectrogram in order
-# for Dejavu to consider it a spectral peak. Higher values mean less
+# for audalign to consider it a spectral peak. Higher values mean less
 # fingerprints and faster matching, but can potentially affect accuracy.
 PEAK_NEIGHBORHOOD_SIZE = 20
 
@@ -164,7 +164,7 @@ def generate_hashes(peaks, fan_value=DEFAULT_FAN_VALUE):
                     h = hashlib.sha1("{}|{}|{}".format(str(freq1), str(freq2), str(t_delta)).encode('utf-8')).hexdigest()[0:FINGERPRINT_REDUCTION]
                     if h not in hash_dict:
                         hash_dict[h] = [int(t1)]
-                    else:
+                    else: #maybe not include duplicate offsets per hash?
                         hash_dict[h] += [int(t1)]
 
     return hash_dict

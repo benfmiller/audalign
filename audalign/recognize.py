@@ -1,6 +1,6 @@
 # encoding: utf-8
-import dejavu.fingerprint as fingerprint
-import dejavu.decoder as decoder
+import audalign.fingerprint as fingerprint
+import audalign.decoder as decoder
 import numpy as np
 import pyaudio
 import time
@@ -8,26 +8,26 @@ import time
 
 class BaseRecognizer(object):
 
-    def __init__(self, dejavu):
-        self.dejavu = dejavu
+    def __init__(self, audalign):
+        self.audalign = audalign
         self.Fs = fingerprint.DEFAULT_FS
 
     def _recognize(self, *channels_samples):
         matches = []
         for channel in channels_samples:
-            matches.extend(self.dejavu.find_matches(channel, Fs=self.Fs))
-        return self.dejavu.align_matches(matches)
+            matches.extend(self.audalign.find_matches(channel, Fs=self.Fs))
+        return self.audalign.align_matches(matches)
 
     def recognize(self):
         pass  # base class does nothing
 
 
 class FileRecognizer(BaseRecognizer):
-    def __init__(self, dejavu):
-        super(FileRecognizer, self).__init__(dejavu)
+    def __init__(self, audalign):
+        super(FileRecognizer, self).__init__(audalign)
 
     def recognize_file(self, filename):
-        channels_samples, self.Fs, file_hash = decoder.read(filename, self.dejavu.limit)
+        channels_samples, self.Fs, file_hash = decoder.read(filename, self.audalign.limit)
 
         t = time.time()
         match = self._recognize(*channels_samples)
@@ -48,8 +48,8 @@ class MicrophoneRecognizer(BaseRecognizer):
     default_channels    = 2
     default_samplerate  = 44100
 
-    def __init__(self, dejavu):
-        super(MicrophoneRecognizer, self).__init__(dejavu)
+    def __init__(self, audalign):
+        super(MicrophoneRecognizer, self).__init__(audalign)
         self.audio = pyaudio.PyAudio()
         self.stream = None
         self.data = []
