@@ -1,4 +1,4 @@
-import dejavu as dj
+import audalign as ad
 
 
 #TODO: Rework Fingerprint Directory
@@ -17,10 +17,10 @@ import dejavu as dj
 
 
 
-djv = dj.Dejavu()
+ada = ad.Audalign()
 
-djv.fingerprint_file("SUB.wav", plot=False, normalize=False)
-print(len(djv.fingerprinted_files[0][1]))
+ada.fingerprint_file("TestAudio/SUB.wav", plot=False, normalize=False)
+print(len(ada.fingerprinted_files[0][1]))
 #djv.save_fingerprinted_files('Sub.json')
 #print(len(djv.fingerprinted_files))
 
@@ -51,14 +51,14 @@ print(len(djv.fingerprinted_files[0][1]))
 """
 filepath = "SUB.mp3"
 
-filename = dejavu.decoder.path_to_filename(filepath)
-file_hash = dejavu.decoder.unique_hash(filepath)
+filename = audalign.decoder.path_to_filename(filepath)
+file_hash = audalign.decoder.unique_hash(filepath)
 file_name = filename
 # don't refingerprint already fingerprinted files
-#file_name, hashes, file_hash = dejavu._fingerprint_worker(filepath)
+#file_name, hashes, file_hash = audalign._fingerprint_worker(filepath)
 #print(hashes)
 
-channels, Fs, file_hash = dejavu.decoder.read(filepath)
+channels, Fs, file_hash = audalign.decoder.read(filepath)
 channel_amount = len(channels)
 result = []
 
@@ -66,7 +66,7 @@ for channeln, channel in enumerate(channels):
     print("Fingerprinting channel %d/%d for %s" % (channeln + 1,
                                                     channel_amount,
                                                     filepath))
-    hashes = dejavu.fingerprint.fingerprint(channel, Fs=Fs, plot=False)
+    hashes = audalign.fingerprint.fingerprint(channel, Fs=Fs, plot=False)
     print("Finished channel %d/%d for %s" % (channeln + 1, channel_amount,
                                                 filepath))
     result += hashes

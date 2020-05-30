@@ -1,7 +1,7 @@
-#from dejavu.database import get_database, Database
-import dejavu.decoder as decoder
-import dejavu.fingerprint as fingerprint
-import dejavu.recognize as recognize
+#from audalign.database import get_database, Database
+import audalign.decoder as decoder
+import audalign.fingerprint as fingerprint
+import audalign.recognize as recognize
 import multiprocessing
 import os
 import traceback
@@ -10,7 +10,7 @@ import pickle
 import json
 
 
-class Dejavu(object):
+class Audalign(object):
 
     FILE_ID = "file_id"
     FILE_NAME = 'file_name'
@@ -20,7 +20,7 @@ class Dejavu(object):
     OFFSET_SECS = 'offset_seconds'
 
     def __init__(self, *args): #, config):
-        #super(Dejavu, self).__init__()
+        #super(audalign, self).__init__()
 
         self.limit = None
         self.file_unique_hash = []
@@ -221,11 +221,11 @@ class Dejavu(object):
                          fingerprint.DEFAULT_WINDOW_SIZE *
                          fingerprint.DEFAULT_OVERLAP_RATIO, 5)
         audio_file = {
-            Dejavu.FILE_ID : file_id,
-            Dejavu.FILE_NAME : file_name,
-            Dejavu.CONFIDENCE : largest_match_count,
-            Dejavu.OFFSET_SAMPLES : int(largest_match_offset),
-            Dejavu.OFFSET_SECS : nseconds,
+            Audalign.FILE_ID : file_id,
+            Audalign.FILE_NAME : file_name,
+            Audalign.CONFIDENCE : largest_match_count,
+            Audalign.OFFSET_SAMPLES : int(largest_match_offset),
+            Audalign.OFFSET_SECS : nseconds,
             #Database.FIELD_FILE_SHA1 : song.get(Database.FIELD_FILE_SHA1, None).encode("utf8"),
             }
         return audio_file
@@ -255,10 +255,10 @@ def _fingerprint_worker(filename, normalize=True, limit=None, file_name=None, pl
     except ValueError:
         pass
 
-    filename, extension = os.path.splitext(os.path.basename(filename))
+    #filename, extension = os.path.splitext(os.path.basename(filename))
     file_name = file_name or filename
     #try:
-    channels, Fs, file_hash = decoder.read(filename + extension, normalize, limit)
+    channels, Fs, file_hash = decoder.read(filename, normalize, limit)
     #except:
      #   print(f"File \"{filename + extension}\" could not be decoded")
       #  return None, None, None

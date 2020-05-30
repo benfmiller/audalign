@@ -1,8 +1,8 @@
 from __future__ import division
 from pydub import AudioSegment
-from dejavu.decoder import path_to_filename
-from dejavu import Dejavu
-from dejavu.fingerprint import *
+from audalign.decoder import path_to_filename
+from audalign import audalign
+from audalign.fingerprint import *
 import traceback
 import fnmatch
 import os, re, ast
@@ -112,9 +112,9 @@ def autolabeldoubles(rects, ax):
         ax.text(rect.get_x() + rect.get_width() / 2., 1.05 * height, 
             '%s' % round(float(height), 3), ha='center', va='bottom')
 
-class DejavuTest(object):
+class audalignTest(object):
     def __init__(self, folder, seconds):
-        super(DejavuTest, self).__init__()
+        super(audalignTest, self).__init__()
 
         self.test_folder = folder
         self.test_seconds = seconds
@@ -189,7 +189,7 @@ class DejavuTest(object):
             box = ax.get_position()
             ax.set_position([box.x0, box.y0, box.width * 0.75, box.height])
 
-            #ax.legend( (rects1[0]), ('Dejavu'), loc='center left', bbox_to_anchor=(1, 0.5))
+            #ax.legend( (rects1[0]), ('audalign'), loc='center left', bbox_to_anchor=(1, 0.5))
 
             if name == 'Confidence':
                 autolabel(rects1, ax)
@@ -213,7 +213,7 @@ class DejavuTest(object):
             line = self.get_line_id(file)
             result = subprocess.check_output([
                 "python", 
-                "dejavu.py",
+                "audalign.py",
                 '-r',
                 'file', 
                 self.test_folder + "/" + f])
@@ -248,21 +248,21 @@ class DejavuTest(object):
                     log_msg('correct match')
                     print (self.result_match)
                     self.result_match[line][col] = 'yes'
-                    self.result_query_duration[line][col] = round(result[Dejavu.MATCH_TIME],3)
-                    self.result_match_confidence[line][col] = result[Dejavu.CONFIDENCE]
+                    self.result_query_duration[line][col] = round(result[audalign.MATCH_TIME],3)
+                    self.result_match_confidence[line][col] = result[audalign.CONFIDENCE]
 
                     file_start_time = re.findall("\_[^\_]+",f)
                     file_start_time = file_start_time[0].lstrip("_ ")
 
-                    result_start_time = round((result[Dejavu.OFFSET] * DEFAULT_WINDOW_SIZE * 
+                    result_start_time = round((result[audalign.OFFSET] * DEFAULT_WINDOW_SIZE * 
                         DEFAULT_OVERLAP_RATIO) / (DEFAULT_FS), 0)
 
                     self.result_matching_times[line][col] = int(result_start_time) - int(file_start_time)
                     if (abs(self.result_matching_times[line][col]) == 1):
                         self.result_matching_times[line][col] = 0
 
-                    log_msg('query duration: %s' % round(result[Dejavu.MATCH_TIME],3))
-                    log_msg('confidence: %s' % result[Dejavu.CONFIDENCE])
+                    log_msg('query duration: %s' % round(result[audalign.MATCH_TIME],3))
+                    log_msg('confidence: %s' % result[audalign.CONFIDENCE])
                     log_msg('file start_time: %s' % file_start_time)
                     log_msg('result start time: %s' % result_start_time)
                     if (self.result_matching_times[line][col] == 0):
