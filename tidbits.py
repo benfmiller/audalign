@@ -2,12 +2,12 @@ from os import path
 from pydub import AudioSegment
 import pydub
 
-                                                                   
+
 src = "Street.mp3"
 dst = "Street.wav"
 
-# convert wav to mp3               
-#AudioSegment.converter = "C:\\Users\\benfm\\AppData\\Local\\Programs\\Python\\Python38\\Lib\\site-packages"                                             
+# convert wav to mp3
+# AudioSegment.converter = "C:\\Users\\benfm\\AppData\\Local\\Programs\\Python\\Python38\\Lib\\site-packages"
 sound = AudioSegment.from_mp3(src)
 sound.export(dst, format="wav")
 
@@ -17,7 +17,6 @@ import moviepy.audio
 import numpy as np
 
 
-
 def conv_vid_to_aud(vid_name, aud_name):
     # Replace the parameter with the location of the video
     video = moviepy.editor.VideoFileClip(vid_name)
@@ -25,20 +24,21 @@ def conv_vid_to_aud(vid_name, aud_name):
     # Replace the parameter with the location along with filename
     audio.write_audiofile(aud_name)
 
-#conv_vid_to_aud("SUB.mp4", "SUB.wav")
 
-#import soundfile as sf
+# conv_vid_to_aud("SUB.mp4", "SUB.wav")
 
-# Extract audio data and sampling rate from file 
-#data, fs = sf.read('SUB.wav') 
+# import soundfile as sf
+
+# Extract audio data and sampling rate from file
+# data, fs = sf.read('SUB.wav')
 # Save as FLAC file at correct sampling rate
-#sf.write('myfile.flac', data, fs)  
-#print(data)
+# sf.write('myfile.flac', data, fs)
+# print(data)
 
-#import wavio
+# import wavio
 import librosa
 
-#wavio.write("myfile.wav", my_np_array, fs, sampwidth=2)
+# wavio.write("myfile.wav", my_np_array, fs, sampwidth=2)
 """
 audio = moviepy.editor.AudioFileClip('Street.mp3')
 audionp = audio.to_soundarray()
@@ -50,18 +50,18 @@ a = read("Street.wav")
 numpy.array(a[1],dtype=float)
 array([ 128.,  128.,  128., ...,  128.,  128.,  128.])"""
 
-#import IPython.display as ipd
+# import IPython.display as ipd
 import librosa
 import librosa.display
 import matplotlib.pyplot as plt
 
-filename = 'SUB.wav'
-plt.figure(figsize=(12,4))
-data,sample_rate = librosa.load(filename)
-_ = librosa.display.waveplot(data,sr=sample_rate)
+filename = "SUB.wav"
+plt.figure(figsize=(12, 4))
+data, sample_rate = librosa.load(filename)
+_ = librosa.display.waveplot(data, sr=sample_rate)
 plt.show()
 
-#------------------------------------------------
+# ------------------------------------------------
 import numpy as np
 import simpleaudio as sa
 
@@ -76,7 +76,7 @@ t = np.linspace(0, seconds, seconds * fs, False)
 note = np.sin(frequency * t * 2 * np.pi)
 
 # Ensure that highest value is in 16-bit range
-audio = note * (2**15 - 1) / np.max(np.abs(note))
+audio = note * (2 ** 15 - 1) / np.max(np.abs(note))
 # Convert to 16-bit data
 audio = audio.astype(np.int16)
 

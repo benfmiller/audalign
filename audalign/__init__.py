@@ -1,4 +1,4 @@
-#from audalign.database import get_database, Database
+# from audalign.database import get_database, Database
 import audalign.decoder as decoder
 import audalign.fingerprint as fingerprint
 import audalign.recognize as recognize
@@ -13,61 +13,59 @@ import json
 class Audalign(object):
 
     FILE_ID = "file_id"
-    FILE_NAME = 'file_name'
-    CONFIDENCE = 'confidence'
-    MATCH_TIME = 'match_time'                             
-    OFFSET_SAMPLES = 'offset_samples'
-    OFFSET_SECS = 'offset_seconds'
+    FILE_NAME = "file_name"
+    CONFIDENCE = "confidence"
+    MATCH_TIME = "match_time"
+    OFFSET_SAMPLES = "offset_samples"
+    OFFSET_SECS = "offset_seconds"
 
-    def __init__(self, *args): #, config):
-        #super(audalign, self).__init__()
+    def __init__(self, *args):  # , config):
+        # super(audalign, self).__init__()
 
         self.limit = None
         self.file_unique_hash = []
         self.fingerprinted_files = []
         if len(args) > 0:
             self.get_fingerprinted_files(args[0])
-        
 
-        #--------------------------------------------------
+        # --------------------------------------------------
 
-        #self.config = config
+        # self.config = config
 
         # initialize db
-        #db_cls = get_database(config.get("database_type", None))
+        # db_cls = get_database(config.get("database_type", None))
 
-        #self.db = db_cls(**config.get("database", {}))
-        #self.db.setup()
+        # self.db = db_cls(**config.get("database", {}))
+        # self.db.setup()
 
-        #---------------------------------------------
+        # ---------------------------------------------
 
         # if we should limit seconds fingerprinted,
         # None|-1 means use entire track
-        #self.limit = self.config.get("fingerprint_limit", None)
-        #if self.limit == -1:  # for JSON compatibility
+        # self.limit = self.config.get("fingerprint_limit", None)
+        # if self.limit == -1:  # for JSON compatibility
         #    self.limit = None
-        
-        
+
     def save_fingerprinted_files(self, filename):
-        if filename.split('.')[-1] == 'pickle':
-            with open(filename, 'wb') as f:
+        if filename.split(".")[-1] == "pickle":
+            with open(filename, "wb") as f:
                 pickle.dump(self.fingerprinted_files, f)
-        elif filename.split('.')[-1] == 'json':
-            with open(filename, 'w') as f:
+        elif filename.split(".")[-1] == "json":
+            with open(filename, "w") as f:
                 json.dump(self.fingerprinted_files, f)
         else:
-            print('File type must be either pickle or json')
+            print("File type must be either pickle or json")
 
     def get_fingerprinted_files(self, filename):
-        if filename.split('.')[-1] == 'pickle':
-            with open(filename, 'rb') as f:
+        if filename.split(".")[-1] == "pickle":
+            with open(filename, "rb") as f:
                 self.fingerprinted_files = pickle.load(f)
-        elif filename.split('.')[-1] == 'json':
-            with open(filename, 'r') as f:
+        elif filename.split(".")[-1] == "json":
+            with open(filename, "r") as f:
                 self.fingerprinted_files = json.load(f)
         else:
-            print('File type must be either pickle or json')
-            
+            print("File type must be either pickle or json")
+
     """
         # get songs previously indexed
         self.songs = self.db.get_songs()
@@ -76,7 +74,9 @@ class Audalign(object):
             song_hash = song[Database.FIELD_FILE_SHA1]
             self.file_unique_hash.add(song_hash)"""
 
-    def fingerprint_directory(self, path, extensions=[".mp3", ".wav", ".mp4", ".MOV"], nprocesses=None):
+    def fingerprint_directory(
+        self, path, extensions=[".mp3", ".wav", ".mp4", ".MOV"], nprocesses=None
+    ):
         # Try to use the maximum amount of processes if not given.
         """try:
             #nprocesses = nprocesses or multiprocessing.cpu_count()
@@ -86,22 +86,23 @@ class Audalign(object):
         else:
             nprocesses = 1 if nprocesses <= 0 else nprocesses"""
 
-        #pool = multiprocessing.Pool(nprocesses)
+        # pool = multiprocessing.Pool(nprocesses)
 
         filenames_to_fingerprint = []
         for filename, _ in decoder.find_files(path, extensions):
 
             # don't refingerprint already fingerprinted files
             if decoder.unique_hash(filename) in self.file_unique_hash:
-                print ("%s already fingerprinted, continuing..." % filename)
+                print("%s already fingerprinted, continuing..." % filename)
                 continue
 
-            filenames_to_fingerprint.append(filename) 
+            filenames_to_fingerprint.append(filename)
 
-        #TODO: Redo preparation
+        # TODO: Redo preparation
         # Prepare _fingerprint_worker input
-        worker_input = zip(filenames_to_fingerprint,
-                           [self.limit] * len(filenames_to_fingerprint))
+        worker_input = zip(
+            filenames_to_fingerprint, [self.limit] * len(filenames_to_fingerprint)
+        )
 
         list_file_and_hashes = []
 
@@ -114,8 +115,7 @@ class Audalign(object):
                 print("Failed fingerprinting")
                 # Print traceback because we can't reraise it here
                 traceback.print_exc(file=sys.stdout)
-                
-        
+
         self.fingerprinted_files += list_file_and_hashes
 
         """
@@ -152,14 +152,10 @@ class Audalign(object):
         file_name = file_name or filename
         # don't refingerprint already fingerprinted files
         if file_hash in self.file_unique_hash:
-            print ("%s already fingerprinted, continuing..." % file_name)
+            print("%s already fingerprinted, continuing..." % file_name)
         else:
             file_name, hashes, file_hash = _fingerprint_worker(
-                filepath,
-                normalize,
-                self.limit,
-                file_name,
-                plot
+                filepath, normalize, self.limit, file_name, plot
             )
             if file_hash != None:
                 self.fingerprinted_files += [[file_name, hashes, file_hash]]
@@ -174,7 +170,7 @@ class Audalign(object):
     def find_matches(self, samples, Fs=fingerprint.DEFAULT_FS):
         target_mapper = fingerprint.fingerprint(samples, Fs=Fs)
         matches = []
-        
+
         for audio_file in self.fingerprinted_files:
             already_hashes = audio_file[1]
             for channel in already_hashes:
@@ -185,8 +181,6 @@ class Audalign(object):
                                 diff = a_offset - t_offset
                                 matches.append([audio_file[0], diff])
         return matches
-        
-        
 
     def align_matches(self, matches):
         """
@@ -217,28 +211,32 @@ class Audalign(object):
         file_id = self.get_file_id(file_name)
 
         # return match info
-        nseconds = round(float(largest_match_offset) / fingerprint.DEFAULT_FS *
-                         fingerprint.DEFAULT_WINDOW_SIZE *
-                         fingerprint.DEFAULT_OVERLAP_RATIO, 5)
+        nseconds = round(
+            float(largest_match_offset)
+            / fingerprint.DEFAULT_FS
+            * fingerprint.DEFAULT_WINDOW_SIZE
+            * fingerprint.DEFAULT_OVERLAP_RATIO,
+            5,
+        )
         audio_file = {
-            Audalign.FILE_ID : file_id,
-            Audalign.FILE_NAME : file_name,
-            Audalign.CONFIDENCE : largest_match_count,
-            Audalign.OFFSET_SAMPLES : int(largest_match_offset),
-            Audalign.OFFSET_SECS : nseconds,
-            #Database.FIELD_FILE_SHA1 : song.get(Database.FIELD_FILE_SHA1, None).encode("utf8"),
-            }
+            Audalign.FILE_ID: file_id,
+            Audalign.FILE_NAME: file_name,
+            Audalign.CONFIDENCE: largest_match_count,
+            Audalign.OFFSET_SAMPLES: int(largest_match_offset),
+            Audalign.OFFSET_SECS: nseconds,
+            # Database.FIELD_FILE_SHA1 : song.get(Database.FIELD_FILE_SHA1, None).encode("utf8"),
+        }
         return audio_file
 
     def recognize(self, *options, **kwoptions):
-        if 'recognizer' not in kwoptions.keys():
+        if "recognizer" not in kwoptions.keys():
             r = recognize.FileRecognizer(self)
-        elif kwoptions['recognizer'].lower() == 'microphonerecognizer':
+        elif kwoptions["recognizer"].lower() == "microphonerecognizer":
             r = recognize.MicrophoneRecognizer(self)
-            kwoptions.pop('recognizer')
-        elif kwoptions['recognizer'].lower() == 'filerecognizer':
+            kwoptions.pop("recognizer")
+        elif kwoptions["recognizer"].lower() == "filerecognizer":
             r = recognize.FileRecognizer(self)
-            kwoptions.pop('recognizer')
+            kwoptions.pop("recognizer")
         return r.recognize(*options, **kwoptions)
 
     def get_file_id(self, name):
@@ -247,7 +245,9 @@ class Audalign(object):
                 return i[2]
 
 
-def _fingerprint_worker(filename, normalize=True, limit=None, file_name=None, plot=False):
+def _fingerprint_worker(
+    filename, normalize=True, limit=None, file_name=None, plot=False
+):
     # Pool.imap sends arguments as tuples so we have to unpack
     # them ourself.
     try:
@@ -255,24 +255,26 @@ def _fingerprint_worker(filename, normalize=True, limit=None, file_name=None, pl
     except ValueError:
         pass
 
-    #filename, extension = os.path.splitext(os.path.basename(filename))
+    # filename, extension = os.path.splitext(os.path.basename(filename))
     file_name = file_name or filename
-    #try:
+    # try:
     channels, Fs, file_hash = decoder.read(filename, normalize, limit)
-    #except:
-     #   print(f"File \"{filename + extension}\" could not be decoded")
-      #  return None, None, None
+    # except:
+    #   print(f"File \"{filename + extension}\" could not be decoded")
+    #  return None, None, None
     result = {}
     channel_amount = len(channels)
 
     for channeln, channel in enumerate(channels):
         # TODO: Remove prints or change them into optional logging.
-        print("Fingerprinting channel %d/%d for %s" % (channeln + 1,
-                                                       channel_amount,
-                                                       filename))
+        print(
+            "Fingerprinting channel %d/%d for %s"
+            % (channeln + 1, channel_amount, filename)
+        )
         hashes = fingerprint.fingerprint(channel, Fs=Fs, plot=plot)
-        print("Finished channel %d/%d for %s" % (channeln + 1, channel_amount,
-                                                 filename))
+        print(
+            "Finished channel %d/%d for %s" % (channeln + 1, channel_amount, filename)
+        )
         for hash_ in hashes.keys():
             if hash_ not in result.keys():
                 result[hash_] = hashes[hash_]
