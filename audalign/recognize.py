@@ -7,7 +7,6 @@ import time
 
 
 class BaseRecognizer(object):
-
     def __init__(self, audalign):
         self.audalign = audalign
         self.Fs = fingerprint.DEFAULT_FS
@@ -27,14 +26,16 @@ class FileRecognizer(BaseRecognizer):
         super(FileRecognizer, self).__init__(audalign)
 
     def recognize_file(self, filename):
-        channels_samples, self.Fs, file_hash = decoder.read(filename, self.audalign.limit)
+        channels_samples, self.Fs, file_hash = decoder.read(
+            filename, self.audalign.limit
+        )
 
         t = time.time()
         match = self._recognize(*channels_samples)
         t = time.time() - t
 
         if match:
-            match['match_time'] = t
+            match["match_time"] = t
 
         return match
 
@@ -43,10 +44,10 @@ class FileRecognizer(BaseRecognizer):
 
 
 class MicrophoneRecognizer(BaseRecognizer):
-    default_chunksize   = 8192
-    default_format      = pyaudio.paInt16
-    default_channels    = 2
-    default_samplerate  = 44100
+    default_chunksize = 8192
+    default_format = pyaudio.paInt16
+    default_channels = 2
+    default_samplerate = 44100
 
     def __init__(self, audalign):
         super(MicrophoneRecognizer, self).__init__(audalign)
@@ -58,9 +59,12 @@ class MicrophoneRecognizer(BaseRecognizer):
         self.samplerate = MicrophoneRecognizer.default_samplerate
         self.recorded = False
 
-    def start_recording(self, channels=default_channels,
-                        samplerate=default_samplerate,
-                        chunksize=default_chunksize):
+    def start_recording(
+        self,
+        channels=default_channels,
+        samplerate=default_samplerate,
+        chunksize=default_chunksize,
+    ):
         print("* start recording")
         self.chunksize = chunksize
         self.channels = channels
@@ -87,7 +91,7 @@ class MicrophoneRecognizer(BaseRecognizer):
         nums = np.fromstring(data, np.int16)
         # print(nums)
         for c in range(self.channels):
-            self.data[c].extend(nums[c::self.channels])
+            self.data[c].extend(nums[c :: self.channels])
 
     def stop_recording(self):
         print("* done recording")

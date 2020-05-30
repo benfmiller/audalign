@@ -2,14 +2,18 @@ import numpy as np
 import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
 from scipy.ndimage.filters import maximum_filter
-from scipy.ndimage.morphology import (generate_binary_structure,
-                                      iterate_structure, binary_erosion)
+from scipy.ndimage.morphology import (
+    generate_binary_structure,
+    iterate_structure,
+    binary_erosion,
+)
 import hashlib
 from operator import itemgetter
-#import warnings
-#warnings.filterwarnings("ignore")
 
-np.seterr(divide = 'ignore')
+# import warnings
+# warnings.filterwarnings("ignore")
+
+np.seterr(divide="ignore")
 
 IDX_FREQ_I = 0
 IDX_TIME_J = 1
@@ -61,16 +65,20 @@ PEAK_SORT = True
 
 ######################################################################
 # Number of bits to grab from the front of the SHA1 hash in the
-# fingerprint calculation. The more you grab, the more memory storage, 
+# fingerprint calculation. The more you grab, the more memory storage,
 # with potentially lesser collisions of matches.
 FINGERPRINT_REDUCTION = 20
 
-def fingerprint(channel_samples, Fs=DEFAULT_FS,
-                wsize=DEFAULT_WINDOW_SIZE,
-                wratio=DEFAULT_OVERLAP_RATIO,
-                fan_value=DEFAULT_FAN_VALUE,
-                amp_min=DEFAULT_AMP_MIN,
-                plot=False):
+
+def fingerprint(
+    channel_samples,
+    Fs=DEFAULT_FS,
+    wsize=DEFAULT_WINDOW_SIZE,
+    wratio=DEFAULT_OVERLAP_RATIO,
+    fan_value=DEFAULT_FAN_VALUE,
+    amp_min=DEFAULT_AMP_MIN,
+    plot=False,
+):
     """
     FFT the channel, log transform output, find local maxima, then return
     locally sensitive hashes.
@@ -81,7 +89,8 @@ def fingerprint(channel_samples, Fs=DEFAULT_FS,
         NFFT=wsize,
         Fs=Fs,
         window=mlab.window_hanning,
-        noverlap=int(wsize * wratio))[0]
+        noverlap=int(wsize * wratio),
+    )[0]
 
     # apply log transform since specgram() returns linear array
     arr2D = 10 * np.log10(arr2D)
@@ -101,9 +110,10 @@ def get_2D_peaks(arr2D, plot=False, amp_min=DEFAULT_AMP_MIN):
 
     # find local maxima using our filter shape
     local_max = maximum_filter(arr2D, footprint=neighborhood) == arr2D
-    background = (arr2D == 0)
-    eroded_background = binary_erosion(background, structure=neighborhood,
-                                       border_value=1)
+    background = arr2D == 0
+    eroded_background = binary_erosion(
+        background, structure=neighborhood, border_value=1
+    )
 
     # Boolean mask of arr2D with True at peaks (Fixed deprecated boolean operator by changing '-' to '^')
     detected_peaks = local_max ^ eroded_background
@@ -115,25 +125,24 @@ def get_2D_peaks(arr2D, plot=False, amp_min=DEFAULT_AMP_MIN):
     # filter peaks
     amps = amps.flatten()
     peaks = zip(i, j, amps)
-    peaks_filtered = filter(lambda x: x[2]>amp_min, peaks) # freq, time, amp
+    peaks_filtered = filter(lambda x: x[2] > amp_min, peaks)  # freq, time, amp
     # get indices for frequency and time
     frequency_idx = []
     time_idx = []
     for x in peaks_filtered:
         frequency_idx.append(x[1])
         time_idx.append(x[0])
-    
+
     if plot:
         # scatter of the peaks
         fig, ax = plt.subplots()
         ax.imshow(arr2D)
         ax.scatter(time_idx, frequency_idx)
-        ax.set_xlabel('Time')
-        ax.set_ylabel('Frequency')
+        ax.set_xlabel("Time")
+        ax.set_ylabel("Frequency")
         ax.set_title("Spectrogram")
         plt.gca().invert_yaxis()
         plt.show()
-
 
     return zip(frequency_idx, time_idx)
 
@@ -147,8 +156,8 @@ def generate_hashes(peaks, fan_value=DEFAULT_FAN_VALUE):
     hash_dict = {}
     peaks = list(peaks)
     if PEAK_SORT:
-        sorted(peaks, key= lambda x : x[1])
-    #print("Length of Peaks List is: {}".format(len(peaks)))
+        sorted(peaks, key=lambda x: x[1])
+    # print("Length of Peaks List is: {}".format(len(peaks)))
 
     for i in range(len(peaks)):
         for j in range(1, fan_value):
@@ -161,10 +170,14 @@ def generate_hashes(peaks, fan_value=DEFAULT_FAN_VALUE):
                 t_delta = t2 - t1
 
                 if t_delta >= MIN_HASH_TIME_DELTA and t_delta <= MAX_HASH_TIME_DELTA:
-                    h = hashlib.sha1("{}|{}|{}".format(str(freq1), str(freq2), str(t_delta)).encode('utf-8')).hexdigest()[0:FINGERPRINT_REDUCTION]
+                    h = hashlib.sha1(
+                        "{}|{}|{}".format(str(freq1), str(freq2), str(t_delta)).encode(
+                            "utf-8"
+                        )
+                    ).hexdigest()[0:FINGERPRINT_REDUCTION]
                     if h not in hash_dict:
                         hash_dict[h] = [int(t1)]
-                    else: #maybe not include duplicate offsets per hash?
+                    else:  # maybe not include duplicate offsets per hash?
                         hash_dict[h] += [int(t1)]
 
     return hash_dict

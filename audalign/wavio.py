@@ -12,8 +12,9 @@ def _wav2array(nchannels, sampwidth, data):
     """data must be the string containing the bytes from the wav file."""
     num_samples, remainder = divmod(len(data), sampwidth * nchannels)
     if remainder > 0:
-        raise ValueError('The length of data is not a multiple of '
-                         'sampwidth * num_channels.')
+        raise ValueError(
+            "The length of data is not a multiple of " "sampwidth * num_channels."
+        )
     if sampwidth > 4:
         raise ValueError("sampwidth must not be greater than 4.")
 
@@ -21,12 +22,12 @@ def _wav2array(nchannels, sampwidth, data):
         a = _np.empty((num_samples, nchannels, 4), dtype=_np.uint8)
         raw_bytes = _np.fromstring(data, dtype=_np.uint8)
         a[:, :, :sampwidth] = raw_bytes.reshape(-1, nchannels, sampwidth)
-        a[:, :, sampwidth:] = (a[:, :, sampwidth - 1:sampwidth] >> 7) * 255
-        result = a.view('<i4').reshape(a.shape[:-1])
+        a[:, :, sampwidth:] = (a[:, :, sampwidth - 1 : sampwidth] >> 7) * 255
+        result = a.view("<i4").reshape(a.shape[:-1])
     else:
         # 8 bit samples are stored as unsigned ints; others as signed ints.
-        dt_char = 'u' if sampwidth == 1 else 'i'
-        a = _np.fromstring(data, dtype='<%s%d' % (dt_char, sampwidth))
+        dt_char = "u" if sampwidth == 1 else "i"
+        a = _np.fromstring(data, dtype="<%s%d" % (dt_char, sampwidth))
         result = a.reshape(-1, nchannels)
     return result
 
@@ -113,7 +114,7 @@ def writewav24(filename, rate, data):
     a8 = (a32.reshape(a32.shape + (1,)) >> _np.array([0, 8, 16])) & 255
     wavdata = a8.astype(_np.uint8).tostring()
 
-    w = _wave.open(filename, 'wb')
+    w = _wave.open(filename, "wb")
     w.setnchannels(a32.shape[1])
     w.setsampwidth(3)
     w.setframerate(rate)

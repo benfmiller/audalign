@@ -6,7 +6,8 @@ from pydub.utils import audioop
 import wavio
 from hashlib import sha1
 
-def unique_hash(filepath, blocksize=2**20):
+
+def unique_hash(filepath, blocksize=2 ** 20):
     """ Small function to generate a hash to uniquely generate
     a file. Inspired by MD5 version here:
     http://stackoverflow.com/a/1131255/712997
@@ -14,7 +15,7 @@ def unique_hash(filepath, blocksize=2**20):
     Works with large files. 
     """
     s = sha1()
-    with open(filepath , "rb") as f:
+    with open(filepath, "rb") as f:
         while True:
             buf = f.read(blocksize)
             if not buf:
@@ -48,30 +49,30 @@ def read(filename, normalize=True, limit=None):
     """
     # pydub does not support 24-bit wav files, use wavio when this occurs
     try:
-        #print(f"{filename}, and limit is {limit}")
-        #AudioSegment.converter = "ffmpeg/bin/ffmpeg.exe"
+        # print(f"{filename}, and limit is {limit}")
+        # AudioSegment.converter = "ffmpeg/bin/ffmpeg.exe"
         audiofile = AudioSegment.from_file(filename)
 
         if normalize:
             audiofile.normalize()
-            print('normalized')
+            print("normalized")
 
         if limit:
-            audiofile = audiofile[:limit * 1000]
+            audiofile = audiofile[: limit * 1000]
 
         data = np.fromstring(audiofile._data, np.int16)
-        #print(len(data))
+        # print(len(data))
 
         channels = []
         for chn in range(audiofile.channels):
-            channels.append(data[chn::audiofile.channels])
+            channels.append(data[chn :: audiofile.channels])
 
         fs = audiofile.frame_rate
     except audioop.error:
         fs, _, audiofile = wavio.readwav(filename)
 
         if limit:
-            audiofile = audiofile[:limit * 1000]
+            audiofile = audiofile[: limit * 1000]
 
         audiofile = audiofile.T
         audiofile = audiofile.astype(np.int16)
