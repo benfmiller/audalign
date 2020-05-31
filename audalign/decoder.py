@@ -54,8 +54,8 @@ def read(filename, normalize=True, limit=None):
         audiofile = AudioSegment.from_file(filename)
 
         if normalize:
-            audiofile.normalize()
-            print("normalized")
+            audiofile = audiofile.normalize()
+            #print("normalized")
 
         if limit:
             audiofile = audiofile[: limit * 1000]
