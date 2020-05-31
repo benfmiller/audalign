@@ -67,7 +67,7 @@ class Audalign(object):
             else:
                 print("File type must be either pickle or json")
         except FileNotFoundError:
-            print(f"\"{filename}\" not found")
+            print(f'"{filename}" not found')
 
     """
         # get songs previously indexed
@@ -77,9 +77,7 @@ class Audalign(object):
             song_hash = song[Database.FIELD_FILE_SHA1]
             self.file_unique_hash.add(song_hash)"""
 
-    def fingerprint_directory(
-        self, path, extensions=[".mp3", ".wav", ".mp4", ".MOV"], nprocesses=None
-    ):
+    def fingerprint_directory(self, path, filt_name=False, nprocesses=None):
         # Try to use the maximum amount of processes if not given.
         """try:
             #nprocesses = nprocesses or multiprocessing.cpu_count()
@@ -92,7 +90,7 @@ class Audalign(object):
         # pool = multiprocessing.Pool(nprocesses)
 
         filenames_to_fingerprint = []
-        for filename, _ in decoder.find_files(path, extensions):
+        for filename, _ in decoder.find_files(path, ["*"]):
 
             # don't refingerprint already fingerprinted files
             if decoder.unique_hash(filename) in self.file_unique_hash:
@@ -149,12 +147,12 @@ class Audalign(object):
         pool.join()
         """
 
-    def fingerprint_file(self, file_path, normalize=True, file_name=None, plot=False):
+    def fingerprint_file(self, file_path, file_name=None, plot=False):
         filename = decoder.path_to_filename(file_path)
         try:
             file_hash = decoder.unique_hash(file_path)
         except FileNotFoundError:
-            print(f"\"{file_path}\" not found")
+            print(f'"{file_path}" not found')
             return
         file_name = file_name or filename
         # don't refingerprint already fingerprinted files
@@ -162,7 +160,7 @@ class Audalign(object):
             print("%s already fingerprinted, continuing..." % file_name)
         else:
             file_name, hashes, file_hash = _fingerprint_worker(
-                file_path, normalize, self.limit, file_name, plot
+                file_path, self.limit, file_name, plot
             )
             if file_hash != None:
                 self.fingerprinted_files += [[file_name, hashes, file_hash]]
@@ -252,9 +250,7 @@ class Audalign(object):
                 return i[2]
 
 
-def _fingerprint_worker(
-    file_path, normalize=True, limit=None, file_name=None, plot=False
-):
+def _fingerprint_worker(file_path, limit=None, file_name=None, plot=False):
     # Pool.imap sends arguments as tuples so we have to unpack
     # them ourself.
     try:
@@ -264,32 +260,22 @@ def _fingerprint_worker(
 
     file_name, extension = os.path.splitext(os.path.basename(file_path))
     file_name += extension
-    
+
     try:
-        channels, Fs, file_hash = decoder.read(file_path, normalize, limit)
+        channel, Fs, file_hash = decoder.read(file_path, limit)
     except:
-        print(f"File \"{file_name}\" could not be decoded")
+        print(f'File "{file_name}" could not be decoded')
         return None, None, None
-    result = {}
-    channel_amount = len(channels)
 
-    for channeln, channel in enumerate(channels):
-        # TODO: Remove prints or change them into optional logging.
-        print(
-            "Fingerprinting channel %d/%d for %s"
-            % (channeln + 1, channel_amount, file_name)
-        )
-        hashes = fingerprint.fingerprint(channel, Fs=Fs, plot=plot)
-        print(
-            "Finished channel %d/%d for %s" % (channeln + 1, channel_amount, file_name)
-        )
-        for hash_ in hashes.keys():
-            if hash_ not in result.keys():
-                result[hash_] = hashes[hash_]
-            else:
-                result[hash_] += hashes[hash_]
+    print(
+        f"Fingerprinting {file_name}"
+    )
+    hashes = fingerprint.fingerprint(channel, Fs=Fs, plot=plot)
+    print(
+        f"Finished fingerprinting {file_name}"
+    )
 
-    return file_name, result, file_hash
+    return file_name, hashes, file_hash
 
 
 def chunkify(lst, n):
@@ -297,4 +283,4 @@ def chunkify(lst, n):
     Splits a list into roughly n equal parts.
     http://stackoverflow.com/questions/2130016/splitting-a-list-of-arbitrary-size-into-only-roughly-n-equal-parts
     """
-    return [lst[i::n] for i in range(n)]
+    return [list(lst)[i::n] for i in range(n)]

@@ -16,11 +16,11 @@ import audalign as ad
 # TODO: is normalize needed
 
 
-ada = ad.Audalign("SUB.json")
+ada = ad.Audalign()
 
-#ada.fingerprint_file("TestAudio/SUB.wav", plot=False)
-#ada.save_fingerprinted_files("SUB.json")
-print(ada.recognize("TestAudio/SUBminus10db.wav"))
+ada.fingerprint_file("TestAudio/pink_noise.wav", plot=True)
+# ada.save_fingerprinted_files("SUB.json")
+# print(ada.recognize("TestAudio/SUBminus10db.wav"))
 # print(len(ada.fingerprinted_files[0][1]))
 # djv.save_fingerprinted_files('Sub.json')
 # print(len(djv.fingerprinted_files))
@@ -44,4 +44,3 @@ print(ada.recognize("TestAudio/SUBminus10db.wav"))
 # filen = djv.recognize("mp3/Sean-Fournier--Falling-For-You.mp3")
 # print(filen)
 # print ("From file we recognized: %s\n" % filen)
-

@@ -31,10 +31,9 @@ class FileRecognizer(BaseRecognizer):
                 file_path, limit=self.audalign.limit
             )
         except FileNotFoundError:
-            return f"\"{file_path}\" not found"
+            return f'"{file_path}" not found'
         except:
-            return f"File \"{file_path}\" could not be decoded"
-            
+            return f'File "{file_path}" could not be decoded'
 
         t = time.time()
         match = self._recognize(*channels_samples)
