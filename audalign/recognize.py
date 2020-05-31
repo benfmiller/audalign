@@ -28,7 +28,7 @@ class FileRecognizer(BaseRecognizer):
     def recognize_file(self, file_path):
         try:
             channels_samples, self.Fs, file_hash = decoder.read(
-                file_path, self.audalign.limit
+                file_path, limit=self.audalign.limit
             )
         except FileNotFoundError:
             return f"\"{file_path}\" could not be found"

@@ -4,7 +4,6 @@ import audalign as ad
 # TODO: Rework Fingerprint Directory
 # TODO: Multiprocessing
 # TODO: Not double add files
-# TODO: Handle non audio files
 # TODO: Add precision optional adjustments to recognize
 # TODO: Document
 
@@ -16,10 +15,11 @@ import audalign as ad
 # TODO: is normalize needed
 
 
-ada = ad.Audalign()
+ada = ad.Audalign("SUB.json")
 
-#ada.fingerprint_file("TestAudio/SUB.wav", plot=False, normalize=False)
-print(ada.recognize("Sub.json"))
+#ada.fingerprint_file("TestAudio/SUB.wav", plot=False)
+#ada.save_fingerprinted_files("SUB.json")
+print(ada.recognize("TestAudio/SUBminus10db.wav"))
 # print(len(ada.fingerprinted_files[0][1]))
 # djv.save_fingerprinted_files('Sub.json')
 # print(len(djv.fingerprinted_files))
@@ -44,27 +44,3 @@ print(ada.recognize("Sub.json"))
 # print(filen)
 # print ("From file we recognized: %s\n" % filen)
 
-"""
-filepath = "SUB.mp3"
-
-filename = audalign.decoder.path_to_filename(filepath)
-file_hash = audalign.decoder.unique_hash(filepath)
-file_name = filename
-# don't refingerprint already fingerprinted files
-#file_name, hashes, file_hash = audalign._fingerprint_worker(filepath)
-#print(hashes)
-
-channels, Fs, file_hash = audalign.decoder.read(filepath)
-channel_amount = len(channels)
-result = []
-
-for channeln, channel in enumerate(channels):
-    print("Fingerprinting channel %d/%d for %s" % (channeln + 1,
-                                                    channel_amount,
-                                                    filepath))
-    hashes = audalign.fingerprint.fingerprint(channel, Fs=Fs, plot=False)
-    print("Finished channel %d/%d for %s" % (channeln + 1, channel_amount,
-                                                filepath))
-    result += hashes
-    print("Length is: {}".format(len(result)))
-"""
