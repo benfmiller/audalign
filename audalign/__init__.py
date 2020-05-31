@@ -146,16 +146,20 @@ class Audalign(object):
         pool.join()
         """
 
-    def fingerprint_file(self, filepath, normalize=True, file_name=None, plot=False):
-        filename = decoder.path_to_filename(filepath)
-        file_hash = decoder.unique_hash(filepath)
+    def fingerprint_file(self, file_path, normalize=True, file_name=None, plot=False):
+        filename = decoder.path_to_filename(file_path)
+        try:
+            file_hash = decoder.unique_hash(file_path)
+        except FileNotFoundError:
+            print(f"\"{file_path}\" could not be found")
+            return
         file_name = file_name or filename
         # don't refingerprint already fingerprinted files
         if file_hash in self.file_unique_hash:
             print("%s already fingerprinted, continuing..." % file_name)
         else:
             file_name, hashes, file_hash = _fingerprint_worker(
-                filepath, normalize, self.limit, file_name, plot
+                file_path, normalize, self.limit, file_name, plot
             )
             if file_hash != None:
                 self.fingerprinted_files += [[file_name, hashes, file_hash]]
@@ -246,22 +250,23 @@ class Audalign(object):
 
 
 def _fingerprint_worker(
-    filename, normalize=True, limit=None, file_name=None, plot=False
+    file_path, normalize=True, limit=None, file_name=None, plot=False
 ):
     # Pool.imap sends arguments as tuples so we have to unpack
     # them ourself.
     try:
-        filename, limit = filename
+        file_path, limit = file_path
     except ValueError:
         pass
 
-    # filename, extension = os.path.splitext(os.path.basename(filename))
-    file_name = file_name or filename
-    # try:
-    channels, Fs, file_hash = decoder.read(filename, normalize, limit)
-    # except:
-    #   print(f"File \"{filename + extension}\" could not be decoded")
-    #  return None, None, None
+    file_name, extension = os.path.splitext(os.path.basename(file_path))
+    file_name += extension
+    
+    try:
+        channels, Fs, file_hash = decoder.read(file_path, normalize, limit)
+    except:
+        print(f"File \"{file_name}\" could not be decoded")
+        return None, None, None
     result = {}
     channel_amount = len(channels)
 
@@ -269,11 +274,11 @@ def _fingerprint_worker(
         # TODO: Remove prints or change them into optional logging.
         print(
             "Fingerprinting channel %d/%d for %s"
-            % (channeln + 1, channel_amount, filename)
+            % (channeln + 1, channel_amount, file_name)
         )
         hashes = fingerprint.fingerprint(channel, Fs=Fs, plot=plot)
         print(
-            "Finished channel %d/%d for %s" % (channeln + 1, channel_amount, filename)
+            "Finished channel %d/%d for %s" % (channeln + 1, channel_amount, file_name)
         )
         for hash_ in hashes.keys():
             if hash_ not in result.keys():

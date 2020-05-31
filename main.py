@@ -18,8 +18,8 @@ import audalign as ad
 
 ada = ad.Audalign()
 
-ada.fingerprint_file("SUB.wav", plot=False, normalize=False)
-print(ada.recognize("SUB.wav"))
+#ada.fingerprint_file("TestAudio/SUB.wav", plot=False, normalize=False)
+print(ada.recognize("Sub.json"))
 # print(len(ada.fingerprinted_files[0][1]))
 # djv.save_fingerprinted_files('Sub.json')
 # print(len(djv.fingerprinted_files))
