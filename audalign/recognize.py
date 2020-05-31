@@ -31,7 +31,7 @@ class FileRecognizer(BaseRecognizer):
                 file_path, limit=self.audalign.limit
             )
         except FileNotFoundError:
-            return f"\"{file_path}\" could not be found"
+            return f"\"{file_path}\" not found"
         except:
             return f"File \"{file_path}\" could not be decoded"
             

@@ -1,5 +1,6 @@
 import audalign as ad
 
+# TODO: make noise files
 
 # TODO: Rework Fingerprint Directory
 # TODO: Multiprocessing

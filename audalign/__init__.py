@@ -57,14 +57,17 @@ class Audalign(object):
             print("File type must be either pickle or json")
 
     def get_fingerprinted_files(self, filename):
-        if filename.split(".")[-1] == "pickle":
-            with open(filename, "rb") as f:
-                self.fingerprinted_files = pickle.load(f)
-        elif filename.split(".")[-1] == "json":
-            with open(filename, "r") as f:
-                self.fingerprinted_files = json.load(f)
-        else:
-            print("File type must be either pickle or json")
+        try:
+            if filename.split(".")[-1] == "pickle":
+                with open(filename, "rb") as f:
+                    self.fingerprinted_files += pickle.load(f)
+            elif filename.split(".")[-1] == "json":
+                with open(filename, "r") as f:
+                    self.fingerprinted_files += json.load(f)
+            else:
+                print("File type must be either pickle or json")
+        except FileNotFoundError:
+            print(f"\"{filename}\" not found")
 
     """
         # get songs previously indexed
@@ -151,7 +154,7 @@ class Audalign(object):
         try:
             file_hash = decoder.unique_hash(file_path)
         except FileNotFoundError:
-            print(f"\"{file_path}\" could not be found")
+            print(f"\"{file_path}\" not found")
             return
         file_name = file_name or filename
         # don't refingerprint already fingerprinted files
