@@ -25,10 +25,16 @@ class FileRecognizer(BaseRecognizer):
     def __init__(self, audalign):
         super(FileRecognizer, self).__init__(audalign)
 
-    def recognize_file(self, filename):
-        channels_samples, self.Fs, file_hash = decoder.read(
-            filename, self.audalign.limit
-        )
+    def recognize_file(self, file_path):
+        try:
+            channels_samples, self.Fs, file_hash = decoder.read(
+                file_path, self.audalign.limit
+            )
+        except FileNotFoundError:
+            return f"\"{file_path}\" could not be found"
+        except:
+            return f"File \"{file_path}\" could not be decoded"
+            
 
         t = time.time()
         match = self._recognize(*channels_samples)
