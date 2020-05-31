@@ -26,7 +26,7 @@ def unique_hash(filepath, blocksize=2 ** 20):
 
 def find_files(path, extensions):
     # Allow both with ".mp3" and without "mp3" to be used for extensions
-    extensions = [e.replace(".", "") for e in extensions]
+    # extensions = [e.replace(".", "") for e in extensions]
 
     for dirpath, dirnames, files in os.walk(path):
         for extension in extensions:
@@ -35,7 +35,7 @@ def find_files(path, extensions):
                 yield (p, extension)
 
 
-def read(filename, normalize=True, limit=None):
+def read(filename, limit=None):
     """
     Reads any file supported by pydub (ffmpeg) and returns the data contained
     within. If file reading fails due to input being a 24-bit wav file,
@@ -47,39 +47,24 @@ def read(filename, normalize=True, limit=None):
 
     returns: (channels, samplerate)
     """
-    # pydub does not support 24-bit wav files, use wavio when this occurs
-    try:
-        # print(f"{filename}, and limit is {limit}")
-        # AudioSegment.converter = "ffmpeg/bin/ffmpeg.exe"
-        audiofile = AudioSegment.from_file(filename)
+    
+    audiofile = AudioSegment.from_file(filename)
+    
+    audiofile = audiofile.set_frame_rate(44100)
+    audiofile = audiofile.set_sample_width(2)
+    audiofile = audiofile.set_channels(1)
+    audiofile = audiofile.normalize()
 
-        if normalize:
-            audiofile = audiofile.normalize()
-            #print("normalized")
+    if limit:
+        audiofile = audiofile[: limit * 1000]
 
-        if limit:
-            audiofile = audiofile[: limit * 1000]
+    data = np.fromstring(audiofile._data, np.int16)
 
-        data = np.fromstring(audiofile._data, np.int16)
-        # print(len(data))
+    channels = data[1 :: audiofile.channels]
+    """for chn in range(audiofile.channels):
+        channels.append(data[chn :: audiofile.channels])"""
 
-        channels = []
-        for chn in range(audiofile.channels):
-            channels.append(data[chn :: audiofile.channels])
-
-        fs = audiofile.frame_rate
-    except audioop.error:
-        fs, _, audiofile = wavio.readwav(filename)
-
-        if limit:
-            audiofile = audiofile[: limit * 1000]
-
-        audiofile = audiofile.T
-        audiofile = audiofile.astype(np.int16)
-
-        channels = []
-        for chn in audiofile:
-            channels.append(chn)
+    fs = audiofile.frame_rate
 
     return channels, audiofile.frame_rate, unique_hash(filename)
 
