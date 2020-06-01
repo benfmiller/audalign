@@ -47,9 +47,9 @@ def read(filename, limit=None):
 
     returns: (channels, samplerate)
     """
-    
+
     audiofile = AudioSegment.from_file(filename)
-    
+
     audiofile = audiofile.set_frame_rate(44100)
     audiofile = audiofile.set_sample_width(2)
     audiofile = audiofile.set_channels(1)

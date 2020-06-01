@@ -2,6 +2,7 @@
 import audalign.decoder as decoder
 import audalign.fingerprint as fingerprint
 import audalign.recognize as recognize
+from functools import partial
 import multiprocessing
 import os
 import traceback
@@ -19,12 +20,14 @@ class Audalign(object):
     OFFSET_SAMPLES = "offset_samples"
     OFFSET_SECS = "offset_seconds"
 
-    def __init__(self, *args):  # , config):
+    def __init__(self, *args, multiprocessing=True):  # , config):
         # super(audalign, self).__init__()
 
         self.limit = None
         self.file_unique_hash = []
         self.fingerprinted_files = []
+        self.multiprocessing = multiprocessing
+
         if len(args) > 0:
             self.get_fingerprinted_files(args[0])
 
@@ -77,18 +80,9 @@ class Audalign(object):
             song_hash = song[Database.FIELD_FILE_SHA1]
             self.file_unique_hash.add(song_hash)"""
 
-    def fingerprint_directory(self, path, filt_name=False, nprocesses=None):
-        # Try to use the maximum amount of processes if not given.
-        """try:
-            #nprocesses = nprocesses or multiprocessing.cpu_count()
-            nprocesses = 1
-        except NotImplementedError:
-            nprocesses = 1
-        else:
-            nprocesses = 1 if nprocesses <= 0 else nprocesses"""
+    def fingerprint_directory(self, path, filt_name=False, plot=False, nprocesses=None):
 
-        # pool = multiprocessing.Pool(nprocesses)
-
+        # print(f"{pool} : {nprocesses}")
         filenames_to_fingerprint = []
         for filename, _ in decoder.find_files(path, ["*"]):
 
@@ -99,53 +93,50 @@ class Audalign(object):
 
             filenames_to_fingerprint.append(filename)
 
-        # TODO: Redo preparation
-        # Prepare _fingerprint_worker input
-        worker_input = zip(
-            filenames_to_fingerprint, [self.limit] * len(filenames_to_fingerprint)
+        if len(filenames_to_fingerprint) == 0:
+            print("Directory contains 0 files or could not be found")
+            return
+
+        _fingerprint_worker_directory = partial(
+            _fingerprint_worker, limit=self.limit, plot=plot
         )
 
-        list_file_and_hashes = []
+        if self.multiprocessing == True:
 
-        for i in worker_input:
+            # Try to use the maximum amount of processes if not given.
             try:
-                file_name, hashes, file_hash = _fingerprint_worker(i)
-                if file_name != None:
-                    list_file_and_hashes += [[file_name, hashes, file_hash]]
-            except:
-                print("Failed fingerprinting")
-                # Print traceback because we can't reraise it here
-                traceback.print_exc(file=sys.stdout)
-
-        self.fingerprinted_files += list_file_and_hashes
-
-        """
-        # Send off our tasks
-        iterator = pool.izip(_fingerprint_worker,
-                                       worker_input)
-
-        # Loop till we have all of them
-        while True:
-            try:
-                song_name, hashes, file_hash = iterator.next()
-            except multiprocessing.TimeoutError:
-                continue
-            except StopIteration:
-                break
-            except:
-                print("Failed fingerprinting")
-                # Print traceback because we can't reraise it here
-                traceback.print_exc(file=sys.stdout)
+                nprocesses = nprocesses or multiprocessing.cpu_count()
+            except NotImplementedError:
+                nprocesses = 1
             else:
-                sid = self.db.insert_song(song_name, file_hash)
+                nprocesses = 1 if nprocesses <= 0 else nprocesses
 
-                self.db.insert_hashes(sid, hashes)
-                self.db.set_song_fingerprinted(sid)
-                self.get_fingerprinted_songs()
+            with multiprocessing.Pool(nprocesses) as self.pool:
 
-        pool.close()
-        pool.join()
-        """
+                result = self.pool.map(
+                    _fingerprint_worker_directory, filenames_to_fingerprint
+                )
+
+                self.pool.close()
+                self.pool.join()
+
+                for processed_file in result:
+                    if processed_file[2] != None:
+                        self.fingerprinted_files.append(processed_file)
+
+        else:
+
+            for filename in filenames_to_fingerprint:
+                try:
+                    file_name, hashes, file_hash = _fingerprint_worker(
+                        filename, limit=self.limit, file_name=None, plot=plot
+                    )
+                    if file_name != None:
+                        self.fingerprinted_files.append([file_name, hashes, file_hash])
+                except:
+                    print("Failed fingerprinting")
+                    # Print traceback because we can't reraise it here
+                    traceback.print_exc(file=sys.stdout)
 
     def fingerprint_file(self, file_path, file_name=None, plot=False):
         filename = decoder.path_to_filename(file_path)
@@ -164,13 +155,6 @@ class Audalign(object):
             )
             if file_hash != None:
                 self.fingerprinted_files += [[file_name, hashes, file_hash]]
-
-            """
-            sid = self.db.insert_song(song_name, file_hash)
-
-            self.db.insert_hashes(sid, hashes)
-            self.db.set_song_fingerprinted(sid)
-            self.get_fingerprinted_songs()"""
 
     def find_matches(self, samples, Fs=fingerprint.DEFAULT_FS):
         target_mapper = fingerprint.fingerprint(samples, Fs=Fs)
@@ -267,13 +251,9 @@ def _fingerprint_worker(file_path, limit=None, file_name=None, plot=False):
         print(f'File "{file_name}" could not be decoded')
         return None, None, None
 
-    print(
-        f"Fingerprinting {file_name}"
-    )
+    print(f"Fingerprinting {file_name}")
     hashes = fingerprint.fingerprint(channel, Fs=Fs, plot=plot)
-    print(
-        f"Finished fingerprinting {file_name}"
-    )
+    print(f"Finished fingerprinting {file_name}")
 
     return file_name, hashes, file_hash
 
