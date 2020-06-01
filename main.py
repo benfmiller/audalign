@@ -1,20 +1,19 @@
 def main():
     import audalign as ad
 
-    # TODO: make noise files
-
-    # TODO: Rework Fingerprint Directory
     # TODO: Multiprocessing
     # TODO: Not double add files
     # TODO: Add precision optional adjustments to recognize
     # TODO: Document
+    # TODO: Add plot function
+    # TODO: Add uniquehashes and filename fields
 
-    ada = ad.Audalign()
+    ada = ad.Audalign("TestAudio.json")
 
     # ada.save_fingerprinted_files("asdf.")
-    ada.fingerprint_directory("TestAudio")
+    # ada.fingerprint_directory("TestAudio")
     # ada.save_fingerprinted_files("TestAudio.json")
-    # print(ada.recognize("TestAudio/SUBminus10db.wav"))
+    print(ada.recognize("ResearchMaher/BenStreet.mp4"))
     # print(len(ada.fingerprinted_files[0][1]))
     # djv.save_fingerprinted_files('Sub.json')
     # print(len(djv.fingerprinted_files))

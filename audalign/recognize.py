@@ -11,10 +11,8 @@ class BaseRecognizer(object):
         self.audalign = audalign
         self.Fs = fingerprint.DEFAULT_FS
 
-    def _recognize(self, *channels_samples):
-        matches = []
-        for channel in channels_samples:
-            matches.extend(self.audalign.find_matches(channel, Fs=self.Fs))
+    def _recognize(self, channel_samples):
+        matches = self.audalign.find_matches(channel_samples, Fs=self.Fs)
         return self.audalign.align_matches(matches)
 
     def recognize(self):
@@ -27,7 +25,7 @@ class FileRecognizer(BaseRecognizer):
 
     def recognize_file(self, file_path):
         try:
-            channels_samples, self.Fs, file_hash = decoder.read(
+            channel_samples, self.Fs, file_hash = decoder.read(
                 file_path, limit=self.audalign.limit
             )
         except FileNotFoundError:
@@ -36,7 +34,7 @@ class FileRecognizer(BaseRecognizer):
             return f'File "{file_path}" could not be decoded'
 
         t = time.time()
-        match = self._recognize(*channels_samples)
+        match = self._recognize(channel_samples)
         t = time.time() - t
 
         if match:
