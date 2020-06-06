@@ -3,7 +3,6 @@ import fnmatch
 import numpy as np
 from pydub import AudioSegment
 from pydub.utils import audioop
-import wavio
 from hashlib import sha1
 
 

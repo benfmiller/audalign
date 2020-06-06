@@ -1,4 +1,3 @@
-# from audalign.database import get_database, Database
 import audalign.decoder as decoder
 import audalign.fingerprint as fingerprint
 import audalign.recognize as recognize
