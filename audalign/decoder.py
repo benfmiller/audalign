@@ -34,7 +34,7 @@ def find_files(path, extensions):
                 yield (p, extension)
 
 
-def read(filename, limit=None):
+def read(filename, limit=None, wrdestination=None):
     """
     Reads any file supported by pydub (ffmpeg) and returns the data contained
     within. If file reading fails due to input being a 24-bit wav file,
@@ -64,6 +64,9 @@ def read(filename, limit=None):
         channels.append(data[chn :: audiofile.channels])"""
 
     fs = audiofile.frame_rate
+
+    if wrdestination:
+        audiofile.export(wrdestination)
 
     return channels, audiofile.frame_rate, unique_hash(filename)
 

@@ -8,6 +8,7 @@ import traceback
 import sys
 import pickle
 import json
+from pydub import AudioSegment
 
 
 class Audalign(object):
@@ -71,13 +72,6 @@ class Audalign(object):
         except FileNotFoundError:
             print(f'"{filename}" not found')
 
-    """
-        # get songs previously indexed
-        self.songs = self.db.get_songs()
-        self.file_unique_hash = set()  # to know which ones we've computed before
-        for song in self.songs:
-            song_hash = song[Database.FIELD_FILE_SHA1]
-            self.file_unique_hash.add(song_hash)"""
 
     def fingerprint_directory(self, path, filt_name=False, plot=False, nprocesses=None):
 
@@ -232,6 +226,8 @@ class Audalign(object):
             if i[0] == name:
                 return i[2]
 
+    def write_processed_file(self, file_name, destination_path):
+        channel, Fs, file_hash = decoder.read(file_name, wrdestination=destination_path)
 
 def _fingerprint_worker(file_path, limit=None, file_name=None, plot=False):
     # Pool.imap sends arguments as tuples so we have to unpack

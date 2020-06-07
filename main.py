@@ -8,14 +8,13 @@ def main():
     # TODO: Add plot function
     # TODO: Add uniquehashes and filename fields
 
-    ada = ad.Audalign("FraserStreet.json")
+    ada = ad.Audalign()
+    ada.write_processed_file("ResearchMaher/FraserSUB.mov", "processed_audio/FraserSUB.wav")
 
-    # ada.save_fingerprinted_files("asdf.")
-    ada.fingerprint_directory("TestAudio")
-    # ada.fingerprint_file("ResearchMaher/FraserStreet.mov",plot=True)
-    # ada.fingerprint_file("ResearchMaher/BenStreet.mp4",plot=True)
-    # ada.save_fingerprinted_files("FraserStreet.json")
-    print(ada.recognize("ResearchMaher/Street.mp4"))
+    #ada.fingerprint_directory("TestAudio")
+    #ada.fingerprint_file("ResearchMaher/FraserStreet.mov",plot=True)
+    #ada.fingerprint_file("ResearchMaher/BenStreet.mp4",plot=True)
+    #ada.save_fingerprinted_files("FraserStreet.json")
     # print(len(ada.fingerprinted_files[0][1]))
     # djv.save_fingerprinted_files('Sub.json')
     # print(len(djv.fingerprinted_files))
