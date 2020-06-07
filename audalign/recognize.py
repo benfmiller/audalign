@@ -44,6 +44,7 @@ class FileRecognizer(BaseRecognizer):
     def recognize(self, filename):
         return self.recognize_file(filename)
 
+
 """
 class MicrophoneRecognizer(BaseRecognizer):
     default_chunksize = 8192
