@@ -15,7 +15,8 @@ def main():
     print(f"It took {t} seconds to complete.")
     print(f"Total fingerprints: {ada.total_fingerprints}")
     # ada.save_fingerprinted_files("all_audio.json")
-    print(ada.recognize("audio_files/TestAudio/SUBtran1.wav"))
+    ada.plot("audio_files/TestAdio/Paige.MOV")
+    print(ada.recognize("audio_files/TestAudio/Rachel.mp4"))
 
 
 if __name__ == "__main__":

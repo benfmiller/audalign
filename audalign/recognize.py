@@ -3,6 +3,7 @@ import audalign.fingerprint as fingerprint
 import audalign.decoder as decoder
 import numpy as np
 import time
+import os
 
 
 class FileRecognizer:
@@ -20,8 +21,11 @@ class FileRecognizer:
         except:
             return f'File "{file_path}" could not be decoded'
 
+        file_name, extension = os.path.splitext(os.path.basename(file_path))
+        file_name += extension
+
         t = time.time()
-        matches = self.find_matches(channel_samples, Fs=self.Fs)
+        matches = self.find_matches(channel_samples, file_name, Fs=self.Fs)
         file_match = self.align_matches(matches)
         t = time.time() - t
 
@@ -35,13 +39,13 @@ class FileRecognizer:
             if i[0] == name:
                 return i[2]
 
-    def find_matches(self, samples, Fs=fingerprint.DEFAULT_FS):
+    def find_matches(self, samples, file_name, Fs=fingerprint.DEFAULT_FS):
         target_mapper = fingerprint.fingerprint(samples, Fs=Fs)
         matches = []
 
         for audio_file in self.audalign.fingerprinted_files:
-            already_hashes = audio_file[1]
-            for channel in already_hashes:
+            if audio_file[0].lower() != file_name.lower():
+                already_hashes = audio_file[1]
                 for t_hash in target_mapper.keys():
                     if t_hash in already_hashes.keys():
                         for t_offset in target_mapper[t_hash]:

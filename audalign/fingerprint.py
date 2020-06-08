@@ -10,9 +10,6 @@ from scipy.ndimage.morphology import (
 import hashlib
 from operator import itemgetter
 
-# import warnings
-# warnings.filterwarnings("ignore")
-
 np.seterr(divide="ignore")
 
 IDX_FREQ_I = 0

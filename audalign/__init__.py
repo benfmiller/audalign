@@ -29,7 +29,7 @@ class Audalign(object):
         self.total_fingerprints = 0
 
         if len(args) > 0:
-            self.get_fingerprinted_files(args[0])
+            self.load_fingerprinted_files(args[0])
 
     def save_fingerprinted_files(self, filename):
         data = [self.fingerprinted_files, self.total_fingerprints]
@@ -42,7 +42,7 @@ class Audalign(object):
         else:
             print("File type must be either pickle or json")
 
-    def get_fingerprinted_files(self, filename):
+    def load_fingerprinted_files(self, filename):
         try:
             if filename.split(".")[-1] == "pickle":
                 with open(filename, "rb") as f:
@@ -148,20 +148,20 @@ class Audalign(object):
     def write_processed_file(self, file_name, destination_path):
         decoder.read(file_name, wrdestination=destination_path)
 
+    def plot(self, file_path):
+        _fingerprint_worker(file_path, plot=True)
+
 
 def _fingerprint_worker(file_path, limit=None, file_name=None, plot=False):
-    # Pool.imap sends arguments as tuples so we have to unpack
-    # them ourself.
-    try:
-        file_path, limit = file_path
-    except ValueError:
-        pass
 
     file_name, extension = os.path.splitext(os.path.basename(file_path))
     file_name += extension
 
     try:
         channel, Fs, file_hash = decoder.read(file_path, limit)
+    except FileNotFoundError:
+        print(f'"{file_path}" not found')
+        return None, None, None
     except:
         print(f'File "{file_name}" could not be decoded')
         return None, None, None
