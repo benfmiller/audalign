@@ -143,7 +143,6 @@ def autolabeldoubles(rects, ax):
 
 class audalignTest(object):
     def __init__(self, folder, seconds):
-        super(audalignTest, self).__init__()
 
         self.test_folder = folder
         self.test_seconds = seconds

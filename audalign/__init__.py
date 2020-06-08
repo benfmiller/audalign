@@ -21,7 +21,6 @@ class Audalign(object):
     OFFSET_SECS = "offset_seconds"
 
     def __init__(self, *args, multiprocessing=True):  # , config):
-        # super(audalign, self).__init__()
 
         self.limit = None
         self.file_unique_hash = []
