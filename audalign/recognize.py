@@ -5,24 +5,12 @@ import numpy as np
 import time
 
 
-class BaseRecognizer(object):
+class FileRecognizer:
     def __init__(self, audalign):
         self.audalign = audalign
         self.Fs = fingerprint.DEFAULT_FS
 
-    def _recognize(self, channel_samples):
-        matches = self.audalign.find_matches(channel_samples, Fs=self.Fs)
-        return self.audalign.align_matches(matches)
-
-    def recognize(self):
-        pass  # base class does nothing
-
-
-class FileRecognizer(BaseRecognizer):
-    def __init__(self, audalign):
-       super().__init__(audalign)
-
-    def recognize_file(self, file_path):
+    def recognize(self, file_path):
         try:
             channel_samples, self.Fs, file_hash = decoder.read(
                 file_path, limit=self.audalign.limit
@@ -33,13 +21,76 @@ class FileRecognizer(BaseRecognizer):
             return f'File "{file_path}" could not be decoded'
 
         t = time.time()
-        match = self._recognize(channel_samples)
+        matches = self.find_matches(channel_samples, Fs=self.Fs)
+        file_match = self.align_matches(matches)
         t = time.time() - t
 
-        if match:
-            match["match_time"] = t
+        if file_match:
+            file_match["match_time"] = t
 
-        return match
+        return file_match
 
-    def recognize(self, filename):
-        return self.recognize_file(filename)
+    def get_file_id(self, name):
+        for i in self.audalign.fingerprinted_files:
+            if i[0] == name:
+                return i[2]
+
+    def find_matches(self, samples, Fs=fingerprint.DEFAULT_FS):
+        target_mapper = fingerprint.fingerprint(samples, Fs=Fs)
+        matches = []
+
+        for audio_file in self.audalign.fingerprinted_files:
+            already_hashes = audio_file[1]
+            for channel in already_hashes:
+                for t_hash in target_mapper.keys():
+                    if t_hash in already_hashes.keys():
+                        for t_offset in target_mapper[t_hash]:
+                            for a_offset in already_hashes[t_hash]:
+                                diff = a_offset - t_offset
+                                matches.append([audio_file[0], diff])
+        return matches
+
+    def align_matches(self, matches):
+        """
+            Finds hash matches that align in time with other matches and finds
+            consensus about which hashes are "true" signal from the audio.
+
+            Returns a dictionary with match information.
+        """
+        # align by diffs
+        diff_counter = {}
+        largest_match_offset = 0
+        largest_match_count = 0
+        file_name = -1
+        for pair in matches:
+            sid, diff = pair
+            if diff not in diff_counter:
+                diff_counter[diff] = {}
+            if sid not in diff_counter[diff]:
+                diff_counter[diff][sid] = 0
+            diff_counter[diff][sid] += 1
+
+            if diff_counter[diff][sid] > largest_match_count:
+                largest_match_offset = diff
+                largest_match_count = diff_counter[diff][sid]
+                file_name = sid
+
+        # extract idenfication
+        file_id = self.get_file_id(file_name)
+
+        # return match info
+        nseconds = round(
+            float(largest_match_offset)
+            / fingerprint.DEFAULT_FS
+            * fingerprint.DEFAULT_WINDOW_SIZE
+            * fingerprint.DEFAULT_OVERLAP_RATIO,
+            5,
+        )
+        audio_file = {
+            self.audalign.FILE_ID: file_id,
+            self.audalign.FILE_NAME: file_name,
+            self.audalign.CONFIDENCE: largest_match_count,
+            self.audalign.OFFSET_SAMPLES: int(largest_match_offset),
+            self.audalign.OFFSET_SECS: nseconds,
+        }
+        return audio_file

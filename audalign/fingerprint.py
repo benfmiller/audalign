@@ -137,7 +137,7 @@ def get_2D_peaks(arr2D, plot=False, amp_min=DEFAULT_AMP_MIN):
         # scatter of the peaks
         fig, ax = plt.subplots()
         ax.imshow(arr2D)
-        ax.scatter(time_idx, frequency_idx, color='r')
+        ax.scatter(time_idx, frequency_idx, color="r")
         ax.set_xlabel("Time")
         ax.set_ylabel("Frequency")
         ax.set_title("Spectrogram")

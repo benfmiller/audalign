@@ -30,7 +30,6 @@ class Audalign(object):
 
         if len(args) > 0:
             self.get_fingerprinted_files(args[0])
-        
 
     def save_fingerprinted_files(self, filename):
         data = [self.fingerprinted_files, self.total_fingerprints]
@@ -58,7 +57,6 @@ class Audalign(object):
             self.total_fingerprints += data[1]
         except FileNotFoundError:
             print(f'"{filename}" not found')
-
 
     def fingerprint_directory(self, path, filt_name=False, plot=False, nprocesses=None):
 
@@ -139,85 +137,17 @@ class Audalign(object):
                 self.fingerprinted_files += [[file_name, hashes, file_hash]]
                 self.total_fingerprints += len(hashes)
 
-    def find_matches(self, samples, Fs=fingerprint.DEFAULT_FS):
-        target_mapper = fingerprint.fingerprint(samples, Fs=Fs)
-        matches = []
-
-        for audio_file in self.fingerprinted_files:
-            already_hashes = audio_file[1]
-            for channel in already_hashes:
-                for t_hash in target_mapper.keys():
-                    if t_hash in already_hashes.keys():
-                        for t_offset in target_mapper[t_hash]:
-                            for a_offset in already_hashes[t_hash]:
-                                diff = a_offset - t_offset
-                                matches.append([audio_file[0], diff])
-        return matches
-
-    def align_matches(self, matches):
-        """
-            Finds hash matches that align in time with other matches and finds
-            consensus about which hashes are "true" signal from the audio.
-
-            Returns a dictionary with match information.
-        """
-        # align by diffs
-        diff_counter = {}
-        largest_match_offset = 0
-        largest_match_count = 0
-        file_name = -1
-        for pair in matches:
-            sid, diff = pair
-            if diff not in diff_counter:
-                diff_counter[diff] = {}
-            if sid not in diff_counter[diff]:
-                diff_counter[diff][sid] = 0
-            diff_counter[diff][sid] += 1
-
-            if diff_counter[diff][sid] > largest_match_count:
-                largest_match_offset = diff
-                largest_match_count = diff_counter[diff][sid]
-                file_name = sid
-
-        # extract idenfication
-        file_id = self.get_file_id(file_name)
-
-        # return match info
-        nseconds = round(
-            float(largest_match_offset)
-            / fingerprint.DEFAULT_FS
-            * fingerprint.DEFAULT_WINDOW_SIZE
-            * fingerprint.DEFAULT_OVERLAP_RATIO,
-            5,
-        )
-        audio_file = {
-            Audalign.FILE_ID: file_id,
-            Audalign.FILE_NAME: file_name,
-            Audalign.CONFIDENCE: largest_match_count,
-            Audalign.OFFSET_SAMPLES: int(largest_match_offset),
-            Audalign.OFFSET_SECS: nseconds,
-            # Database.FIELD_FILE_SHA1 : song.get(Database.FIELD_FILE_SHA1, None).encode("utf8"),
-        }
-        return audio_file
-
     def recognize(self, *options, **kwoptions):
         if "recognizer" not in kwoptions.keys():
             r = recognize.FileRecognizer(self)
-        elif kwoptions["recognizer"].lower() == "microphonerecognizer":
-            r = recognize.MicrophoneRecognizer(self)
-            kwoptions.pop("recognizer")
         elif kwoptions["recognizer"].lower() == "filerecognizer":
             r = recognize.FileRecognizer(self)
             kwoptions.pop("recognizer")
         return r.recognize(*options, **kwoptions)
 
-    def get_file_id(self, name):
-        for i in self.fingerprinted_files:
-            if i[0] == name:
-                return i[2]
-
     def write_processed_file(self, file_name, destination_path):
         decoder.read(file_name, wrdestination=destination_path)
+
 
 def _fingerprint_worker(file_path, limit=None, file_name=None, plot=False):
     # Pool.imap sends arguments as tuples so we have to unpack
