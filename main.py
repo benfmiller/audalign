@@ -1,5 +1,6 @@
 def main():
     import audalign as ad
+    import time
 
     # TODO: Multiprocessing
     # TODO: Not double add files
@@ -8,13 +9,18 @@ def main():
     # TODO: Add plot function
     # TODO: Add uniquehashes and filename fields
 
-    ada = ad.Audalign()
-    ada.write_processed_file("ResearchMaher/FraserSUB.mov", "processed_audio/FraserSUB.wav")
-
-    #ada.fingerprint_directory("TestAudio")
+    ada = ad.Audalign("SUB.json")
+    # ada.write_processed_file("ResearchMaher/FraserSUB.mov", "processed_audio/FraserSUB.wav")
+    t = time.time()
+    # ada.fingerprint_file("audio_files/TestAudio/SUB.wav") 
+    t = time.time()-t
+    print(f"It took {t} seconds to complete.")
+    print(f"Total fingerprints: {ada.total_fingerprints}")
+    # ada.save_fingerprinted_files("SUB.json")
+    print(ada.recognize("audio_files/TestAudio/SUBtran1.wav"))
     #ada.fingerprint_file("ResearchMaher/FraserStreet.mov",plot=True)
     #ada.fingerprint_file("ResearchMaher/BenStreet.mp4",plot=True)
-    #ada.save_fingerprinted_files("FraserStreet.json")
+    #ada.save_fingerprinted_files("all_audio.json")
     # print(len(ada.fingerprinted_files[0][1]))
     # djv.save_fingerprinted_files('Sub.json')
     # print(len(djv.fingerprinted_files))
