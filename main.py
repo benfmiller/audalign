@@ -2,11 +2,9 @@ def main():
     import audalign as ad
     import time
 
-    # TODO: autosaver?
     # TODO: New fingerprint algorithm
-    # TODO: Not double add files
     # TODO: Document
-    # TODO: Add uniquehashes and filename fields
+    # TODO: complete align function
 
     ada = ad.Audalign("all_audio.json")
     # ada.write_processed_file("ResearchMaher/FraserSUB.mov", "processed_audio/FraserSUB.wav")
