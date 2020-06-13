@@ -8,7 +8,6 @@ import traceback
 import sys
 import pickle
 import json
-from pydub import AudioSegment
 
 
 class Audalign(object):
