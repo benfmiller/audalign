@@ -24,15 +24,17 @@ class Audalign(object):
 
         self.limit = None
         self.file_unique_hash = []
+        self.file_names = []
         self.fingerprinted_files = []
         self.multiprocessing = multiprocessing
         self.total_fingerprints = 0
+        self.auto_save = False
 
         if len(args) > 0:
             self.load_fingerprinted_files(args[0])
 
     def save_fingerprinted_files(self, filename):
-        data = [self.fingerprinted_files, self.total_fingerprints]
+        data = [self.fingerprinted_files, self.total_fingerprints, self.file_names]
         if filename.split(".")[-1] == "pickle":
             with open(filename, "wb") as f:
                 pickle.dump(data, f)
@@ -53,22 +55,24 @@ class Audalign(object):
             else:
                 print("File type must be either pickle or json")
                 return
-            self.fingerprinted_files += data[0]
+            self.fingerprinted_files.extend(data[0])
             self.total_fingerprints += data[1]
+            self.file_names.extend(data[2])
         except FileNotFoundError:
             print(f'"{filename}" not found')
 
-    def fingerprint_directory(self, path, filt_name=False, plot=False, nprocesses=None):
+    def fingerprint_directory(
+        self, path, plot=False, nprocesses=None, extensions=["*"]
+    ):
 
         # print(f"{pool} : {nprocesses}")
         filenames_to_fingerprint = []
-        for filename, _ in decoder.find_files(path, ["*"]):
-
-            # don't refingerprint already fingerprinted files
-            if decoder.unique_hash(filename) in self.file_unique_hash:
-                print(f"{filename} already fingerprinted, continuing...")
+        for filename, _ in decoder.find_files(path, extensions):
+            file_name, extension = os.path.splitext(os.path.basename(filename))
+            file_name += extension
+            if file_name in self.file_names:
+                print(f"{file_name} already fingerprinted")
                 continue
-
             filenames_to_fingerprint.append(filename)
 
         if len(filenames_to_fingerprint) == 0:
@@ -99,43 +103,50 @@ class Audalign(object):
                 self.pool.join()
 
                 for processed_file in result:
-                    if processed_file[2] != None:
-                        self.fingerprinted_files.append(processed_file)
-                        self.total_fingerprints += len(processed_file[1])
+                    if processed_file[0] != None:
+                        if processed_file[0] not in self.file_names:
+                            self.fingerprinted_files.append(processed_file)
+                            self.file_names.append(processed_file[0])
+                            self.total_fingerprints += len(processed_file[1])
 
         else:
 
             for filename in filenames_to_fingerprint:
                 try:
+                    file_name, extension = os.path.splitext(os.path.basename(filename))
+                    file_name += extension
+                    if file_name in self.file_names:
+                        print(f"{file_name} already fingerprinted, continuing...")
+                        continue
                     file_name, hashes, file_hash = _fingerprint_worker(
-                        filename, limit=self.limit, file_name=None, plot=plot
+                        filename, limit=self.limit, plot=plot
                     )
                     if file_name != None:
-                        self.fingerprinted_files.append([file_name, hashes, file_hash])
+                        self.fingerprinted_files.add([file_name, hashes, file_hash])
+                        self.file_names.append(file_name)
                         self.total_fingerprints += len(hashes)
                 except:
                     print("Failed fingerprinting")
                     # Print traceback because we can't reraise it here
                     traceback.print_exc(file=sys.stdout)
 
-    def fingerprint_file(self, file_path, file_name=None, plot=False):
-        filename = decoder.path_to_filename(file_path)
-        try:
-            file_hash = decoder.unique_hash(file_path)
-        except FileNotFoundError:
-            print(f'"{file_path}" not found')
+    def fingerprint_file(self, file_path, set_file_name=None, plot=False):
+
+        file_name, extension = os.path.splitext(os.path.basename(file_path))
+        file_name += extension
+        if file_name in self.file_names:
+            print(f"{file_name} already fingerprinted")
             return
-        file_name = file_name or filename
-        # don't refingerprint already fingerprinted files
-        if file_hash in self.file_unique_hash:
-            print(f"{file_name} already fingerprinted, continuing...")
-        else:
-            file_name, hashes, file_hash = _fingerprint_worker(
-                file_path, self.limit, file_name, plot
-            )
-            if file_hash != None:
-                self.fingerprinted_files += [[file_name, hashes, file_hash]]
-                self.total_fingerprints += len(hashes)
+
+        file_name, hashes, file_hash = self._fingerprint_worker(
+            file_path, limit=self.limit, plot=plot
+        )
+        filename = decoder.path_to_filename(file_path)
+        file_name = set_file_name or filename
+        if file_name != None:
+            self.fingerprinted_files.add([file_name, hashes, file_hash])
+            self.file_names.append(file_name)
+            self.total_fingerprints += len(hashes)
 
     def recognize(self, *options, **kwoptions):
         if "recognizer" not in kwoptions.keys():
@@ -152,7 +163,7 @@ class Audalign(object):
         _fingerprint_worker(file_path, plot=True)
 
 
-def _fingerprint_worker(file_path, limit=None, file_name=None, plot=False):
+def _fingerprint_worker(file_path, limit=None, plot=False):
 
     file_name, extension = os.path.splitext(os.path.basename(file_path))
     file_name += extension
