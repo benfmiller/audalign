@@ -21,8 +21,7 @@ class FileRecognizer:
         except:
             return f'File "{file_path}" could not be decoded'
 
-        file_name, extension = os.path.splitext(os.path.basename(file_path))
-        file_name += extension
+        file_name = os.path.basename(file_path)
 
         t = time.time()
         matches = self.find_matches(channel_samples, file_name, Fs=self.Fs)
@@ -34,15 +33,12 @@ class FileRecognizer:
 
         return file_match
 
-    def get_file_id(self, name):
-        for i in self.audalign.fingerprinted_files:
-            if i[0] == name:
-                return i[2]
-
     def find_matches(self, samples, file_name, Fs=fingerprint.DEFAULT_FS):
+        print(f"Fingerprinting \"{file_name}\"")
         target_mapper = fingerprint.fingerprint(samples, Fs=Fs)
         matches = []
 
+        print(f"Finding Matches...  ", end="")
         for audio_file in self.audalign.fingerprinted_files:
             if audio_file[0].lower() != file_name.lower():
                 already_hashes = audio_file[1]
@@ -50,8 +46,10 @@ class FileRecognizer:
                     if t_hash in already_hashes.keys():
                         for t_offset in target_mapper[t_hash]:
                             for a_offset in already_hashes[t_hash]:
-                                diff = a_offset - t_offset
-                                matches.append([audio_file[0], diff])
+                                sample_difference = a_offset - t_offset
+                                matches.append([audio_file[0], sample_difference])
+            # else:
+                # print(f"{audio_file[0]} not compared to {file_name}")
         return matches
 
     def align_matches(self, matches):
@@ -61,26 +59,29 @@ class FileRecognizer:
 
             Returns a dictionary with match information.
         """
-        # align by diffs
-        diff_counter = {}
+        print("Aligning matches")
+        # align by sample_differences
+        sample_difference_counter = {}
         largest_match_offset = 0
         largest_match_count = 0
         file_name = -1
-        for pair in matches:
-            sid, diff = pair
-            if diff not in diff_counter:
-                diff_counter[diff] = {}
-            if sid not in diff_counter[diff]:
-                diff_counter[diff][sid] = 0
-            diff_counter[diff][sid] += 1
+        for file_name, sample_difference in matches:
+            if sample_difference not in sample_difference_counter:
+                sample_difference_counter[sample_difference] = {}
+            if file_name not in sample_difference_counter[sample_difference]:
+                sample_difference_counter[sample_difference][file_name] = 0
+            sample_difference_counter[sample_difference][file_name] += 1
 
-            if diff_counter[diff][sid] > largest_match_count:
-                largest_match_offset = diff
-                largest_match_count = diff_counter[diff][sid]
-                file_name = sid
+            if sample_difference_counter[sample_difference][file_name] > largest_match_count:
+                largest_match_offset = sample_difference
+                largest_match_count = sample_difference_counter[sample_difference][file_name]
+                file_name = file_name
 
         # extract idenfication
-        file_id = self.get_file_id(file_name)
+        for i in self.audalign.fingerprinted_files:
+            if i[0] == file_name:
+                file_id = i[2]
+                break
 
         # return match info
         nseconds = round(

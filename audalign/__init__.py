@@ -27,7 +27,6 @@ class Audalign(object):
         self.fingerprinted_files = []
         self.multiprocessing = multiprocessing
         self.total_fingerprints = 0
-        self.auto_save = False
 
         if len(args) > 0:
             self.load_fingerprinted_files(args[0])
@@ -137,13 +136,13 @@ class Audalign(object):
             print(f"{file_name} already fingerprinted")
             return
 
-        file_name, hashes, file_hash = self._fingerprint_worker(
+        file_name, hashes, file_hash = _fingerprint_worker(
             file_path, limit=self.limit, plot=plot
         )
         filename = decoder.path_to_filename(file_path)
         file_name = set_file_name or filename
         if file_name != None:
-            self.fingerprinted_files.add([file_name, hashes, file_hash])
+            self.fingerprinted_files.append([file_name, hashes, file_hash])
             self.file_names.append(file_name)
             self.total_fingerprints += len(hashes)
 
