@@ -64,7 +64,7 @@ PEAK_SORT = True
 # Number of bits to grab from the front of the SHA1 hash in the
 # fingerprint calculation. The more you grab, the more memory storage,
 # with potentially lesser collisions of matches.
-FINGERPRINT_REDUCTION = 20
+FINGERPRINT_REDUCTION = 30
 
 
 def fingerprint(

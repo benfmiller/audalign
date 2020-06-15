@@ -160,6 +160,9 @@ class Audalign(object):
     def plot(self, file_path):
         _fingerprint_worker(file_path, plot=True)
 
+    def align(self):
+        pass
+
 
 def _fingerprint_worker(file_path, limit=None, plot=False):
 
