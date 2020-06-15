@@ -25,16 +25,20 @@ class FileRecognizer:
 
         t = time.time()
         matches = self.find_matches(channel_samples, file_name, Fs=self.Fs)
-        file_match = self.align_matches(matches)
+        rough_match = self.align_matches(matches)
+        file_match = self.process_results(rough_match)
         t = time.time() - t
 
-        if file_match:
-            file_match["match_time"] = t
+        result = {}
+        result["match_info"] = file_match
 
-        return file_match
+        if file_match:
+            result["match_time"] = t
+
+        return result
 
     def find_matches(self, samples, file_name, Fs=fingerprint.DEFAULT_FS):
-        print(f"Fingerprinting \"{file_name}\"")
+        print(f'Fingerprinting "{file_name}"')
         target_mapper = fingerprint.fingerprint(samples, Fs=Fs)
         matches = []
 
@@ -49,7 +53,7 @@ class FileRecognizer:
                                 sample_difference = a_offset - t_offset
                                 matches.append([audio_file[0], sample_difference])
             # else:
-                # print(f"{audio_file[0]} not compared to {file_name}")
+            # print(f"{audio_file[0]} not compared to {file_name}")
         return matches
 
     def align_matches(self, matches):
@@ -62,40 +66,55 @@ class FileRecognizer:
         print("Aligning matches")
         # align by sample_differences
         sample_difference_counter = {}
-        largest_match_offset = 0
-        largest_match_count = 0
-        file_name = -1
         for file_name, sample_difference in matches:
-            if sample_difference not in sample_difference_counter:
-                sample_difference_counter[sample_difference] = {}
-            if file_name not in sample_difference_counter[sample_difference]:
-                sample_difference_counter[sample_difference][file_name] = 0
-            sample_difference_counter[sample_difference][file_name] += 1
+            if file_name not in sample_difference_counter:
+                sample_difference_counter[file_name] = {}
+            if sample_difference not in sample_difference_counter[file_name]:
+                sample_difference_counter[file_name][sample_difference] = 0
+            sample_difference_counter[file_name][sample_difference] += 1
 
-            if sample_difference_counter[sample_difference][file_name] > largest_match_count:
-                largest_match_offset = sample_difference
-                largest_match_count = sample_difference_counter[sample_difference][file_name]
-                file_name = file_name
+        return sample_difference_counter
 
-        # extract idenfication
-        for i in self.audalign.fingerprinted_files:
-            if i[0] == file_name:
-                file_id = i[2]
-                break
+    def process_results(self, results):
 
-        # return match info
-        nseconds = round(
-            float(largest_match_offset)
-            / fingerprint.DEFAULT_FS
-            * fingerprint.DEFAULT_WINDOW_SIZE
-            * fingerprint.DEFAULT_OVERLAP_RATIO,
-            5,
-        )
-        audio_file = {
-            self.audalign.FILE_ID: file_id,
-            self.audalign.FILE_NAME: file_name,
-            self.audalign.CONFIDENCE: largest_match_count,
-            self.audalign.OFFSET_SAMPLES: int(largest_match_offset),
-            self.audalign.OFFSET_SECS: nseconds,
-        }
-        return audio_file
+        complete_match_info = {}
+
+        for file_name in results:
+            match_offsets = []
+            offset_count = []
+            offset_diff = []
+            for sample_difference, num_of_matches in results[file_name].items():
+                match_offsets.append((num_of_matches, sample_difference))
+            match_offsets = sorted(match_offsets, reverse=True, key=lambda x: x[0])[:3]
+            if match_offsets[0][0] <= 1:
+                continue
+            for i in match_offsets:
+                if i[0] <= 1:
+                    continue
+                offset_count.append(i[0])
+                offset_diff.append(i[1])
+
+            complete_match_info[file_name] = {}
+            complete_match_info[file_name][self.audalign.CONFIDENCE] = offset_count
+            complete_match_info[file_name][self.audalign.OFFSET_SAMPLES] = offset_diff
+
+            # extract idenfication
+            for i in self.audalign.fingerprinted_files:
+                if i[0] == file_name:
+                    complete_match_info[file_name][self.audalign.FILE_ID] = i[2]
+                    break
+
+            complete_match_info[file_name][self.audalign.OFFSET_SECS] = []
+            for i in offset_diff:
+                nseconds = round(
+                    float(i)
+                    / fingerprint.DEFAULT_FS
+                    * fingerprint.DEFAULT_WINDOW_SIZE
+                    * fingerprint.DEFAULT_OVERLAP_RATIO,
+                    5,
+                )
+                complete_match_info[file_name][self.audalign.OFFSET_SECS].append(
+                    nseconds
+                )
+
+        return complete_match_info

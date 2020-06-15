@@ -4,9 +4,10 @@ def main():
 
     # TODO: New fingerprint algorithm
     # TODO: Document
+    # TODO: type hints
     # TODO: complete align function
 
-    ada = ad.Audalign("all_audio.json")
+    ada = ad.Audalign()  # "all_audio.json")
     # ada.write_processed_file("ResearchMaher/FraserSUB.mov", "processed_audio/FraserSUB.wav")
     t = time.time()
     # ada.fingerprint_file("audio_files/TestAudio/Street.wav")
