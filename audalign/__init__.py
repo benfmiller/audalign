@@ -12,6 +12,7 @@ import json
 
 class Audalign(object):
 
+    # Names that appear in match information
     FILE_ID = "file_id"
     FILE_NAME = "file_name"
     CONFIDENCE = "confidence"
@@ -20,6 +21,15 @@ class Audalign(object):
     OFFSET_SECS = "offset_seconds"
 
     def __init__(self, *args, multiprocessing=True):  # , config):
+        """
+        Constructs new audalign object
+
+        Parameters
+        ----------
+        arg1 : str
+        Optional file path to load json or pickle file of already fingerprinted files
+        multiprocessing is set to True by default
+        """
 
         self.limit = None
         self.file_unique_hash = []
@@ -32,6 +42,18 @@ class Audalign(object):
             self.load_fingerprinted_files(args[0])
 
     def save_fingerprinted_files(self, filename):
+        """
+        Serializes fingerprinted files to json or pickle file
+
+        Parameters
+        ----------
+        filename
+            must be either json or pickle extension
+
+        Returns
+        -------
+        None
+        """
         data = [self.fingerprinted_files, self.total_fingerprints, self.file_names]
         if filename.split(".")[-1] == "pickle":
             with open(filename, "wb") as f:
@@ -43,6 +65,18 @@ class Audalign(object):
             print("File type must be either pickle or json")
 
     def load_fingerprinted_files(self, filename):
+        """
+        Loads/adds saved json or pickle file into current audalign object
+
+        Parameters
+        ----------
+        filename
+            must be either json or pickle extension
+
+        Returns
+        -------
+        None
+        """
         try:
             if filename.split(".")[-1] == "pickle":
                 with open(filename, "rb") as f:
@@ -56,14 +90,29 @@ class Audalign(object):
             self.fingerprinted_files.extend(data[0])
             self.total_fingerprints += data[1]
             self.file_names.extend(data[2])
+            self.clean_fingerprinted_files()
         except FileNotFoundError:
             print(f'"{filename}" not found')
+
+    def clean_fingerprinted_files(self):
+        # TODO: clean doubles
+        pass
 
     def fingerprint_directory(
         self, path, plot=False, nprocesses=None, extensions=["*"]
     ):
+        """
+        Fingerprints all files in given directory and all subdirectories
 
-        # print(f"{pool} : {nprocesses}")
+        Parameters
+        ----------
+        path
+            path to directory to be fingerprinted
+        
+
+
+        """
+
         filenames_to_fingerprint = []
         for filename, _ in decoder.find_files(path, extensions):
             file_name, extension = os.path.splitext(os.path.basename(filename))
