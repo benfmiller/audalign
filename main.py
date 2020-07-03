@@ -7,10 +7,11 @@ def main():
     # TODO: type hints
     # TODO: complete align function
 
-    ada = ad.Audalign()  # "all_audio.json")
+    ada = ad.Audalign("all_audio.json")
     # ada.write_processed_file("ResearchMaher/FraserSUB.mov", "processed_audio/FraserSUB.wav")
     t = time.time()
     # ada.fingerprint_file("audio_files/TestAudio/Street.wav")
+    # ada.multiprocessing = False
     # ada.fingerprint_directory("audio_files")
     t = time.time() - t
     print(f"It took {t} seconds to complete.")
@@ -21,8 +22,6 @@ def main():
 
     # ada.save_fingerprinted_files("all_audio.json")
     # ada.plot("audio_files/TestAudio/Paige.MOV")
-    print(ada.recognize("audio_files/TestAudio/Street.wav"))
-
-
+    print(ada.recognize("audio_files/audio_sync/seg_st12_01.wav"))
 if __name__ == "__main__":
     main()

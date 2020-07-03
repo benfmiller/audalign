@@ -70,7 +70,7 @@ class Audalign(object):
 
         Parameters
         ----------
-        filename
+        filename : str
             must be either json or pickle extension
 
         Returns
@@ -106,17 +106,25 @@ class Audalign(object):
 
         Parameters
         ----------
-        path
+        path : str
             path to directory to be fingerprinted
+        plot : boolean
+            if true, plots the peaks to be fingerprinted on spectrogram
+        nprocesses : int
+            specifies number of threads to use
+        extensions : list[str]
+            specify which extensions to fingerprint
         
-
-
+        Returns
+        -------
+        None
         """
 
         filenames_to_fingerprint = []
-        for filename, _ in decoder.find_files(path, extensions):
-            file_name, extension = os.path.splitext(os.path.basename(filename))
-            file_name += extension
+        for filename, _ in decoder.find_files(path, extensions): #finds all files to fingerprint
+            file_name = os.path.splitext(filename)
+            # file_name, extension = os.path.splitext(os.path.basename(filename))
+            # file_name += extension
             if file_name in self.file_names:
                 print(f"{file_name} already fingerprinted")
                 continue
@@ -160,16 +168,15 @@ class Audalign(object):
 
             for filename in filenames_to_fingerprint:
                 try:
-                    file_name, extension = os.path.splitext(os.path.basename(filename))
-                    file_name += extension
+                    file_name = os.path.splitext(filename)
                     if file_name in self.file_names:
                         print(f"{file_name} already fingerprinted, continuing...")
                         continue
-                    file_name, hashes, file_hash = _fingerprint_worker(
-                        filename, limit=self.limit, plot=plot
+                    file_name, hashes, file_hash = _fingerprint_worker_directory(
+                        filename 
                     )
                     if file_name != None:
-                        self.fingerprinted_files.add([file_name, hashes, file_hash])
+                        self.fingerprinted_files.append([file_name, hashes, file_hash])
                         self.file_names.append(file_name)
                         self.total_fingerprints += len(hashes)
                 except:
@@ -178,6 +185,9 @@ class Audalign(object):
                     traceback.print_exc(file=sys.stdout)
 
     def fingerprint_file(self, file_path, set_file_name=None, plot=False):
+        """
+        
+        """
 
         file_name, extension = os.path.splitext(os.path.basename(file_path))
         file_name += extension

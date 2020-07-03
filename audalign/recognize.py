@@ -75,7 +75,7 @@ class FileRecognizer:
 
         return sample_difference_counter
 
-    def process_results(self, results):
+    def process_results(self, results, filter_matches=1):
 
         complete_match_info = {}
 
@@ -86,10 +86,10 @@ class FileRecognizer:
             for sample_difference, num_of_matches in results[file_name].items():
                 match_offsets.append((num_of_matches, sample_difference))
             match_offsets = sorted(match_offsets, reverse=True, key=lambda x: x[0])[:3]
-            if match_offsets[0][0] <= 1:
+            if match_offsets[0][0] <= filter_matches:
                 continue
             for i in match_offsets:
-                if i[0] <= 1:
+                if i[0] <= filter_matches:
                     continue
                 offset_count.append(i[0])
                 offset_diff.append(i[1])
@@ -116,5 +116,8 @@ class FileRecognizer:
                 complete_match_info[file_name][self.audalign.OFFSET_SECS].append(
                     nseconds
                 )
+        
+        if len(complete_match_info) == 0:
+            return self.process_results(results, filter_matches=0)
 
         return complete_match_info
