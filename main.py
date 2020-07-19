@@ -22,6 +22,8 @@ def main():
 
     # ada.save_fingerprinted_files("all_audio.json")
     # ada.plot("audio_files/TestAudio/Paige.MOV")
-    print(ada.recognize("audio_files/audio_sync/seg_st12_01.wav"))
+    print(ada.recognize("audio_files/audio_sync/20200602/nr2.wav"))
+
+
 if __name__ == "__main__":
     main()

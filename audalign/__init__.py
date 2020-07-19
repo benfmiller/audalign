@@ -121,7 +121,9 @@ class Audalign(object):
         """
 
         filenames_to_fingerprint = []
-        for filename, _ in decoder.find_files(path, extensions): #finds all files to fingerprint
+        for filename, _ in decoder.find_files(
+            path, extensions
+        ):  # finds all files to fingerprint
             file_name = os.path.splitext(filename)
             # file_name, extension = os.path.splitext(os.path.basename(filename))
             # file_name += extension
@@ -173,7 +175,7 @@ class Audalign(object):
                         print(f"{file_name} already fingerprinted, continuing...")
                         continue
                     file_name, hashes, file_hash = _fingerprint_worker_directory(
-                        filename 
+                        filename
                     )
                     if file_name != None:
                         self.fingerprinted_files.append([file_name, hashes, file_hash])
@@ -205,13 +207,13 @@ class Audalign(object):
             self.file_names.append(file_name)
             self.total_fingerprints += len(hashes)
 
-    def recognize(self, *options, **kwoptions):
+    def recognize(self, file_path, filter_matches=1, *options, **kwoptions):
         if "recognizer" not in kwoptions.keys():
             r = recognize.FileRecognizer(self)
         elif kwoptions["recognizer"].lower() == "filerecognizer":
             r = recognize.FileRecognizer(self)
             kwoptions.pop("recognizer")
-        return r.recognize(*options, **kwoptions)
+        return r.recognize(file_path, filter_matches, *options, **kwoptions)
 
     def write_processed_file(self, file_name, destination_path):
         decoder.read(file_name, wrdestination=destination_path)
