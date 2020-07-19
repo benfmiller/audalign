@@ -101,6 +101,19 @@ class Audalign(object):
     def fingerprint_directory(
         self, path, plot=False, nprocesses=None, extensions=["*"]
     ):
+
+        result = self.__fingerprint_directory(self, path, plot, nprocesses, extensions)
+
+        for processed_file in result:
+            if processed_file[0] != None:
+                if processed_file[0] not in self.file_names:
+                    self.fingerprinted_files.append(processed_file)
+                    self.file_names.append(processed_file[0])
+                    self.total_fingerprints += len(processed_file[1])
+
+    def __fingerprint_directory(
+        self, path, plot=False, nprocesses=None, extensions=["*"]
+    ):
         """
         Fingerprints all files in given directory and all subdirectories
 
@@ -159,14 +172,9 @@ class Audalign(object):
                 self.pool.close()
                 self.pool.join()
 
-                for processed_file in result:
-                    if processed_file[0] != None:
-                        if processed_file[0] not in self.file_names:
-                            self.fingerprinted_files.append(processed_file)
-                            self.file_names.append(processed_file[0])
-                            self.total_fingerprints += len(processed_file[1])
-
         else:
+
+            result = []
 
             for filename in filenames_to_fingerprint:
                 try:
@@ -177,16 +185,24 @@ class Audalign(object):
                     file_name, hashes, file_hash = _fingerprint_worker_directory(
                         filename
                     )
-                    if file_name != None:
-                        self.fingerprinted_files.append([file_name, hashes, file_hash])
-                        self.file_names.append(file_name)
-                        self.total_fingerprints += len(hashes)
+                    result.append([file_name, hashes, file_hash])
                 except:
-                    print("Failed fingerprinting")
+                    print(f'Failed fingerprinting "{filename}"')
                     # Print traceback because we can't reraise it here
                     traceback.print_exc(file=sys.stdout)
+        return result
 
     def fingerprint_file(self, file_path, set_file_name=None, plot=False):
+
+        file_name, hashes, file_hash = self.__fingerprint_file(
+            file_path, set_file_name, plot
+        )
+        if file_name != None:
+            self.fingerprinted_files.append([file_name, hashes, file_hash])
+            self.file_names.append(file_name)
+            self.total_fingerprints += len(hashes)
+
+    def __fingerprint_file(self, file_path, set_file_name=None, plot=False):
         """
         
         """
@@ -202,10 +218,7 @@ class Audalign(object):
         )
         filename = decoder.path_to_filename(file_path)
         file_name = set_file_name or filename
-        if file_name != None:
-            self.fingerprinted_files.append([file_name, hashes, file_hash])
-            self.file_names.append(file_name)
-            self.total_fingerprints += len(hashes)
+        return [file_name, hashes, file_hash]
 
     def recognize(self, file_path, filter_matches=1, *options, **kwoptions):
         if "recognizer" not in kwoptions.keys():
