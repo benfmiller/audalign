@@ -11,7 +11,7 @@ class FileRecognizer:
         self.audalign = audalign
         self.Fs = fingerprint.DEFAULT_FS
 
-    def recognize(self, file_path):
+    def recognize(self, file_path, filter_matches):
         try:
             channel_samples, self.Fs, file_hash = decoder.read(
                 file_path, limit=self.audalign.limit
@@ -26,7 +26,7 @@ class FileRecognizer:
         t = time.time()
         matches = self.find_matches(channel_samples, file_name, Fs=self.Fs)
         rough_match = self.align_matches(matches)
-        file_match = self.process_results(rough_match)
+        file_match = self.process_results(rough_match, filter_matches)
         t = time.time() - t
 
         result = {}
@@ -85,7 +85,7 @@ class FileRecognizer:
             offset_diff = []
             for sample_difference, num_of_matches in results[file_name].items():
                 match_offsets.append((num_of_matches, sample_difference))
-            match_offsets = sorted(match_offsets, reverse=True, key=lambda x: x[0])[:3]
+            match_offsets = sorted(match_offsets, reverse=True, key=lambda x: x[0])
             if match_offsets[0][0] <= filter_matches:
                 continue
             for i in match_offsets:
@@ -116,7 +116,7 @@ class FileRecognizer:
                 complete_match_info[file_name][self.audalign.OFFSET_SECS].append(
                     nseconds
                 )
-        
+
         if len(complete_match_info) == 0:
             return self.process_results(results, filter_matches=0)
 
