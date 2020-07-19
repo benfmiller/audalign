@@ -57,7 +57,7 @@ def read(filename, limit=None, wrdestination=None):
     if limit:
         audiofile = audiofile[: limit * 1000]
 
-    data = np.fromstring(audiofile._data, np.int16)
+    data = np.frombuffer(audiofile._data, np.int16)
 
     channels = data[1 :: audiofile.channels]
     """for chn in range(audiofile.channels):

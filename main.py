@@ -6,6 +6,9 @@ def main():
     # TODO: Document
     # TODO: type hints
     # TODO: complete align function
+    # TODO: write aligned files function
+
+    assert 5 == 4
 
     ada = ad.Audalign("all_audio.json")
     # ada.write_processed_file("ResearchMaher/FraserSUB.mov", "processed_audio/FraserSUB.wav")
