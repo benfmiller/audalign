@@ -26,16 +26,20 @@ class FileRecognizer:
         t = time.time()
         matches = self.find_matches(channel_samples, file_name, Fs=self.Fs)
         rough_match = self.align_matches(matches)
-        file_match = self.process_results(rough_match, filter_matches)
+
+        file_match = None
+        if len(rough_match) > 0:
+            file_match = self.process_results(rough_match, filter_matches)
         t = time.time() - t
 
         result = {}
-        result["match_info"] = file_match
 
         if file_match:
             result["match_time"] = t
+            result["match_info"] = file_match
+            return result
 
-        return result
+        return None
 
     def find_matches(self, samples, file_name, Fs=fingerprint.DEFAULT_FS):
         print(f'Fingerprinting "{file_name}"')

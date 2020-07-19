@@ -8,12 +8,10 @@ def main():
     # TODO: complete align function
     # TODO: write aligned files function
 
-    assert 5 == 4
-
-    ada = ad.Audalign("all_audio.json")
+    ada = ad.Audalign()  # "all_audio.json")
     # ada.write_processed_file("ResearchMaher/FraserSUB.mov", "processed_audio/FraserSUB.wav")
     t = time.time()
-    # ada.fingerprint_file("audio_files/TestAudio/Street.wav")
+    ada.fingerprint_file("audio_files/TestAudio/Street.wav")
     # ada.multiprocessing = False
     # ada.fingerprint_directory("audio_files")
     t = time.time() - t
