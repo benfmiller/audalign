@@ -102,7 +102,7 @@ class Audalign(object):
         self, path, plot=False, nprocesses=None, extensions=["*"]
     ):
 
-        result = self.__fingerprint_directory(self, path, plot, nprocesses, extensions)
+        result = self.__fingerprint_directory(path, plot, nprocesses, extensions)
 
         for processed_file in result:
             if processed_file[0] != None:
