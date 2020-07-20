@@ -1,3 +1,11 @@
+def chunkify(lst, n):
+    """
+    Splits a list into roughly n equal parts.
+    http://stackoverflow.com/questions/2130016/splitting-a-list-of-arbitrary-size-into-only-roughly-n-equal-parts
+    """
+    return [list(lst)[i::n] for i in range(n)]
+
+
 from os import path
 from pydub import AudioSegment
 import pydub
