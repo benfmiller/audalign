@@ -13,7 +13,7 @@ class FileRecognizer:
 
     def recognize(self, file_path, filter_matches):
         try:
-            channel_samples, self.Fs, file_hash = decoder.read(
+            channel_samples, self.Fs = decoder.read(
                 file_path, limit=self.audalign.limit
             )
         except FileNotFoundError:
@@ -56,8 +56,6 @@ class FileRecognizer:
                             for a_offset in already_hashes[t_hash]:
                                 sample_difference = a_offset - t_offset
                                 matches.append([audio_file[0], sample_difference])
-            # else:
-            # print(f"{audio_file[0]} not compared to {file_name}")
         return matches
 
     def align_matches(self, matches):
@@ -103,10 +101,6 @@ class FileRecognizer:
             complete_match_info[file_name][self.audalign.OFFSET_SAMPLES] = offset_diff
 
             # extract idenfication
-            for i in self.audalign.fingerprinted_files:
-                if i[0] == file_name:
-                    complete_match_info[file_name][self.audalign.FILE_ID] = i[2]
-                    break
 
             complete_match_info[file_name][self.audalign.OFFSET_SECS] = []
             for i in offset_diff:

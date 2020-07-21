@@ -182,10 +182,8 @@ class Audalign(object):
                     if file_name in self.file_names:
                         print(f"{file_name} already fingerprinted, continuing...")
                         continue
-                    file_name, hashes, file_hash = _fingerprint_worker_directory(
-                        filename
-                    )
-                    result.append([file_name, hashes, file_hash])
+                    file_name, hashes = _fingerprint_worker_directory(filename)
+                    result.append([file_name, hashes])
                 except:
                     print(f'Failed fingerprinting "{filename}"')
                     # Print traceback because we can't reraise it here
@@ -194,11 +192,9 @@ class Audalign(object):
 
     def fingerprint_file(self, file_path, set_file_name=None, plot=False):
 
-        file_name, hashes, file_hash = self.__fingerprint_file(
-            file_path, set_file_name, plot
-        )
+        file_name, hashes = self.__fingerprint_file(file_path, set_file_name, plot)
         if file_name != None:
-            self.fingerprinted_files.append([file_name, hashes, file_hash])
+            self.fingerprinted_files.append([file_name, hashes])
             self.file_names.append(file_name)
             self.total_fingerprints += len(hashes)
 
@@ -213,12 +209,10 @@ class Audalign(object):
             print(f"{file_name} already fingerprinted")
             return
 
-        file_name, hashes, file_hash = _fingerprint_worker(
-            file_path, limit=self.limit, plot=plot
-        )
+        file_name, hashes = _fingerprint_worker(file_path, limit=self.limit, plot=plot)
         filename = decoder.path_to_filename(file_path)
         file_name = set_file_name or filename
-        return [file_name, hashes, file_hash]
+        return [file_name, hashes]
 
     def recognize(self, file_path, filter_matches=1, *options, **kwoptions):
         if "recognizer" not in kwoptions.keys():
@@ -234,8 +228,16 @@ class Audalign(object):
     def plot(self, file_path):
         _fingerprint_worker(file_path, plot=True)
 
-    def align(self):
-        pass
+    def align(self, directory_path, destination_path):
+        try:
+            os.stat(directory_path)
+        except:
+            os.mkdir(directory_path)
+
+        self.file_unique_hash = []
+        self.file_names = []
+        self.fingerprinted_files = []
+        self.total_fingerprints = 0
 
 
 def _fingerprint_worker(file_path, limit=None, plot=False):
@@ -244,16 +246,16 @@ def _fingerprint_worker(file_path, limit=None, plot=False):
     file_name += extension
 
     try:
-        channel, Fs, file_hash = decoder.read(file_path, limit)
+        channel, Fs = decoder.read(file_path, limit)
     except FileNotFoundError:
         print(f'"{file_path}" not found')
-        return None, None, None
+        return None, None
     except:
         print(f'File "{file_name}" could not be decoded')
-        return None, None, None
+        return None, None
 
     print(f"Fingerprinting {file_name}")
     hashes = fingerprint.fingerprint(channel, Fs=Fs, plot=plot)
     print(f"Finished fingerprinting {file_name}")
 
-    return file_name, hashes, file_hash
+    return file_name, hashes

@@ -14,6 +14,7 @@ def main():
     ada.fingerprint_file("audio_files/TestAudio/Street.wav")
     # ada.multiprocessing = False
     # ada.fingerprint_directory("audio_files")
+    ada.align("folder", "folder")
     t = time.time() - t
     print(f"It took {t} seconds to complete.")
     print(f"Total fingerprints: {ada.total_fingerprints}")
@@ -23,7 +24,7 @@ def main():
 
     # ada.save_fingerprinted_files("all_audio.json")
     # ada.plot("audio_files/TestAudio/Paige.MOV")
-    print(ada.recognize("audio_files/audio_sync/20200602/nr2.wav"))
+    # print(ada.recognize("audio_files/audio_sync/20200602/nr2.wav"))
 
 
 if __name__ == "__main__":

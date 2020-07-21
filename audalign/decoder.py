@@ -68,7 +68,7 @@ def read(filename, limit=None, wrdestination=None):
     if wrdestination:
         audiofile.export(wrdestination)
 
-    return channels, audiofile.frame_rate, unique_hash(filename)
+    return channels, audiofile.frame_rate
 
 
 def path_to_filename(path):
