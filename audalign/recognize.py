@@ -8,10 +8,42 @@ import os
 
 class FileRecognizer:
     def __init__(self, audalign):
+        """
+        Creates FileRecognizer object
+
+        Parameters
+        ----------
+        audalign : Audalign
+            instance of Audalign
+        
+        Returns
+        -------
+        None
+        """
         self.audalign = audalign
         self.Fs = fingerprint.DEFAULT_FS
 
     def recognize(self, file_path, filter_matches):
+        """
+        Recognizes given file against already fingerprinted files
+
+        Parameters
+        ----------
+        file_path : str
+            file path of target file
+        filter_matches : int
+            only returns information on match counts greater than filter_matches
+        
+        Returns
+        -------
+        match_result : dict
+            dictionary containing match time and match info
+            
+            or
+
+            None : if no match
+            
+        """
         try:
             channel_samples, self.Fs = decoder.read(
                 file_path, limit=self.audalign.limit
@@ -42,6 +74,22 @@ class FileRecognizer:
         return None
 
     def find_matches(self, samples, file_name, Fs=fingerprint.DEFAULT_FS):
+        """
+        fingerprints target file, then finds every occurence of exact same hashes in already
+        fingerprinted files
+
+        Parameters
+        ----------
+        samples : array of decoded file
+            array of decoded file from decoder.read
+        file_name : str
+            base name of target file
+
+        Returns
+        -------
+        Matches: list[str, int]
+            list of all matches, file_name match and corresponding offset
+        """
         print(f'Fingerprinting "{file_name}"')
         target_mapper = fingerprint.fingerprint(samples, Fs=Fs)
         matches = []
@@ -60,10 +108,17 @@ class FileRecognizer:
 
     def align_matches(self, matches):
         """
-            Finds hash matches that align in time with other matches and finds
-            consensus about which hashes are "true" signal from the audio.
+        takes matches from find_matches and converts it to a dictionary of counts per offset and file name
 
-            Returns a dictionary with match information.
+        Parameters
+        ----------
+        matches : list[str, int]
+            list of matches from find_matches
+
+        Returns
+        -------
+        sample_difference_counter : dict{str{int}}
+            of the form dict{file_name{number of matching offsets}}
         """
         print("Aligning matches")
         # align by sample_differences
@@ -116,6 +171,6 @@ class FileRecognizer:
                 )
 
         if len(complete_match_info) == 0:
-            return self.process_results(results, filter_matches=0)
+            return self.process_results(results, filter_matches=filter_matches-1)
 
         return complete_match_info
