@@ -10,17 +10,16 @@ import pickle
 import json
 
 
-class Audalign(object):
+class Audalign():
 
     # Names that appear in match information
-    FILE_ID = "file_id"
     FILE_NAME = "file_name"
     CONFIDENCE = "confidence"
     MATCH_TIME = "match_time"
     OFFSET_SAMPLES = "offset_samples"
     OFFSET_SECS = "offset_seconds"
 
-    def __init__(self, *args, multiprocessing=True):  # , config):
+    def __init__(self, *args, multiprocessing=True):
         """
         Constructs new audalign object
 
@@ -32,7 +31,6 @@ class Audalign(object):
         """
 
         self.limit = None
-        self.file_unique_hash = []
         self.file_names = []
         self.fingerprinted_files = []
         self.multiprocessing = multiprocessing
@@ -41,7 +39,7 @@ class Audalign(object):
         if len(args) > 0:
             self.load_fingerprinted_files(args[0])
 
-    def save_fingerprinted_files(self, filename):
+    def save_fingerprinted_files(self, filename: str) -> None:
         """
         Serializes fingerprinted files to json or pickle file
 
@@ -64,7 +62,7 @@ class Audalign(object):
         else:
             print("File type must be either pickle or json")
 
-    def load_fingerprinted_files(self, filename):
+    def load_fingerprinted_files(self, filename: str) -> None:
         """
         Loads/adds saved json or pickle file into current audalign object
 
@@ -99,8 +97,26 @@ class Audalign(object):
         pass
 
     def fingerprint_directory(
-        self, path, plot=False, nprocesses=None, extensions=["*"]
-    ):
+        self, path: str, plot=False, nprocesses=None, extensions=["*"]
+    ) -> None:
+        """
+        Fingerprints all files in given directory and all subdirectories
+
+        Parameters
+        ----------
+        path : str
+            path to directory to be fingerprinted
+        plot : boolean
+            if true, plots the peaks to be fingerprinted on a spectrogram
+        nprocesses : int
+            specifies number of threads to use
+        extensions : list[str]
+            specify which extensions to fingerprint
+        
+        Returns
+        -------
+        None
+        """
 
         result = self.__fingerprint_directory(path, plot, nprocesses, extensions)
 
@@ -115,6 +131,8 @@ class Audalign(object):
         self, path, plot=False, nprocesses=None, extensions=["*"]
     ):
         """
+        Worker function for fingerprint_directory
+
         Fingerprints all files in given directory and all subdirectories
 
         Parameters
@@ -122,7 +140,7 @@ class Audalign(object):
         path : str
             path to directory to be fingerprinted
         plot : boolean
-            if true, plots the peaks to be fingerprinted on spectrogram
+            if true, plots the peaks to be fingerprinted on a spectrogram
         nprocesses : int
             specifies number of threads to use
         extensions : list[str]
@@ -138,8 +156,6 @@ class Audalign(object):
             path, extensions
         ):  # finds all files to fingerprint
             file_name = os.path.splitext(filename)
-            # file_name, extension = os.path.splitext(os.path.basename(filename))
-            # file_name += extension
             if file_name in self.file_names:
                 print(f"{file_name} already fingerprinted")
                 continue
@@ -191,6 +207,22 @@ class Audalign(object):
         return result
 
     def fingerprint_file(self, file_path, set_file_name=None, plot=False):
+        """
+        Fingerprints given file and adds to fingerprinted files
+
+        Parameters
+        ----------
+        file_path : str
+            path to word to be fingerprinted
+        set_file_name : str
+            option to set file name manually rather than use file name in file_path
+        plot : boolean
+            if true, plots the peaks to be fingerprinted on a spectrogram
+        
+        Returns
+        -------
+        None
+        """
 
         file_name, hashes = self.__fingerprint_file(file_path, set_file_name, plot)
         if file_name != None:
@@ -200,7 +232,22 @@ class Audalign(object):
 
     def __fingerprint_file(self, file_path, set_file_name=None, plot=False):
         """
+        Worker function for fingerprint_file
+
+        Fingerprints given file and adds to fingerprinted files
+
+        Parameters
+        ----------
+        file_path : str
+            path to word to be fingerprinted
+        set_file_name : str
+            option to set file name manually rather than use file name in file_path
+        plot : boolean
+            if true, plots the peaks to be fingerprinted on a spectrogram
         
+        Returns
+        -------
+        None
         """
 
         file_name, extension = os.path.splitext(os.path.basename(file_path))
@@ -214,33 +261,114 @@ class Audalign(object):
         file_name = set_file_name or filename
         return [file_name, hashes]
 
-    def recognize(self, file_path, filter_matches=1, *options, **kwoptions):
-        if "recognizer" not in kwoptions.keys():
-            r = recognize.FileRecognizer(self)
-        elif kwoptions["recognizer"].lower() == "filerecognizer":
-            r = recognize.FileRecognizer(self)
-            kwoptions.pop("recognizer")
-        return r.recognize(file_path, filter_matches, *options, **kwoptions)
+    def recognize(self, file_path, filter_matches=1, *args, **kwargs):
+        """
+        Recognizes given file against already fingerprinted files
 
-    def write_processed_file(self, file_name, destination_path):
-        decoder.read(file_name, wrdestination=destination_path)
+        Parameters
+        ----------
+        file_path : str
+            file path of target file to recognize
+        filter_matches : int
+            filters all matches lower than given argument, 1 is recommended
+        
+        Returns
+        -------
+        match_result : dict
+            dictionary containing match time and match info
+            
+            or
+
+            None : if no match
+        """
+
+        if "recognizer" not in kwargs.keys():
+            r = recognize.FileRecognizer(self)
+        elif kwargs["recognizer"].lower() == "filerecognizer":
+            r = recognize.FileRecognizer(self)
+            kwargs.pop("recognizer")
+        return r.recognize(file_path, filter_matches, *args, **kwargs)
+
+    def write_processed_file(self, file_path, destination_file):
+        """
+        writes given file to the destination file after processing for fingerprinting
+
+        Parameters
+        ----------
+        file_path : str
+            file path of audio file
+        destination_file : str
+            file path and name to write file to
+
+        Returns
+        -------
+        None
+        """
+        decoder.read(file_path, wrdestination=destination_file)
 
     def plot(self, file_path):
+        """
+        Plots the file_path's peak chart
+
+        Parameters
+        ----------
+        file_path : str
+            file to plot
+
+        Returns
+        -------
+        None
+        """
         _fingerprint_worker(file_path, plot=True)
 
     def align(self, directory_path, destination_path):
+
+        self.file_names, temp_file_names = [], self.file_names
+        self.fingerprinted_files, temp_fingerprinted_files = [], self.fingerprinted_files
+        self.total_fingerprints, temp_total_fingerprints = 0, self.total_fingerprints
+
         try:
-            os.stat(directory_path)
-        except:
-            os.mkdir(directory_path)
 
-        self.file_unique_hash = []
-        self.file_names = []
-        self.fingerprinted_files = []
-        self.total_fingerprints = 0
+            if not os.path.exists(destination_path):
+                os.makedirs(destination_path)
+            
+            self.fingerprint_directory(directory_path)
+
+            total_alignment = {}
+
+            for file_name, _ in decoder.find_files(directory_path):
+                alignment = self.recognize()
+                total_alignment
+    
+        finally:
+            self.file_names = temp_file_names
+            self.fingerprinted_files = temp_fingerprinted_files
+            self.total_fingerprints = temp_total_fingerprints
 
 
-def _fingerprint_worker(file_path, limit=None, plot=False):
+
+
+
+
+def _fingerprint_worker(file_path: str, limit=None, plot=False) -> None:
+    """
+    Runs the file through the fingerprinter and returns file_name and hashes
+
+    Parameters
+    ----------
+    file_path : str
+        file_path to be fingerprinted
+    limit : int
+        limits fingerprinting to number of seconds from the start
+    plot : bool
+        displays the plot of the peaks if true
+    
+    Returns
+    -------
+    file_name : str, hashes : dict{str: [int]}
+        file_name and hash dictionary
+    """
+
 
     file_name, extension = os.path.splitext(os.path.basename(file_path))
     file_name += extension
