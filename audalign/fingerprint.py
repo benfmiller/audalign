@@ -174,7 +174,7 @@ def generate_hashes(peaks, fan_value=DEFAULT_FAN_VALUE):
                     ).hexdigest()[0:FINGERPRINT_REDUCTION]
                     if h not in hash_dict:
                         hash_dict[h] = [int(t1)]
-                    else:  # maybe not include duplicate offsets per hash?
+                    else:  
                         hash_dict[h] += [int(t1)]
 
     return hash_dict
