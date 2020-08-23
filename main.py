@@ -8,13 +8,14 @@ def main():
     # TODO: write aligned files function
     # TODO: add location information to fingerprint
 
-    ada = ad.Audalign()  # "all_audio.json")
+    ada = ad.Audalign()# "all_audio.json")
     # ada.write_processed_file("ResearchMaher/FraserSUB.mov", "processed_audio/FraserSUB.wav")
     t = time.time()
     # ada.fingerprint_file("audio_files/TestAudio/Street.wav")
     # ada.multiprocessing = False
-    # ada.fingerprint_directory("audio_files")
-    ada.align("folder", "folder")
+    ada.fingerprint_directory("audio_files")
+    # ada.align("folder", "folder")
+    ada.align("audio_files/audio_sync/20200602", "test_alignment")
     t = time.time() - t
     print(f"It took {t} seconds to complete.")
     print(f"Total fingerprints: {ada.total_fingerprints}")

@@ -46,7 +46,7 @@ class FileRecognizer:
         """
         try:
             channel_samples, self.Fs = decoder.read(
-                file_path, limit=self.audalign.limit
+                file_path 
             )
         except FileNotFoundError:
             return f'"{file_path}" not found'

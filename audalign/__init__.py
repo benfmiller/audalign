@@ -23,14 +23,14 @@ class Audalign():
         """
         Constructs new audalign object
 
+        multiprocessing is set to True by default
+
         Parameters
         ----------
         arg1 : str
-        Optional file path to load json or pickle file of already fingerprinted files
-        multiprocessing is set to True by default
+            Optional file path to load json or pickle file of already fingerprinted files
         """
 
-        self.limit = None
         self.file_names = []
         self.fingerprinted_files = []
         self.multiprocessing = multiprocessing
@@ -120,9 +120,9 @@ class Audalign():
 
         result = self.__fingerprint_directory(path, plot, nprocesses, extensions)
 
-        for processed_file in result:
-            if processed_file[0] != None:
-                if processed_file[0] not in self.file_names:
+        if result:
+            for processed_file in result:
+                if processed_file[0] != None and processed_file[0] not in self.file_names:
                     self.fingerprinted_files.append(processed_file)
                     self.file_names.append(processed_file[0])
                     self.total_fingerprints += len(processed_file[1])
@@ -166,7 +166,7 @@ class Audalign():
             return
 
         _fingerprint_worker_directory = partial(
-            _fingerprint_worker, limit=self.limit, plot=plot
+            _fingerprint_worker, plot=plot
         )
 
         if self.multiprocessing == True:
@@ -200,7 +200,7 @@ class Audalign():
                         continue
                     file_name, hashes = _fingerprint_worker_directory(filename)
                     result.append([file_name, hashes])
-                except:
+                except Exception:
                     print(f'Failed fingerprinting "{filename}"')
                     # Print traceback because we can't reraise it here
                     traceback.print_exc(file=sys.stdout)
@@ -250,14 +250,13 @@ class Audalign():
         None
         """
 
-        file_name, extension = os.path.splitext(os.path.basename(file_path))
-        file_name += extension
-        if file_name in self.file_names:
+        file_name = os.path.basename(file_path)
+        if os.path.splitext(file_name)[0] in self.file_names:
             print(f"{file_name} already fingerprinted")
-            return
+            return None, None
 
-        file_name, hashes = _fingerprint_worker(file_path, limit=self.limit, plot=plot)
-        filename = decoder.path_to_filename(file_path)
+        file_name, hashes = _fingerprint_worker(file_path, plot=plot)
+        filename = os.path.splitext(os.path.basename(file_path))[0]
         file_name = set_file_name or filename
         return [file_name, hashes]
 
@@ -306,6 +305,10 @@ class Audalign():
         """
         decoder.read(file_path, wrdestination=destination_file)
 
+    def _write_processed_file(self, file_path, destination_path, offset_seconds):
+        pass # not written yet
+
+
     def plot(self, file_path):
         """
         Plots the file_path's peak chart
@@ -320,6 +323,12 @@ class Audalign():
         None
         """
         _fingerprint_worker(file_path, plot=True)
+    
+    def clear_fingerprints(self):
+        self.file_names = []
+        self.fingerprinted_files = []
+        self.total_fingerprints = 0
+
 
     def align(self, directory_path, destination_path):
 
@@ -336,9 +345,24 @@ class Audalign():
 
             total_alignment = {}
 
-            for file_name, _ in decoder.find_files(directory_path):
-                alignment = self.recognize()
-                total_alignment
+            for file_path, _ in decoder.find_files(directory_path):
+                alignment = self.recognize(file_path, aligner=True)
+                name = os.path.splitext(os.path.basename(file_path))
+                if alignment:
+                    total_alignment[name] = alignment
+            
+            most_matches = 0
+            most_matches_file = "None"
+
+            for name, match in total_alignment.items():
+                if (n := len(match["offset_seconds"])) > most_matches:
+                    most_matches = n
+                    most_matches_file = name 
+
+            print(f"most Matches:{most_matches}, name: {most_matches_file}")
+
+
+            
     
         finally:
             self.file_names = temp_file_names
@@ -350,7 +374,7 @@ class Audalign():
 
 
 
-def _fingerprint_worker(file_path: str, limit=None, plot=False) -> None:
+def _fingerprint_worker(file_path: str, plot=False) -> None:
     """
     Runs the file through the fingerprinter and returns file_name and hashes
 
@@ -358,8 +382,6 @@ def _fingerprint_worker(file_path: str, limit=None, plot=False) -> None:
     ----------
     file_path : str
         file_path to be fingerprinted
-    limit : int
-        limits fingerprinting to number of seconds from the start
     plot : bool
         displays the plot of the peaks if true
     
@@ -370,20 +392,19 @@ def _fingerprint_worker(file_path: str, limit=None, plot=False) -> None:
     """
 
 
-    file_name, extension = os.path.splitext(os.path.basename(file_path))
-    file_name += extension
+    file_name = os.path.basename(file_path)
 
     try:
-        channel, Fs = decoder.read(file_path, limit)
+        channel, fs = decoder.read(file_path)
     except FileNotFoundError:
         print(f'"{file_path}" not found')
         return None, None
-    except:
+    except Exception:
         print(f'File "{file_name}" could not be decoded')
         return None, None
 
     print(f"Fingerprinting {file_name}")
-    hashes = fingerprint.fingerprint(channel, Fs=Fs, plot=plot)
+    hashes = fingerprint.fingerprint(channel, Fs=fs, plot=plot)
     print(f"Finished fingerprinting {file_name}")
 
     return file_name, hashes

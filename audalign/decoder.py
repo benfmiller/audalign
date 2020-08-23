@@ -6,26 +6,24 @@ from pydub.utils import audioop
 from hashlib import sha1
 
 
-def unique_hash(filepath, blocksize=2 ** 20):
-    """ Small function to generate a hash to uniquely generate
-    a file. Inspired by MD5 version here:
-    http://stackoverflow.com/a/1131255/712997
-
-    Works with large files. 
+def find_files(path, extensions=["*"]):
     """
-    s = sha1()
-    with open(filepath, "rb") as f:
-        while True:
-            buf = f.read(blocksize)
-            if not buf:
-                break
-            s.update(buf)
-    return s.hexdigest().upper()
+    Yields all files with given extension in path and all subdirectories
 
+    Parameters
+    ----------
+    path : str
+        path to folder
+    extensions : list[str]
+        list of all extensions to include
 
-def find_files(path, extensions):
-    # Allow both with ".mp3" and without "mp3" to be used for extensions
-    # extensions = [e.replace(".", "") for e in extensions]
+    Yields
+    ------
+    p : str
+        file path
+    extension : str
+        extension of file
+    """
 
     for dirpath, dirnames, files in os.walk(path):
         for extension in extensions:
@@ -34,17 +32,23 @@ def find_files(path, extensions):
                 yield (p, extension)
 
 
-def read(filename, limit=None, wrdestination=None):
+def read(filename, wrdestination=None, adjust_alignment=None):
     """
-    Reads any file supported by pydub (ffmpeg) and returns the data contained
-    within. If file reading fails due to input being a 24-bit wav file,
-    wavio is used as a backup.
+    Reads any file supported by pydub (ffmpeg) and returns a numpy array and the bit depth
 
-    Can be optionally limited to a certain amount of seconds from the start
-    of the file by specifying the `limit` parameter. This is the amount of
-    seconds from the start of the file.
+    Parameters
+    ----------
+    filename : str
+        path to audio file
+    wrdestination : str
+        writes the audio file after processing
 
-    returns: (channels, samplerate)
+    Returns
+    -------
+    channel : array[int]
+        array of audio data
+    frame_rate : int
+        returns the bit depth
     """
 
     audiofile = AudioSegment.from_file(filename)
@@ -54,26 +58,15 @@ def read(filename, limit=None, wrdestination=None):
     audiofile = audiofile.set_channels(1)
     audiofile = audiofile.normalize()
 
-    if limit:
-        audiofile = audiofile[: limit * 1000]
-
     data = np.frombuffer(audiofile._data, np.int16)
-
-    channels = data[1 :: audiofile.channels]
-    """for chn in range(audiofile.channels):
-        channels.append(data[chn :: audiofile.channels])"""
-
-    fs = audiofile.frame_rate
 
     if wrdestination:
         audiofile.export(wrdestination)
 
-    return channels, audiofile.frame_rate
+    if adjust_alignment:
+        shift_file(audiofile, adjust_alignment)
 
+    return data, audiofile.frame_rate
 
-def path_to_filename(path):
-    """
-    Extracts file name from a filepath. Used to identify which files
-    have already been fingerprinted on disk.
-    """
-    return os.path.splitext(os.path.basename(path))[0]
+def shift_file(audiofile, adjustment):
+    pass # not implemented yet
