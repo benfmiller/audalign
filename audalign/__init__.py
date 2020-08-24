@@ -10,10 +10,9 @@ import pickle
 import json
 
 
-class Audalign():
+class Audalign:
 
     # Names that appear in match information
-    FILE_NAME = "file_name"
     CONFIDENCE = "confidence"
     MATCH_TIME = "match_time"
     OFFSET_SAMPLES = "offset_samples"
@@ -122,7 +121,10 @@ class Audalign():
 
         if result:
             for processed_file in result:
-                if processed_file[0] != None and processed_file[0] not in self.file_names:
+                if (
+                    processed_file[0] != None
+                    and processed_file[0] not in self.file_names
+                ):
                     self.fingerprinted_files.append(processed_file)
                     self.file_names.append(processed_file[0])
                     self.total_fingerprints += len(processed_file[1])
@@ -165,9 +167,7 @@ class Audalign():
             print("Directory contains 0 files or could not be found")
             return
 
-        _fingerprint_worker_directory = partial(
-            _fingerprint_worker, plot=plot
-        )
+        _fingerprint_worker_directory = partial(_fingerprint_worker, plot=plot)
 
         if self.multiprocessing == True:
 
@@ -306,8 +306,7 @@ class Audalign():
         decoder.read(file_path, wrdestination=destination_file)
 
     def _write_processed_file(self, file_path, destination_path, offset_seconds):
-        pass # not written yet
-
+        pass  # not written yet
 
     def plot(self, file_path):
         """
@@ -323,55 +322,132 @@ class Audalign():
         None
         """
         _fingerprint_worker(file_path, plot=True)
-    
+
     def clear_fingerprints(self):
+        """
+        Resets audalign object to brand new state
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
+        """
         self.file_names = []
         self.fingerprinted_files = []
         self.total_fingerprints = 0
 
-
     def align(self, directory_path, destination_path):
 
         self.file_names, temp_file_names = [], self.file_names
-        self.fingerprinted_files, temp_fingerprinted_files = [], self.fingerprinted_files
+        self.fingerprinted_files, temp_fingerprinted_files = (
+            [],
+            self.fingerprinted_files,
+        )
         self.total_fingerprints, temp_total_fingerprints = 0, self.total_fingerprints
 
         try:
 
+            # Make target directory
             if not os.path.exists(destination_path):
                 os.makedirs(destination_path)
-            
+
             self.fingerprint_directory(directory_path)
 
             total_alignment = {}
+            file_names_and_paths = {}
 
+            # Get matches and paths
             for file_path, _ in decoder.find_files(directory_path):
-                alignment = self.recognize(file_path, aligner=True)
-                name = os.path.splitext(os.path.basename(file_path))
-                if alignment:
+                name = os.path.basename(file_path)
+                if name in self.file_names:
+                    alignment = self.recognize(file_path)
+                    file_names_and_paths["name"] = file_path
                     total_alignment[name] = alignment
-            
+
             most_matches = 0
-            most_matches_file = "None"
+            most_matches_file = {}
+            most_matches_file["tied"] = []
+            most_matches_file["most_matches"] = None
 
+            no_matches_list = []
+
+            # find file with most matches
             for name, match in total_alignment.items():
-                if (n := len(match["offset_seconds"])) > most_matches:
-                    most_matches = n
-                    most_matches_file = name 
+                if match:
+                    if (n := len(match["match_info"])) > most_matches:
+                        most_matches = n
+                        most_matches_file["most_matches"] = name
+                        most_matches_file["tied"] = [name]
+                    elif (n := len(match["match_info"])) == most_matches:
+                        most_matches_file["tied"] += [name]
+                else:
+                    no_matches_list += [name]
 
-            print(f"most Matches:{most_matches}, name: {most_matches_file}")
+            if len(no_matches_list) == len(total_alignment):
+                print("No matches detected")
+                return
 
+            total_match_strength = 0  # total match count of strongest match per file
 
-            
-    
+            # Get match info for file with strongest matches
+            for file_match in most_matches_file["tied"]:
+                running_strength = 0
+                for _, match in total_alignment[file_match]["match_info"].items():
+                    running_strength += match[Audalign.CONFIDENCE][0]
+                if running_strength > total_match_strength:
+                    total_match_strength = running_strength
+                    most_matches_file["most_matches"] = file_match
+                    most_matches_file["match_info"] = total_alignment[file_match][
+                        "match_info"
+                    ]
+
+            files_shifts = {}
+            files_shifts[most_matches_file["most_matches"]] = 0
+
+            for name, file_match in most_matches_file["match_info"].items():
+                files_shifts[name] = file_match[Audalign.OFFSET_SECS][0]
+
+            nmatch_wt_most = {}
+
+            # Finds files that aren't in files_shifts that match with files in files_shifts
+            for main_name, file_matches in total_alignment.items():
+                if file_matches:
+                    if main_name not in files_shifts.keys():
+                        for match_name, file_match in file_matches[
+                            "match_info"
+                        ].items():
+                            if match_name in files_shifts:
+                                if main_name not in nmatch_wt_most:
+                                    nmatch_wt_most[main_name] = {}
+                                    nmatch_wt_most[main_name]["match_strength"] = 0
+                                    nmatch_wt_most[main_name][
+                                        Audalign.OFFSET_SECS
+                                    ] = None
+                                if (
+                                    file_match[Audalign.CONFIDENCE][0]
+                                    > nmatch_wt_most[main_name]["match_strength"]
+                                ):
+                                    nmatch_wt_most["match_strength"] = file_match[
+                                        Audalign.CONFIDENCE
+                                    ][0]
+                                    nmatch_wt_most[Audalign.OFFSET_SECS] = (
+                                        file_match[Audalign.OFFSET_SECS][0]
+                                        - files_shifts[match_name]
+                                    )
+
+            min_shift = min(files_shifts.values())
+            for shift in files_shifts.keys():
+                files_shifts[shift] -= min_shift
+
+            print(files_shifts)
+
         finally:
             self.file_names = temp_file_names
             self.fingerprinted_files = temp_fingerprinted_files
             self.total_fingerprints = temp_total_fingerprints
-
-
-
-
 
 
 def _fingerprint_worker(file_path: str, plot=False) -> None:
@@ -390,7 +466,6 @@ def _fingerprint_worker(file_path: str, plot=False) -> None:
     file_name : str, hashes : dict{str: [int]}
         file_name and hash dictionary
     """
-
 
     file_name = os.path.basename(file_path)
 

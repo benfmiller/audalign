@@ -18,7 +18,9 @@ class TestInit:
     def test_fingerprint_file(self):
         ada = ad.Audalign()
         ada.fingerprint_file("audio_files/TestAudio/test.wav")
-        ada.fingerprint_file("audio_files/TestAudio/test.wav", set_file_name="Sup", plot=False)
+        ada.fingerprint_file(
+            "audio_files/TestAudio/test.wav", set_file_name="Sup", plot=False
+        )
         assert ada.total_fingerprints > 0
         assert ada.file_names[0] == "test"
         assert len(ada.fingerprinted_files) == 1
@@ -28,7 +30,6 @@ class TestInit:
 
         ada.fingerprint_file("audio_files/TestAudio/test.wav", set_file_name="Sup")
         assert ada.file_names[0] == "Sup"
-
 
     def test_fingerprint_directory(self):
         ada_multi = ad.Audalign()

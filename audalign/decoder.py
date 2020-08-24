@@ -68,5 +68,6 @@ def read(filename, wrdestination=None, adjust_alignment=None):
 
     return data, audiofile.frame_rate
 
+
 def shift_file(audiofile, adjustment):
-    pass # not implemented yet
+    pass  # not implemented yet
