@@ -44,19 +44,9 @@ class FileRecognizer:
             None : if no match
             
         """
-        try:
-            channel_samples, self.Fs = decoder.read(
-                file_path 
-            )
-        except FileNotFoundError:
-            return f'"{file_path}" not found'
-        except:
-            return f'File "{file_path}" could not be decoded'
-
-        file_name = os.path.basename(file_path)
 
         t = time.time()
-        matches = self.find_matches(channel_samples, file_name, Fs=self.Fs)
+        matches = self.find_matches(file_path, Fs=self.Fs)
         rough_match = self.align_matches(matches)
 
         file_match = None
@@ -73,7 +63,7 @@ class FileRecognizer:
 
         return None
 
-    def find_matches(self, samples, file_name, Fs=fingerprint.DEFAULT_FS):
+    def find_matches(self, file_path, Fs=fingerprint.DEFAULT_FS):
         """
         fingerprints target file, then finds every occurence of exact same hashes in already
         fingerprinted files
@@ -90,11 +80,28 @@ class FileRecognizer:
         Matches: list[str, int]
             list of all matches, file_name match and corresponding offset
         """
-        print(f'Fingerprinting "{file_name}"')
-        target_mapper = fingerprint.fingerprint(samples, Fs=Fs)
+        file_name = os.path.basename(file_path)
+
+        if file_name not in self.audalign.file_names:
+            try:
+                samples, self.Fs = decoder.read(file_path)
+                print(f'Fingerprinting "{file_name}"')
+                target_mapper = fingerprint.fingerprint(samples, Fs=Fs)
+            except FileNotFoundError:
+                print(f'"{file_path}" not found')
+                return {}
+            except:
+                print(f'File "{file_path}" could not be decoded')
+                return {}
+        else:
+            for audio_file in self.audalign.fingerprinted_files:
+                if audio_file[0] == file_name:
+                    target_mapper = audio_file[1]
+                    break
+
         matches = []
 
-        print(f"Finding Matches...  ", end="")
+        print(f"{file_name}: Finding Matches...  ", end="")
         for audio_file in self.audalign.fingerprinted_files:
             if audio_file[0].lower() != file_name.lower():
                 already_hashes = audio_file[1]
@@ -136,7 +143,7 @@ class FileRecognizer:
 
         complete_match_info = {}
 
-        for file_name in results:
+        for file_name in results.keys():
             match_offsets = []
             offset_count = []
             offset_diff = []
@@ -171,6 +178,6 @@ class FileRecognizer:
                 )
 
         if len(complete_match_info) == 0:
-            return self.process_results(results, filter_matches=filter_matches-1)
+            return self.process_results(results, filter_matches=filter_matches - 1)
 
         return complete_match_info
