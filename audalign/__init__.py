@@ -1,4 +1,4 @@
-import audalign.decoder as decoder
+import audalign.filehandler as filehandler
 import audalign.fingerprint as fingerprint
 import audalign.recognize as recognize
 import audalign.align as align
@@ -155,7 +155,7 @@ class Audalign:
         """
 
         filenames_to_fingerprint = []
-        for filename, _ in decoder.find_files(
+        for filename, _ in filehandler.find_files(
             path, extensions
         ):  # finds all files to fingerprint
             file_name = os.path.splitext(filename)
@@ -304,7 +304,7 @@ class Audalign:
         -------
         None
         """
-        decoder.read(file_path, wrdestination=destination_file)
+        filehandler.read(file_path, wrdestination=destination_file)
 
     def _write_processed_file(self, file_path, destination_path, offset_seconds):
         pass  # not written yet
@@ -376,7 +376,7 @@ class Audalign:
             file_names_and_paths = {}
 
             # Get matches and paths
-            for file_path, _ in decoder.find_files(directory_path):
+            for file_path, _ in filehandler.find_files(directory_path):
                 name = os.path.basename(file_path)
                 if name in self.file_names:
                     alignment = self.recognize(file_path)
@@ -384,7 +384,9 @@ class Audalign:
                     total_alignment[name] = alignment
 
             files_shifts = align.find_most_matches(total_alignment)
-            files_shifts = align.find_matches_not_in_file_shifts(total_alignment, files_shifts)
+            files_shifts = align.find_matches_not_in_file_shifts(
+                total_alignment, files_shifts
+            )
 
             print(files_shifts)
 
@@ -392,7 +394,6 @@ class Audalign:
             self.file_names = temp_file_names
             self.fingerprinted_files = temp_fingerprinted_files
             self.total_fingerprints = temp_total_fingerprints
-
 
 
 def _fingerprint_worker(file_path: str, plot=False) -> None:
@@ -415,7 +416,7 @@ def _fingerprint_worker(file_path: str, plot=False) -> None:
     file_name = os.path.basename(file_path)
 
     try:
-        channel, fs = decoder.read(file_path)
+        channel, fs = filehandler.read(file_path)
     except FileNotFoundError:
         print(f'"{file_path}" not found')
         return None, None
