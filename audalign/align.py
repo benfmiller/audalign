@@ -1,5 +1,6 @@
 import audalign
 
+
 def find_most_matches(total_alignment):
 
     most_matches = 0
@@ -35,9 +36,7 @@ def find_most_matches(total_alignment):
         if running_strength > total_match_strength:
             total_match_strength = running_strength
             most_matches_file["most_matches"] = file_match
-            most_matches_file["match_info"] = total_alignment[file_match][
-                "match_info"
-            ]
+            most_matches_file["match_info"] = total_alignment[file_match]["match_info"]
 
     files_shifts = {}
     files_shifts[most_matches_file["most_matches"]] = 0
@@ -56,9 +55,7 @@ def find_matches_not_in_file_shifts(total_alignment, files_shifts):
     for main_name, file_matches in total_alignment.items():
         if file_matches:
             if main_name not in files_shifts.keys():
-                for match_name, file_match in file_matches[
-                    "match_info"
-                ].items():
+                for match_name, file_match in file_matches["match_info"].items():
                     if match_name in files_shifts:
                         if main_name not in nmatch_wt_most:
                             nmatch_wt_most[main_name] = {}

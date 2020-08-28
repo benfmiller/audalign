@@ -1,6 +1,6 @@
 # encoding: utf-8
 import audalign.fingerprint as fingerprint
-import audalign.decoder as decoder
+import audalign.filehandler as filehandler
 import numpy as np
 import time
 import os
@@ -70,7 +70,7 @@ class FileRecognizer:
         Parameters
         ----------
         samples : array of decoded file
-            array of decoded file from decoder.read
+            array of decoded file from filehandler.read
         file_name : str
             base name of target file
 
@@ -83,7 +83,7 @@ class FileRecognizer:
 
         if file_name not in self.audalign.file_names:
             try:
-                samples, self.Fs = decoder.read(file_path)
+                samples, self.Fs = filehandler.read(file_path)
                 print(f'Fingerprinting "{file_name}"')
                 target_mapper = fingerprint.fingerprint(samples, Fs=Fs)
             except FileNotFoundError:
