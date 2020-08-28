@@ -1,6 +1,7 @@
 import audalign.decoder as decoder
 import audalign.fingerprint as fingerprint
 import audalign.recognize as recognize
+import audalign.align as align
 from functools import partial
 import multiprocessing
 import os
@@ -340,6 +341,21 @@ class Audalign:
         self.total_fingerprints = 0
 
     def align(self, directory_path, destination_path):
+        """
+        Finds matches and relative offsets for all files in directory_path, aligns them, and writes them to destination_path
+
+        Parameters
+        ----------
+        directory_path : String
+            String of directory for alignment
+
+        destination_path : String
+            String of path to write alignments to
+
+        Returns
+        -------
+        None
+        """
 
         self.file_names, temp_file_names = [], self.file_names
         self.fingerprinted_files, temp_fingerprinted_files = (
@@ -367,80 +383,8 @@ class Audalign:
                     file_names_and_paths["name"] = file_path
                     total_alignment[name] = alignment
 
-            most_matches = 0
-            most_matches_file = {}
-            most_matches_file["tied"] = []
-            most_matches_file["most_matches"] = None
-
-            no_matches_list = []
-
-            # find file with most matches
-            for name, match in total_alignment.items():
-                if match:
-                    if (n := len(match["match_info"])) > most_matches:
-                        most_matches = n
-                        most_matches_file["most_matches"] = name
-                        most_matches_file["tied"] = [name]
-                    elif (n := len(match["match_info"])) == most_matches:
-                        most_matches_file["tied"] += [name]
-                else:
-                    no_matches_list += [name]
-
-            if len(no_matches_list) == len(total_alignment):
-                print("No matches detected")
-                return
-
-            total_match_strength = 0  # total match count of strongest match per file
-
-            # Get match info for file with strongest matches
-            for file_match in most_matches_file["tied"]:
-                running_strength = 0
-                for _, match in total_alignment[file_match]["match_info"].items():
-                    running_strength += match[Audalign.CONFIDENCE][0]
-                if running_strength > total_match_strength:
-                    total_match_strength = running_strength
-                    most_matches_file["most_matches"] = file_match
-                    most_matches_file["match_info"] = total_alignment[file_match][
-                        "match_info"
-                    ]
-
-            files_shifts = {}
-            files_shifts[most_matches_file["most_matches"]] = 0
-
-            for name, file_match in most_matches_file["match_info"].items():
-                files_shifts[name] = file_match[Audalign.OFFSET_SECS][0]
-
-            nmatch_wt_most = {}
-
-            # Finds files that aren't in files_shifts that match with files in files_shifts
-            for main_name, file_matches in total_alignment.items():
-                if file_matches:
-                    if main_name not in files_shifts.keys():
-                        for match_name, file_match in file_matches[
-                            "match_info"
-                        ].items():
-                            if match_name in files_shifts:
-                                if main_name not in nmatch_wt_most:
-                                    nmatch_wt_most[main_name] = {}
-                                    nmatch_wt_most[main_name]["match_strength"] = 0
-                                    nmatch_wt_most[main_name][
-                                        Audalign.OFFSET_SECS
-                                    ] = None
-                                if (
-                                    file_match[Audalign.CONFIDENCE][0]
-                                    > nmatch_wt_most[main_name]["match_strength"]
-                                ):
-                                    nmatch_wt_most["match_strength"] = file_match[
-                                        Audalign.CONFIDENCE
-                                    ][0]
-                                    nmatch_wt_most[Audalign.OFFSET_SECS] = (
-                                        file_match[Audalign.OFFSET_SECS][0]
-                                        - files_shifts[match_name]
-                                    )
-
-            min_shift = min(files_shifts.values())
-            for shift in files_shifts.keys():
-                files_shifts[shift] -= min_shift
+            files_shifts = align.find_most_matches(total_alignment)
+            files_shifts = align.find_matches_not_in_file_shifts(total_alignment, files_shifts)
 
             print(files_shifts)
 
@@ -448,6 +392,7 @@ class Audalign:
             self.file_names = temp_file_names
             self.fingerprinted_files = temp_fingerprinted_files
             self.total_fingerprints = temp_total_fingerprints
+
 
 
 def _fingerprint_worker(file_path: str, plot=False) -> None:

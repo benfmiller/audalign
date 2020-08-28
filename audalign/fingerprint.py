@@ -88,6 +88,8 @@ def fingerprint(
         Sample Rate
     
     
+    Returns
+    -------
     hashes : dict{str: [int]}
         hashes of the form dict{hash: location}
     """
