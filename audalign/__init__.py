@@ -306,9 +306,6 @@ class Audalign:
         """
         filehandler.read(file_path, wrdestination=destination_file)
 
-    def _write_processed_file(self, file_path, destination_path, offset_seconds):
-        pass  # not written yet
-
     def plot(self, file_path):
         """
         Plots the file_path's peak chart
@@ -346,15 +343,16 @@ class Audalign:
 
         Parameters
         ----------
-        directory_path : String
+        directory_path : str
             String of directory for alignment
 
-        destination_path : String
+        destination_path : str
             String of path to write alignments to
 
         Returns
         -------
-        None
+        files_shifts : dict{float}
+            dict of file name with shift as value
         """
 
         self.file_names, temp_file_names = [], self.file_names
@@ -380,7 +378,7 @@ class Audalign:
                 name = os.path.basename(file_path)
                 if name in self.file_names:
                     alignment = self.recognize(file_path)
-                    file_names_and_paths["name"] = file_path
+                    file_names_and_paths[name] = file_path
                     total_alignment[name] = alignment
 
             files_shifts = align.find_most_matches(total_alignment)
@@ -388,12 +386,35 @@ class Audalign:
                 total_alignment, files_shifts
             )
 
-            print(files_shifts)
+            for file_name, shift in files_shifts.items():
+                self._write_shifted_file(
+                    file_names_and_paths[file_name], destination_path, shift
+                )
+
+            print(
+                f"{len(files_shifts)} out of {len(file_names_and_paths)} found and aligned"
+            )
+            return files_shifts
 
         finally:
             self.file_names = temp_file_names
             self.fingerprinted_files = temp_fingerprinted_files
             self.total_fingerprints = temp_total_fingerprints
+
+    def _write_shifted_file(self, file_path, destination_path, offset_seconds):
+        """
+        Writes file to destination_path with specified shift
+
+        Parameters
+        ----------
+        file_path : str
+            file path of file to shift
+        destination_path : str
+            where to write file to
+        offset_seconds : float
+            how many seconds to shift
+        """
+        filehandler.shift_write_file(file_path, destination_path, offset_seconds)
 
 
 def _fingerprint_worker(file_path: str, plot=False) -> None:

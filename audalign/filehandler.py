@@ -64,10 +64,11 @@ def read(filename, wrdestination=None, adjust_alignment=None):
         audiofile.export(wrdestination)
 
     if adjust_alignment:
-        shift_file(audiofile, adjust_alignment)
+        shift_write_file(audiofile, adjust_alignment)
 
     return data, audiofile.frame_rate
 
 
-def shift_file(audiofile, adjustment):
+def shift_write_file(file_path, destination_path, offset_seconds):
+    print(file_path, destination_path, offset_seconds)
     pass  # not implemented yet
