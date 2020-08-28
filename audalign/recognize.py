@@ -42,7 +42,6 @@ class FileRecognizer:
             or
 
             None : if no match
-            
         """
 
         t = time.time()
@@ -127,8 +126,9 @@ class FileRecognizer:
         sample_difference_counter : dict{str{int}}
             of the form dict{file_name{number of matching offsets}}
         """
+
         print("Aligning matches")
-        # align by sample_differences
+
         sample_difference_counter = {}
         for file_name, sample_difference in matches:
             if file_name not in sample_difference_counter:
@@ -140,6 +140,22 @@ class FileRecognizer:
         return sample_difference_counter
 
     def process_results(self, results, filter_matches=1):
+        """
+        Takes matches from align_matches, filters and orders them, returns dictionary of match info
+
+        Parameters
+        ----------
+        results : dict{str{int}}
+            of the form dict{file_name{number of matching offsets}}
+        
+        filter_matches : int
+            cutout all matches equal to or less than in frequency, goes down if no matches found above filter
+        
+        Returns
+        -------
+        match_info : dict{dict{}}
+            dict of file_names with match info as values
+        """
 
         complete_match_info = {}
 
