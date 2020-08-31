@@ -61,3 +61,8 @@ class TestInit:
             "audio_files/TestAudio/pink_noise.wav", filter_matches=2
         )
         assert not result2
+
+    def test_align(self):
+        ada = ad.Audalign()
+        result = ada.align("audio_files/shifts", "test_alignment")
+        assert result
