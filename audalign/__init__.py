@@ -112,7 +112,7 @@ class Audalign:
             specifies number of threads to use
         extensions : list[str]
             specify which extensions to fingerprint
-        
+
         Returns
         -------
         None
@@ -148,7 +148,7 @@ class Audalign:
             specifies number of threads to use
         extensions : list[str]
             specify which extensions to fingerprint
-        
+
         Returns
         -------
         None
@@ -219,7 +219,7 @@ class Audalign:
             option to set file name manually rather than use file name in file_path
         plot : boolean
             if true, plots the peaks to be fingerprinted on a spectrogram
-        
+
         Returns
         -------
         None
@@ -249,12 +249,11 @@ class Audalign:
             option to set file name manually rather than use file name in file_path
         plot : boolean
             if true, plots the peaks to be fingerprinted on a spectrogram
-        
+
         Returns
         -------
         [file_name, hashes]
         """
-
 
         file_name, hashes = _fingerprint_worker(file_path, plot=plot)
         filename = os.path.basename(file_path)
@@ -273,12 +272,12 @@ class Audalign:
             file path of target file to recognize
         filter_matches : int
             filters all matches lower than given argument, 1 is recommended
-        
+
         Returns
         -------
         match_result : dict
             dictionary containing match time and match info
-            
+
             or
 
             None : if no match
@@ -388,20 +387,36 @@ class Audalign:
                 total_alignment, files_shifts
             )
 
-            for file_name, shift in files_shifts.items():
-                self._write_shifted_file(
-                    file_names_and_paths[file_name], destination_path, shift
-                )
+            self._write_shifted_files(
+                files_shifts, destination_path, file_names_and_paths
+            )
 
             print(
                 f"{len(files_shifts)} out of {len(file_names_and_paths)} found and aligned"
             )
+
+            files_shifts["match_info"] = total_alignment
             return files_shifts
 
         finally:
             self.file_names = temp_file_names
             self.fingerprinted_files = temp_fingerprinted_files
             self.total_fingerprints = temp_total_fingerprints
+
+    def _write_shifted_files(self, files_shifts, destination_path, names_and_paths):
+        """
+        Writes files to destination_path with specified shift
+
+        Parameters
+        ----------
+        files_shifts : dict{float}
+            dict with file path as key and shift as value
+        destination_path : str
+            folder to write file to
+        names_and_paths : dict{str}
+            dict with name as key and path as value
+        """
+        filehandler.shift_write_files(files_shifts, destination_path, names_and_paths)
 
     def _write_shifted_file(self, file_path, destination_path, offset_seconds):
         """
@@ -412,7 +427,7 @@ class Audalign:
         file_path : str
             file path of file to shift
         destination_path : str
-            where to write file to
+            where to write file to and file name
         offset_seconds : float
             how many seconds to shift
         """
@@ -429,7 +444,7 @@ def _fingerprint_worker(file_path: str, plot=False) -> None:
         file_path to be fingerprinted
     plot : bool
         displays the plot of the peaks if true
-    
+
     Returns
     -------
     file_name : str, hashes : dict{str: [int]}

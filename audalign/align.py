@@ -87,9 +87,7 @@ def find_matches_not_in_file_shifts(total_alignment, files_shifts):
                     if main_name not in nmatch_wt_most:
                         nmatch_wt_most[main_name] = {}
                         nmatch_wt_most[main_name]["match_strength"] = 0
-                        nmatch_wt_most[main_name][
-                            audalign.Audalign.OFFSET_SECS
-                        ] = None
+                        nmatch_wt_most[main_name][audalign.Audalign.OFFSET_SECS] = None
                     if (
                         file_match[audalign.Audalign.CONFIDENCE][0]
                         > nmatch_wt_most[main_name]["match_strength"]
