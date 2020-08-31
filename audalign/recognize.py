@@ -21,7 +21,7 @@ class FileRecognizer:
         None
         """
         self.audalign = audalign
-        self.Fs = fingerprint.DEFAULT_FS
+        self.fs = fingerprint.DEFAULT_FS
 
     def recognize(self, file_path, filter_matches):
         """
@@ -45,7 +45,7 @@ class FileRecognizer:
         """
 
         t = time.time()
-        matches = self.find_matches(file_path, Fs=self.Fs)
+        matches = self.find_matches(file_path, fs=self.fs)
         rough_match = self.align_matches(matches)
 
         file_match = None
@@ -62,7 +62,7 @@ class FileRecognizer:
 
         return None
 
-    def find_matches(self, file_path, Fs=fingerprint.DEFAULT_FS):
+    def find_matches(self, file_path, fs=fingerprint.DEFAULT_FS):
         """
         fingerprints target file, then finds every occurence of exact same hashes in already
         fingerprinted files
@@ -81,17 +81,11 @@ class FileRecognizer:
         """
         file_name = os.path.basename(file_path)
 
+        target_mapper = {}
+
         if file_name not in self.audalign.file_names:
-            try:
-                samples, self.Fs = filehandler.read(file_path)
-                print(f'Fingerprinting "{file_name}"')
-                target_mapper = fingerprint.fingerprint(samples, Fs=Fs)
-            except FileNotFoundError:
-                print(f'"{file_path}" not found')
-                return {}
-            except:
-                print(f'File "{file_path}" could not be decoded')
-                return {}
+            fingerprints = self.audalign._fingerprint_file(file_path)
+            target_mapper = fingerprints[1]
         else:
             for audio_file in self.audalign.fingerprinted_files:
                 if audio_file[0] == file_name:

@@ -118,7 +118,7 @@ class Audalign:
         None
         """
 
-        result = self.__fingerprint_directory(path, plot, nprocesses, extensions)
+        result = self._fingerprint_directory(path, plot, nprocesses, extensions)
 
         if result:
             for processed_file in result:
@@ -130,7 +130,7 @@ class Audalign:
                     self.file_names.append(processed_file[0])
                     self.total_fingerprints += len(processed_file[1])
 
-    def __fingerprint_directory(
+    def _fingerprint_directory(
         self, path, plot=False, nprocesses=None, extensions=["*"]
     ):
         """
@@ -158,7 +158,7 @@ class Audalign:
         for filename, _ in filehandler.find_files(
             path, extensions
         ):  # finds all files to fingerprint
-            file_name = os.path.splitext(filename)
+            file_name = os.path.basename(filename)
             if file_name in self.file_names:
                 print(f"{file_name} already fingerprinted")
                 continue
@@ -224,14 +224,18 @@ class Audalign:
         -------
         None
         """
+        file_name = os.path.basename(file_path)
+        if file_name in self.file_names:
+            print(f"{file_name} already fingerprinted")
+            return None
 
-        file_name, hashes = self.__fingerprint_file(file_path, set_file_name, plot)
+        file_name, hashes = self._fingerprint_file(file_path, set_file_name, plot)
         if file_name != None:
             self.fingerprinted_files.append([file_name, hashes])
             self.file_names.append(file_name)
             self.total_fingerprints += len(hashes)
 
-    def __fingerprint_file(self, file_path, set_file_name=None, plot=False):
+    def _fingerprint_file(self, file_path, set_file_name=None, plot=False):
         """
         Worker function for fingerprint_file
 
@@ -248,22 +252,20 @@ class Audalign:
         
         Returns
         -------
-        None
+        [file_name, hashes]
         """
 
-        file_name = os.path.basename(file_path)
-        if os.path.splitext(file_name)[0] in self.file_names:
-            print(f"{file_name} already fingerprinted")
-            return None, None
 
         file_name, hashes = _fingerprint_worker(file_path, plot=plot)
-        filename = os.path.splitext(os.path.basename(file_path))[0]
+        filename = os.path.basename(file_path)
         file_name = set_file_name or filename
         return [file_name, hashes]
 
     def recognize(self, file_path, filter_matches=1, *args, **kwargs):
         """
         Recognizes given file against already fingerprinted files
+
+        Does not recognize against files with same name and extention
 
         Parameters
         ----------
@@ -446,7 +448,7 @@ def _fingerprint_worker(file_path: str, plot=False) -> None:
         return None, None
 
     print(f"Fingerprinting {file_name}")
-    hashes = fingerprint.fingerprint(channel, Fs=fs, plot=plot)
+    hashes = fingerprint.fingerprint(channel, fs=fs, plot=plot)
     print(f"Finished fingerprinting {file_name}")
 
     return file_name, hashes
