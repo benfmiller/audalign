@@ -418,9 +418,9 @@ class Audalign:
         """
         filehandler.shift_write_files(files_shifts, destination_path, names_and_paths)
 
-    def _write_shifted_file(self, file_path, destination_path, offset_seconds):
+    def write_shifted_file(self, file_path, destination_path, offset_seconds):
         """
-        Writes file to destination_path with specified shift
+        Writes file to destination_path with specified shift in seconds
 
         Parameters
         ----------
@@ -429,7 +429,7 @@ class Audalign:
         destination_path : str
             where to write file to and file name
         offset_seconds : float
-            how many seconds to shift
+            how many seconds to shift, can't be negative
         """
         filehandler.shift_write_file(file_path, destination_path, offset_seconds)
 
