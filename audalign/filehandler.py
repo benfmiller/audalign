@@ -32,7 +32,7 @@ def find_files(path, extensions=["*"]):
                 yield (p, extension)
 
 
-def read(filename, wrdestination=None, adjust_alignment=None):
+def read(filename, wrdestination=None):
     """
     Reads any file supported by pydub (ffmpeg) and returns a numpy array and the bit depth
 
@@ -63,12 +63,8 @@ def read(filename, wrdestination=None, adjust_alignment=None):
     if wrdestination:
         audiofile.export(wrdestination)
 
-    if adjust_alignment:
-        shift_write_file(audiofile, adjust_alignment)
-
     return data, audiofile.frame_rate
 
 
 def shift_write_file(file_path, destination_path, offset_seconds):
     print(file_path, destination_path, offset_seconds)
-    pass  # not implemented yet

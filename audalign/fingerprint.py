@@ -69,7 +69,7 @@ FINGERPRINT_REDUCTION = 30
 
 def fingerprint(
     channel_samples,
-    Fs=DEFAULT_FS,
+    fs=DEFAULT_FS,
     wsize=DEFAULT_WINDOW_SIZE,
     wratio=DEFAULT_OVERLAP_RATIO,
     fan_value=DEFAULT_FAN_VALUE,
@@ -84,7 +84,7 @@ def fingerprint(
     ----------
     channel_samples : array[int]
         audio file data
-    Fs : int
+    fs : int
         Sample Rate
     
     
@@ -97,7 +97,7 @@ def fingerprint(
     arr2D = mlab.specgram(
         channel_samples,
         NFFT=wsize,
-        Fs=Fs,
+        Fs=fs,
         window=mlab.window_hanning,
         noverlap=int(wsize * wratio),
     )[0]

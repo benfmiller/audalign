@@ -7,6 +7,8 @@ def test_always_true():
 
 
 class TestInit:
+
+    test_file = "audio_files/TestAudio/test.wav"
     def test_initialization(self):
 
         ada = ad.Audalign()
@@ -17,18 +19,18 @@ class TestInit:
 
     def test_fingerprint_file(self):
         ada = ad.Audalign()
-        ada.fingerprint_file("audio_files/TestAudio/test.wav")
+        ada.fingerprint_file(self.test_file)
         ada.fingerprint_file(
             "audio_files/TestAudio/test.wav", set_file_name="Sup", plot=False
         )
         assert ada.total_fingerprints > 0
-        assert ada.file_names[0] == "test"
+        assert ada.file_names[0] == "test.wav"
         assert len(ada.fingerprinted_files) == 1
 
         ada.clear_fingerprints()
         assert ada.total_fingerprints == 0
 
-        ada.fingerprint_file("audio_files/TestAudio/test.wav", set_file_name="Sup")
+        ada.fingerprint_file(self.test_file, set_file_name="Sup")
         assert ada.file_names[0] == "Sup"
 
     def test_fingerprint_directory(self):
@@ -45,10 +47,13 @@ class TestInit:
     def test_recognize(self):
 
         ada = ad.Audalign()
-        ada.fingerprint_file("audio_files/TestAudio/test.wav")
+        ada.fingerprint_file(self.test_file)
         assert ada.total_fingerprints > 0
 
-        result = ada.recognize("audio_files/TestAudio/test.wav")
+        ada.fingerprinted_files[0][0] = "different"
+        ada.file_names[0] = "different"
+
+        result = ada.recognize(self.test_file)
         assert len(result) > 1
 
         result2 = ada.recognize("audio_files/TestAudio/pink_noise.wav")
