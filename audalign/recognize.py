@@ -15,7 +15,7 @@ class FileRecognizer:
         ----------
         audalign : Audalign
             instance of Audalign
-        
+
         Returns
         -------
         None
@@ -33,12 +33,12 @@ class FileRecognizer:
             file path of target file
         filter_matches : int
             only returns information on match counts greater than filter_matches
-        
+
         Returns
         -------
         match_result : dict
             dictionary containing match time and match info
-            
+
             or
 
             None : if no match
@@ -48,9 +48,14 @@ class FileRecognizer:
         matches = self.find_matches(file_path, fs=self.fs)
         rough_match = self.align_matches(matches)
 
+        filter_set = False
+
+        if filter_matches != 1:
+            filter_set = True
+
         file_match = None
         if len(rough_match) > 0:
-            file_match = self.process_results(rough_match, filter_matches)
+            file_match = self.process_results(rough_match, filter_matches, filter_set)
         t = time.time() - t
 
         result = {}
@@ -133,7 +138,7 @@ class FileRecognizer:
 
         return sample_difference_counter
 
-    def process_results(self, results, filter_matches=1):
+    def process_results(self, results, filter_matches=1, filter_set=False):
         """
         Takes matches from align_matches, filters and orders them, returns dictionary of match info
 
@@ -141,10 +146,13 @@ class FileRecognizer:
         ----------
         results : dict{str{int}}
             of the form dict{file_name{number of matching offsets}}
-        
+
         filter_matches : int
             cutout all matches equal to or less than in frequency, goes down if no matches found above filter
-        
+
+        filter_set : bool
+            if the filter is manually set, doesn't lower filter if no results
+
         Returns
         -------
         match_info : dict{dict{}}
@@ -187,7 +195,7 @@ class FileRecognizer:
                     nseconds
                 )
 
-        if len(complete_match_info) == 0:
+        if len(complete_match_info) == 0 and filter_set == False:
             return self.process_results(results, filter_matches=filter_matches - 1)
 
         return complete_match_info

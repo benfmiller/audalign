@@ -86,8 +86,8 @@ def fingerprint(
         audio file data
     fs : int
         Sample Rate
-    
-    
+
+
     Returns
     -------
     hashes : dict{str: [int]}
@@ -166,7 +166,7 @@ def generate_hashes(peaks, fan_value=DEFAULT_FAN_VALUE):
     hash_dict = {}
     peaks = list(peaks)
     if PEAK_SORT:
-        sorted(peaks, key=lambda x: x[1])
+        peaks = sorted(peaks, key=lambda x: x[1])
     # print("Length of Peaks List is: {}".format(len(peaks)))
 
     for i in range(len(peaks)):
