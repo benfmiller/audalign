@@ -2,8 +2,6 @@ import os
 import fnmatch
 import numpy as np
 from pydub import AudioSegment
-from pydub.utils import audioop
-from hashlib import sha1
 
 
 def find_files(path, extensions=["*"]):
@@ -62,7 +60,7 @@ def read(filename, wrdestination=None):
 
     if wrdestination:
         with open(wrdestination, "wb") as file_place:
-            audiofile.export(file_place)
+            audiofile.export(file_place, format=os.path.splitext(file_place)[1])
 
     return data, audiofile.frame_rate
 
@@ -100,7 +98,7 @@ def shift_write_files(files_shifts, destination_path, names_and_paths):
     total_name = os.path.join(destination_path, "total.wav")
 
     with open(total_name, "wb") as file_place:
-        total_files.export(file_place)
+        total_files.export(file_place, format="wav")
 
 
 def shift_write_file(file_path, destination_path, offset_seconds):
@@ -117,4 +115,4 @@ def shift_write_file(file_path, destination_path, offset_seconds):
     audiofile = silence + audiofile
 
     with open(destination_path, "wb") as file_place:
-        audiofile.export(file_place)
+        audiofile.export(file_place, format="wav")
