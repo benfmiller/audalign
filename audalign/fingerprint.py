@@ -160,8 +160,8 @@ def get_2D_peaks(arr2D, plot=False, amp_min=DEFAULT_AMP_MIN):
 def generate_hashes(peaks, fan_value=DEFAULT_FAN_VALUE):
     """
     Hash list structure:
-       sha1_hash[0:20]    time_offset
-    [(e05b341a9b77a51fd26, 32), ... ]
+       sha1_hash[0:30]    time_offset
+    [(e05b341a9b77a51fd26..., 32), ... ]
     """
     hash_dict = {}
     peaks = list(peaks)
