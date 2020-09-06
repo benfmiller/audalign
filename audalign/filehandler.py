@@ -65,7 +65,13 @@ def read(filename, wrdestination=None):
     return data, audiofile.frame_rate
 
 
-def shift_write_files(files_shifts, destination_path, names_and_paths):
+def shift_write_files(files_shifts, destination_path, names_and_paths, write_extension):
+
+    cant_write_ext = [".mov", ".mp4"]
+
+    if write_extension:
+        if write_extension[0] != ".":
+            write_extension = "." + write_extension
 
     audsegs = []
     for name in files_shifts.keys():
@@ -85,8 +91,24 @@ def shift_write_files(files_shifts, destination_path, names_and_paths):
 
         audiofile = silence + audiofile
 
-        with open(destination_name, "wb") as file_place:
-            audiofile.export(file_place)
+        if os.path.splitext(destination_name)[1] in cant_write_ext:
+            destination_name = os.path.splitext(destination_name)[0] + ".wav"
+
+        if write_extension:
+            destination_name = os.path.join(
+                os.path.splitext(destination_name)[0], write_extension
+            )
+
+            with open(destination_name, "wb") as file_place:
+                audiofile.export(
+                    file_place, format=os.path.splitext(destination_name)[1][1:]
+                )
+
+        else:
+            with open(destination_name, "wb") as file_place:
+                audiofile.export(
+                    file_place, format=os.path.splitext(destination_name)[1][1:]
+                )
 
         audsegs += [audiofile]
 
@@ -95,10 +117,19 @@ def shift_write_files(files_shifts, destination_path, names_and_paths):
     for i in audsegs[1:]:
         total_files = total_files.overlay(i)
 
-    total_name = os.path.join(destination_path, "total.wav")
+    if write_extension:
 
-    with open(total_name, "wb") as file_place:
-        total_files.export(file_place, format="wav")
+        total_name = os.path.join(destination_path, "total", write_extension)
+
+        with open(total_name, "wb") as file_place:
+            total_files.export(file_place, format=os.path.splitext(total_name)[1][1:])
+
+    else:
+
+        total_name = os.path.join(destination_path, "total.wav")
+
+        with open(total_name, "wb") as file_place:
+            total_files.export(file_place, format=os.path.splitext(total_name)[1][1:])
 
 
 def shift_write_file(file_path, destination_path, offset_seconds):
@@ -115,4 +146,8 @@ def shift_write_file(file_path, destination_path, offset_seconds):
     audiofile = silence + audiofile
 
     with open(destination_path, "wb") as file_place:
-        audiofile.export(file_place, format="wav")
+        audiofile.export(file_place, format=os.path.splitext(destination_path)[1][1:])
+
+
+def convert_audio_file():
+    pass
