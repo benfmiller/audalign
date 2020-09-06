@@ -12,12 +12,12 @@ def main():
     t = time.time()
     # result = ada.recognize("audio_files/TestAudio/test.wav")
     # ada.fingerprint_file("audio_files/TestAudio/Street.wav")
-    # ada.multiprocessing = False
-    # ada.fingerprint_directory("audio_files")
-    print(ada.align("audio_files/shifts", "test_alignment"))
+    # ada.write_processed_file("audio_files/shifts")
+    # ada.fingerprint_directory("audio_files/processed_audio")
+    # print(ada.align("audio_files/shifts", "test_alignment"))
     t = time.time() - t
     # print(f"It took {t} seconds to complete.")
-    # print(f"Total fingerprints: {ada.total_fingerprints}")
+    print(f"Total fingerprints: {ada.total_fingerprints}")
     # print(
     # f"Number of fingerprinted files: {len(ada.fingerprinted_files)} : {len(ada.file_names)}"
     # )

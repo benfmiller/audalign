@@ -195,7 +195,7 @@ class Audalign:
 
             for filename in filenames_to_fingerprint:
                 try:
-                    file_name = os.path.splitext(filename)
+                    file_name = os.path.basename(filename)
                     if file_name in self.file_names:
                         print(f"{file_name} already fingerprinted, continuing...")
                         continue
@@ -338,7 +338,7 @@ class Audalign:
         self.fingerprinted_files = []
         self.total_fingerprints = 0
 
-    def align(self, directory_path, destination_path):
+    def align(self, directory_path, destination_path, write_extension=None):
         """
         Finds matches and relative offsets for all files in directory_path, aligns them, and writes them to destination_path
 
@@ -349,6 +349,9 @@ class Audalign:
 
         destination_path : str
             String of path to write alignments to
+
+        write_extension : str
+            if given, writes all alignments with given extension
 
         Returns
         -------
@@ -388,7 +391,7 @@ class Audalign:
             )
 
             self._write_shifted_files(
-                files_shifts, destination_path, file_names_and_paths
+                files_shifts, destination_path, file_names_and_paths, write_extension
             )
 
             print(
@@ -403,7 +406,9 @@ class Audalign:
             self.fingerprinted_files = temp_fingerprinted_files
             self.total_fingerprints = temp_total_fingerprints
 
-    def _write_shifted_files(self, files_shifts, destination_path, names_and_paths):
+    def _write_shifted_files(
+        self, files_shifts, destination_path, names_and_paths, write_extension
+    ):
         """
         Writes files to destination_path with specified shift
 
@@ -416,7 +421,9 @@ class Audalign:
         names_and_paths : dict{str}
             dict with name as key and path as value
         """
-        filehandler.shift_write_files(files_shifts, destination_path, names_and_paths)
+        filehandler.shift_write_files(
+            files_shifts, destination_path, names_and_paths, write_extension
+        )
 
     def write_shifted_file(self, file_path, destination_path, offset_seconds):
         """
