@@ -100,9 +100,4 @@ def find_matches_not_in_file_shifts(total_alignment, files_shifts):
                             - files_shifts[match_name]
                         )
 
-    # shift over so min is 0
-    min_shift = min(files_shifts.values())
-    for shift in files_shifts.keys():
-        files_shifts[shift] -= min_shift
-
     return files_shifts
