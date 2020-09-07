@@ -440,6 +440,19 @@ class Audalign:
         """
         filehandler.shift_write_file(file_path, destination_path, offset_seconds)
 
+    def convert_audio_file(self, file_path, destination_path):
+        """
+        Convert audio file to type specified in destination path
+
+        Parameters
+        ----------
+        file_path : str
+            file path of file to shift
+        destination_path : str
+            where to write file to and file name
+        """
+        filehandler.convert_audio_file(file_path, destination_path)
+
 
 def _fingerprint_worker(file_path: str, plot=False) -> None:
     """

@@ -60,7 +60,7 @@ def read(filename, wrdestination=None):
 
     if wrdestination:
         with open(wrdestination, "wb") as file_place:
-            audiofile.export(file_place, format=os.path.splitext(file_place)[1])
+            audiofile.export(file_place, format=os.path.splitext(file_place)[1][1:])
 
     return data, audiofile.frame_rate
 
@@ -149,5 +149,13 @@ def shift_write_file(file_path, destination_path, offset_seconds):
         audiofile.export(file_place, format=os.path.splitext(destination_path)[1][1:])
 
 
-def convert_audio_file():
-    pass
+def convert_audio_file(file_path, destination_path):
+    audiofile = AudioSegment.from_file(file_path)
+
+    audiofile = audiofile.set_frame_rate(44100)
+    audiofile = audiofile.set_sample_width(2)
+    audiofile = audiofile.set_channels(1)
+    audiofile = audiofile.normalize()
+
+    with open(destination_path, "wb") as file_place:
+        audiofile.export(file_place, format=os.path.splitext(destination_path)[1][1:])
