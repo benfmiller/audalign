@@ -264,6 +264,7 @@ class Audalign:
         """
         Recognizes given file against already fingerprinted files
 
+        Offset describes duration that the recognized file aligns after the target file
         Does not recognize against files with same name and extention
 
         Parameters

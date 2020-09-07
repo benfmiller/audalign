@@ -2,19 +2,17 @@ def main():
     import audalign as ad
     import time
 
-    # TODO: New fingerprint algorithm
-    # TODO: Document and type hint
-    # TODO: complete align function
-    # TODO: write aligned files function
-    # TODO: add location information to fingerprint
+    # TODO: improve fingerprint algorithm
+    # TODO: type hint
+    # TODO: improve alignment
 
     ada = ad.Audalign()  # "all_audio.json")
     t = time.time()
     # result = ada.recognize("audio_files/TestAudio/test.wav")
     # ada.fingerprint_file("audio_files/TestAudio/Street.wav")
-    ada.convert_audio_file("audio_files/shifts/Eigen-song-base.wav", "Eigen-song-base.mp3")
+    # ada.convert_audio_file("audio_files/shifts/Eigen-song-base.wav", "Eigen-song-base.mp3")
     # ada.fingerprint_directory("audio_files/processed_audio")
-    # print(ada.align("audio_files/shifts", "test_alignment"))
+    print(ada.align("audio_files/shifts", "test_alignment"))
     t = time.time() - t
     # print(f"It took {t} seconds to complete.")
     # print(f"Total fingerprints: {ada.total_fingerprints}")
