@@ -8,8 +8,6 @@ mp3
 plots
 .vscode
 env_with_system
-dejavu-m*
-molasses-m*
 *.mp4
 *.MOV
 *.pkf
@@ -19,3 +17,4 @@ ResearchMaher
 Panako*
 workj*
 *.coverage
+figuring*
