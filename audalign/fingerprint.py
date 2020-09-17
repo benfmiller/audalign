@@ -39,7 +39,8 @@ DEFAULT_FAN_VALUE = 15
 # Minimum amplitude in spectrogram in order to be considered a peak.
 # This can be raised to reduce number of fingerprints, but can negatively
 # affect accuracy.
-DEFAULT_AMP_MIN = 10
+# 50 roughly cuts number of fingerprints in half compared to 0
+DEFAULT_AMP_MIN = 65
 
 ######################################################################
 # Number of cells around an amplitude peak in the spectrogram in order
@@ -51,7 +52,7 @@ PEAK_NEIGHBORHOOD_SIZE = 20
 # Thresholds on how close or far fingerprints can be in time in order
 # to be paired as a fingerprint. If your max is too low, higher values of
 # DEFAULT_FAN_VALUE may not perform as expected.
-MIN_HASH_TIME_DELTA = 0
+MIN_HASH_TIME_DELTA = 1
 MAX_HASH_TIME_DELTA = 200
 
 ######################################################################
@@ -64,7 +65,7 @@ PEAK_SORT = True
 # Number of bits to grab from the front of the SHA1 hash in the
 # fingerprint calculation. The more you grab, the more memory storage,
 # with potentially lesser collisions of matches.
-FINGERPRINT_REDUCTION = 30
+FINGERPRINT_REDUCTION = 20
 
 
 def fingerprint(
@@ -103,7 +104,7 @@ def fingerprint(
     )[0]
 
     # apply log transform since specgram() returns linear array
-    arr2D = 10 * np.log10(arr2D)
+    arr2D = 10 * np.log2(arr2D)
     arr2D[arr2D == -np.inf] = 0  # replace infs with zeros
 
     # find local maxima
@@ -169,25 +170,38 @@ def generate_hashes(peaks, fan_value=DEFAULT_FAN_VALUE):
         peaks = sorted(peaks, key=lambda x: x[1])
     # print("Length of Peaks List is: {}".format(len(peaks)))
 
-    for i in range(len(peaks)):
-        for j in range(1, fan_value):
-            if (i + j) < len(peaks):
+    
 
-                freq1 = peaks[i][IDX_FREQ_I]
+    for i in range(0, len(peaks), 1):
+        freq1 = peaks[i][IDX_FREQ_I]
+        t1 = peaks[i][IDX_TIME_J]
+        for j in range(1, fan_value - 1):
+            if i + j < len(peaks):
                 freq2 = peaks[i + j][IDX_FREQ_I]
-                t1 = peaks[i][IDX_TIME_J]
                 t2 = peaks[i + j][IDX_TIME_J]
-                t_delta = t2 - t1
+                for k in range(j + 1, fan_value):
+                    if (i + k) < len(peaks):
 
-                if t_delta >= MIN_HASH_TIME_DELTA and t_delta <= MAX_HASH_TIME_DELTA:
-                    h = hashlib.sha1(
-                        "{}|{}|{}".format(str(freq1), str(freq2), str(t_delta)).encode(
-                            "utf-8"
-                        )
-                    ).hexdigest()[0:FINGERPRINT_REDUCTION]
-                    if h not in hash_dict:
-                        hash_dict[h] = [int(t1)]
-                    else:
-                        hash_dict[h] += [int(t1)]
+                        freq3 = peaks[i + k][IDX_FREQ_I]
+                        t3 = peaks[i + k][IDX_TIME_J]
+
+                        t_delta = t3 - t1
+
+                        if t_delta >= MIN_HASH_TIME_DELTA and t_delta <= MAX_HASH_TIME_DELTA:
+
+                            t_delta = t2 - t1
+
+                            if t_delta >= MIN_HASH_TIME_DELTA and t_delta <= MAX_HASH_TIME_DELTA:
+                                h = hashlib.sha1(
+                                    # f"{freq1}|{freq2}|{t_delta}".encode(
+                                    # f"{freq1-freq2}|{freq2-freq3}|{freq1//400}|{freq3//400}|{(t2-t1)/(t3-t1):.8f}".encode(
+                                    f"{freq1-freq2}|{freq2-freq3}|{(t2-t1)/(t3-t1):.8f}".encode(
+                                        "utf-8"
+                                    )
+                                ).hexdigest()[0:FINGERPRINT_REDUCTION]
+                                if h not in hash_dict:
+                                    hash_dict[h] = [int(t1)]
+                                else:
+                                    hash_dict[h] += [int(t1)]
 
     return hash_dict

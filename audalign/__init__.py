@@ -455,7 +455,7 @@ class Audalign:
         filehandler.convert_audio_file(file_path, destination_path)
 
 
-def _fingerprint_worker(file_path: str, plot=False) -> None:
+def _fingerprint_worker(file_path: str, plot=False, amp_min=None) -> None:
     """
     Runs the file through the fingerprinter and returns file_name and hashes
 
@@ -465,6 +465,8 @@ def _fingerprint_worker(file_path: str, plot=False) -> None:
         file_path to be fingerprinted
     plot : bool
         displays the plot of the peaks if true
+    amp_min : int
+        minimum amplitude to be considered a peak
 
     Returns
     -------
@@ -484,7 +486,11 @@ def _fingerprint_worker(file_path: str, plot=False) -> None:
         return None, None
 
     print(f"Fingerprinting {file_name}")
-    hashes = fingerprint.fingerprint(channel, fs=fs, plot=plot)
+    if amp_min:
+        hashes = fingerprint.fingerprint(channel, fs=fs, plot=plot, amp_min=amp_min)
+    else:
+        hashes = fingerprint.fingerprint(channel, fs=fs, plot=plot)
+
     print(f"Finished fingerprinting {file_name}")
 
     return file_name, hashes

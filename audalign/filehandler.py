@@ -123,7 +123,7 @@ def shift_write_files(files_shifts, destination_path, names_and_paths, write_ext
 
         audsegs += [audiofile]
 
-    # lower volume so the sum is the same volume
+    # lower volume so the sum is the same volume, -1 to account for match_info
     total_files = audsegs[0] - (3 * math.log(len(files_shifts) - 1, 2))
 
     for i in audsegs[1:]:
