@@ -19,9 +19,12 @@ class Audalign:
     OFFSET_SAMPLES = "offset_samples"
     OFFSET_SECS = "offset_seconds"
 
-    def __init__(self, *args, multiprocessing=True):
+    def __init__(self, *args, multiprocessing=True, accuracy=2):
         """
         Constructs new audalign object
+
+        There are four accuracy levels with 1 being the lowest accuracy but the fastest. 3 is the highest recommended.
+        4 gives the highest accuracy, but can take several gigabytes of memory
 
         multiprocessing is set to True by default
 
@@ -256,8 +259,7 @@ class Audalign:
         """
 
         file_name, hashes = _fingerprint_worker(file_path, plot=plot)
-        filename = os.path.basename(file_path)
-        file_name = set_file_name or filename
+        file_name = set_file_name or file_name
         return [file_name, hashes]
 
     def recognize(self, file_path, filter_matches=1, *args, **kwargs):
