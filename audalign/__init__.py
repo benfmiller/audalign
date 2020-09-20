@@ -43,6 +43,57 @@ class Audalign:
         if len(args) > 0:
             self.load_fingerprinted_files(args[0])
 
+        self.fan_value = fingerprint.DEFAULT_FAN_VALUE
+        self.amp_min = fingerprint.DEFAULT_AMP_MIN
+        self.min_hash_time_delta = fingerprint.MIN_HASH_TIME_DELTA
+        self.max_hash_time_delta = fingerprint.MAX_HASH_TIME_DELTA
+        self.peak_sort = fingerprint.PEAK_SORT
+
+        if accuracy != 2:
+            self.set_accuracy(accuracy)
+
+        
+    def set_accuracy(self, accuracy):
+        """
+        Sets the accuracy level of audalign object
+
+        There are four accuracy levels with 1 being the lowest accuracy but the fastest. 3 is the highest recommended.
+        4 gives the highest accuracy, but can take several gigabytes of memory for a couple files.
+        Accuracy settings are acheived by manipulations in fingerprinting variables.
+        
+        Specific values for accuracy levels were chosen semi-arbitrarily from experimentation to give a few good options.
+
+        Parameters
+        ----------
+            accuracy : int
+                which accuracy level: 1-4
+        """
+        if accuracy == 1:
+            self.fan_value = 15
+            self.amp_min = 80
+            self.min_hash_time_delta = fingerprint.MIN_HASH_TIME_DELTA
+            self.max_hash_time_delta = fingerprint.MAX_HASH_TIME_DELTA
+            self.peak_sort = True
+        elif accuracy == 2:
+            self.fan_value = fingerprint.DEFAULT_FAN_VALUE
+            self.amp_min = fingerprint.DEFAULT_AMP_MIN
+            self.min_hash_time_delta = fingerprint.MIN_HASH_TIME_DELTA
+            self.max_hash_time_delta = fingerprint.MAX_HASH_TIME_DELTA
+            self.peak_sort = fingerprint.PEAK_SORT
+        elif accuracy == 3:
+            self.fan_value = 40
+            self.amp_min = 60
+            self.min_hash_time_delta = 1
+            self.max_hash_time_delta = 400
+            self.peak_sort = True
+        elif accuracy == 4:
+            self.fan_value = 60
+            self.amp_min = 55
+            self.min_hash_time_delta = 1
+            self.max_hash_time_delta = 2000
+            self.peak_sort = True
+
+
     def save_fingerprinted_files(self, filename: str) -> None:
         """
         Serializes fingerprinted files to json or pickle file
@@ -172,7 +223,7 @@ class Audalign:
             print("Directory contains 0 files or could not be found")
             return
 
-        _fingerprint_worker_directory = partial(_fingerprint_worker, plot=plot)
+        _fingerprint_worker_directory = partial(_fingerprint_worker, fan_value=self.fan_value, amp_min=self.amp_min, min_hash_time=self.min_hash_time_delta, max_hash_time=self.max_hash_time_delta, peak_sort=self.peak_sort, plot=plot)
 
         if self.multiprocessing == True:
 
@@ -259,7 +310,8 @@ class Audalign:
         [file_name, hashes]
         """
 
-        file_name, hashes = _fingerprint_worker(file_path, plot=plot)
+        
+        file_name, hashes = _fingerprint_worker(file_path, self.fan_value, self.amp_min, self.min_hash_time_delta, self.max_hash_time_delta, self.peak_sort, plot=plot)
         file_name = set_file_name or file_name
         return [file_name, hashes]
 
@@ -324,7 +376,7 @@ class Audalign:
         -------
         None
         """
-        _fingerprint_worker(file_path, plot=True)
+        self._fingerprint_file(file_path, plot=True)
 
     def clear_fingerprints(self):
         """
@@ -458,7 +510,7 @@ class Audalign:
         filehandler.convert_audio_file(file_path, destination_path)
 
 
-def _fingerprint_worker(file_path: str, plot=False, amp_min=None) -> None:
+def _fingerprint_worker(file_path: str, fan_value=fingerprint.DEFAULT_FAN_VALUE, amp_min=fingerprint.DEFAULT_AMP_MIN, min_hash_time=fingerprint.MIN_HASH_TIME_DELTA, max_hash_time=fingerprint.MAX_HASH_TIME_DELTA, peak_sort=fingerprint.PEAK_SORT, plot=False) -> None:
     """
     Runs the file through the fingerprinter and returns file_name and hashes
 
@@ -489,10 +541,7 @@ def _fingerprint_worker(file_path: str, plot=False, amp_min=None) -> None:
         return None, None
 
     print(f"Fingerprinting {file_name}")
-    if amp_min:
-        hashes = fingerprint.fingerprint(channel, fs=fs, plot=plot, amp_min=amp_min)
-    else:
-        hashes = fingerprint.fingerprint(channel, fs=fs, plot=plot)
+    hashes = fingerprint.fingerprint(channel, fan_value=fan_value, amp_min=amp_min, min_hash_time_delta=min_hash_time, max_hash_time_delta=max_hash_time, peak_sort=peak_sort, plot=plot)
 
     print(f"Finished fingerprinting {file_name}")
 

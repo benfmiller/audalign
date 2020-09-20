@@ -52,7 +52,7 @@ PEAK_NEIGHBORHOOD_SIZE = 20
 # Thresholds on how close or far fingerprints can be in time in order
 # to be paired as a fingerprint. If your max is too low, higher values of
 # DEFAULT_FAN_VALUE may not perform as expected.
-MIN_HASH_TIME_DELTA = 1
+MIN_HASH_TIME_DELTA = 10
 MAX_HASH_TIME_DELTA = 200
 
 ######################################################################
@@ -75,6 +75,9 @@ def fingerprint(
     wratio=DEFAULT_OVERLAP_RATIO,
     fan_value=DEFAULT_FAN_VALUE,
     amp_min=DEFAULT_AMP_MIN,
+    min_hash_time_delta=MIN_HASH_TIME_DELTA,
+    max_hash_time_delta=MAX_HASH_TIME_DELTA,
+    peak_sort=PEAK_SORT,
     plot=False,
 ):
     """
@@ -111,7 +114,7 @@ def fingerprint(
     local_maxima = get_2D_peaks(arr2D, plot=plot, amp_min=amp_min)
 
     # return hashes
-    return generate_hashes(local_maxima, fan_value=fan_value)
+    return generate_hashes(local_maxima, fan_value, min_hash_time_delta, max_hash_time_delta, peak_sort)
 
 
 def get_2D_peaks(arr2D, plot=False, amp_min=DEFAULT_AMP_MIN):
@@ -158,7 +161,7 @@ def get_2D_peaks(arr2D, plot=False, amp_min=DEFAULT_AMP_MIN):
     return zip(frequency_idx, time_idx)
 
 
-def generate_hashes(peaks, fan_value=DEFAULT_FAN_VALUE):
+def generate_hashes(peaks, fan_value, min_hash_time_delta, max_hash_time_delta, peak_sort):
     """
     Hash list structure:
        sha1_hash[0:30]    time_offset
@@ -166,11 +169,9 @@ def generate_hashes(peaks, fan_value=DEFAULT_FAN_VALUE):
     """
     hash_dict = {}
     peaks = list(peaks)
-    if PEAK_SORT:
+    if peak_sort:
         peaks = sorted(peaks, key=lambda x: x[1])
     # print("Length of Peaks List is: {}".format(len(peaks)))
-
-    
 
     for i in range(0, len(peaks), 1):
         freq1 = peaks[i][IDX_FREQ_I]
@@ -187,11 +188,17 @@ def generate_hashes(peaks, fan_value=DEFAULT_FAN_VALUE):
 
                         t_delta = t3 - t1
 
-                        if t_delta >= MIN_HASH_TIME_DELTA and t_delta <= MAX_HASH_TIME_DELTA:
+                        if (
+                            t_delta >= min_hash_time_delta
+                            and t_delta <= max_hash_time_delta
+                        ):
 
                             t_delta = t2 - t1
 
-                            if t_delta >= MIN_HASH_TIME_DELTA and t_delta <= MAX_HASH_TIME_DELTA:
+                            if (
+                                t_delta >= min_hash_time_delta
+                                and t_delta <= max_hash_time_delta
+                            ):
                                 h = hashlib.sha1(
                                     # f"{freq1}|{freq2}|{t_delta}".encode(
                                     # f"{freq1-freq2}|{freq2-freq3}|{freq1//400}|{freq3//400}|{(t2-t1)/(t3-t1):.8f}".encode(
