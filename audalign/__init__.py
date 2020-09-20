@@ -24,7 +24,8 @@ class Audalign:
         Constructs new audalign object
 
         There are four accuracy levels with 1 being the lowest accuracy but the fastest. 3 is the highest recommended.
-        4 gives the highest accuracy, but can take several gigabytes of memory
+        4 gives the highest accuracy, but can take several gigabytes of memory for a couple files.
+        Accuracy settings are acheived by manipulations in fingerprinting variables.
 
         multiprocessing is set to True by default
 

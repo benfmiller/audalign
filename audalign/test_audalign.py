@@ -58,7 +58,7 @@ class TestInit:
         assert len(result) > 1
 
         result2 = ada.recognize(
-            "audio_files/TestAudio/pink_noise.wav", filter_matches=2
+            "audio_files/TestAudio/pink_noise.wav", filter_matches=3
         )
         assert not result2
 

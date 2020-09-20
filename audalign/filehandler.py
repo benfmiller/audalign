@@ -3,6 +3,7 @@ import fnmatch
 import numpy as np
 from pydub import AudioSegment
 import math
+from audalign.fingerprint import DEFAULT_FS
 
 
 def find_files(path, extensions=["*"]):
@@ -52,7 +53,7 @@ def read(filename, wrdestination=None):
 
     audiofile = AudioSegment.from_file(filename)
 
-    audiofile = audiofile.set_frame_rate(44100)
+    audiofile = audiofile.set_frame_rate(DEFAULT_FS)
     audiofile = audiofile.set_sample_width(2)
     audiofile = audiofile.set_channels(1)
     audiofile = audiofile.normalize()
@@ -83,12 +84,12 @@ def shift_write_files(files_shifts, destination_path, names_and_paths, write_ext
         file_path = names_and_paths[name]
 
         silence = AudioSegment.silent(
-            (max_shift - files_shifts[name]) * 1000, frame_rate=44100
+            (max_shift - files_shifts[name]) * 1000, frame_rate=DEFAULT_FS
         )
 
         audiofile = AudioSegment.from_file(file_path)
 
-        audiofile = audiofile.set_frame_rate(44100)
+        audiofile = audiofile.set_frame_rate(DEFAULT_FS)
         audiofile = audiofile.set_sample_width(2)
         audiofile = audiofile.set_channels(1)
         audiofile = audiofile.normalize()
@@ -152,11 +153,11 @@ def shift_write_files(files_shifts, destination_path, names_and_paths, write_ext
 
 def shift_write_file(file_path, destination_path, offset_seconds):
 
-    silence = AudioSegment.silent(offset_seconds * 1000, frame_rate=44100)
+    silence = AudioSegment.silent(offset_seconds * 1000, frame_rate=DEFAULT_FS)
 
     audiofile = AudioSegment.from_file(file_path)
 
-    audiofile = audiofile.set_frame_rate(44100)
+    audiofile = audiofile.set_frame_rate(DEFAULT_FS)
     audiofile = audiofile.set_sample_width(2)
     audiofile = audiofile.set_channels(1)
     audiofile = audiofile.normalize()
@@ -170,7 +171,7 @@ def shift_write_file(file_path, destination_path, offset_seconds):
 def convert_audio_file(file_path, destination_path):
     audiofile = AudioSegment.from_file(file_path)
 
-    audiofile = audiofile.set_frame_rate(44100)
+    audiofile = audiofile.set_frame_rate(DEFAULT_FS)
     audiofile = audiofile.set_sample_width(2)
     audiofile = audiofile.set_channels(1)
     audiofile = audiofile.normalize()
