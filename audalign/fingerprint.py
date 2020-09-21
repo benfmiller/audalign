@@ -79,6 +79,7 @@ def fingerprint(
     max_hash_time_delta=MAX_HASH_TIME_DELTA,
     peak_sort=PEAK_SORT,
     plot=False,
+    hash_style="panako",
 ):
     """
     FFT the channel, log transform output, find local maxima, then return
@@ -114,7 +115,14 @@ def fingerprint(
     local_maxima = get_2D_peaks(arr2D, plot=plot, amp_min=amp_min)
 
     # return hashes
-    return generate_hashes(local_maxima, fan_value, min_hash_time_delta, max_hash_time_delta, peak_sort)
+    return generate_hashes(
+        local_maxima,
+        fan_value,
+        min_hash_time_delta,
+        max_hash_time_delta,
+        peak_sort,
+        hash_style,
+    )
 
 
 def get_2D_peaks(arr2D, plot=False, amp_min=DEFAULT_AMP_MIN):
@@ -161,18 +169,31 @@ def get_2D_peaks(arr2D, plot=False, amp_min=DEFAULT_AMP_MIN):
     return zip(frequency_idx, time_idx)
 
 
-def generate_hashes(peaks, fan_value, min_hash_time_delta, max_hash_time_delta, peak_sort):
+def generate_hashes(
+    peaks, fan_value, min_hash_time_delta, max_hash_time_delta, peak_sort, hash_style
+):
     """
     Hash list structure:
        sha1_hash[0:30]    time_offset
     [(e05b341a9b77a51fd26..., 32), ... ]
     """
-    hash_dict = {}
     peaks = list(peaks)
     if peak_sort:
         peaks = sorted(peaks, key=lambda x: x[1])
     # print("Length of Peaks List is: {}".format(len(peaks)))
 
+    if hash_style == "panako_mod":
+        return panako_mod(peaks, fan_value, min_hash_time_delta, max_hash_time_delta)
+    elif hash_style == "base":
+        return base(peaks, fan_value, min_hash_time_delta, max_hash_time_delta)
+    elif hash_style == "panako":
+        return panako(peaks, fan_value, min_hash_time_delta, max_hash_time_delta)
+    elif hash_style == "base_three":
+        return base_three(peaks, fan_value, min_hash_time_delta, max_hash_time_delta)
+
+
+def panako_mod(peaks, fan_value, min_hash_time_delta, max_hash_time_delta):
+    hash_dict = {}
     for i in range(0, len(peaks), 1):
         freq1 = peaks[i][IDX_FREQ_I]
         t1 = peaks[i][IDX_TIME_J]
@@ -200,8 +221,6 @@ def generate_hashes(peaks, fan_value, min_hash_time_delta, max_hash_time_delta, 
                                 and t_delta <= max_hash_time_delta
                             ):
                                 h = hashlib.sha1(
-                                    # f"{freq1}|{freq2}|{t_delta}".encode(
-                                    # f"{freq1-freq2}|{freq2-freq3}|{freq1//400}|{freq3//400}|{(t2-t1)/(t3-t1):.8f}".encode(
                                     f"{freq1-freq2}|{freq2-freq3}|{(t2-t1)/(t3-t1):.8f}".encode(
                                         "utf-8"
                                     )
@@ -210,5 +229,107 @@ def generate_hashes(peaks, fan_value, min_hash_time_delta, max_hash_time_delta, 
                                     hash_dict[h] = [int(t1)]
                                 else:
                                     hash_dict[h] += [int(t1)]
+    return hash_dict
 
+
+def base(peaks, fan_value, min_hash_time_delta, max_hash_time_delta):
+    hash_dict = {}
+    for i in range(0, len(peaks), 1):
+        freq1 = peaks[i][IDX_FREQ_I]
+        t1 = peaks[i][IDX_TIME_J]
+        for j in range(1, fan_value):
+            if i + j < len(peaks):
+                freq2 = peaks[i + j][IDX_FREQ_I]
+                t2 = peaks[i + j][IDX_TIME_J]
+                t_delta = t2 - t1
+
+                if t_delta >= min_hash_time_delta and t_delta <= max_hash_time_delta:
+
+                    h = hashlib.sha1(
+                        f"{freq1}|{freq2}|{t_delta}".encode("utf-8")
+                    ).hexdigest()[0:FINGERPRINT_REDUCTION]
+                    if h not in hash_dict:
+                        hash_dict[h] = [int(t1)]
+                    else:
+                        hash_dict[h] += [int(t1)]
+    return hash_dict
+
+
+def panako(peaks, fan_value, min_hash_time_delta, max_hash_time_delta):
+    hash_dict = {}
+    for i in range(0, len(peaks), 1):
+        freq1 = peaks[i][IDX_FREQ_I]
+        t1 = peaks[i][IDX_TIME_J]
+        for j in range(1, fan_value - 1):
+            if i + j < len(peaks):
+                freq2 = peaks[i + j][IDX_FREQ_I]
+                t2 = peaks[i + j][IDX_TIME_J]
+                for k in range(j + 1, fan_value):
+                    if (i + k) < len(peaks):
+
+                        freq3 = peaks[i + k][IDX_FREQ_I]
+                        t3 = peaks[i + k][IDX_TIME_J]
+
+                        t_delta1 = t3 - t1
+
+                        if (
+                            t_delta1 >= min_hash_time_delta
+                            and t_delta1 <= max_hash_time_delta
+                        ):
+
+                            t_delta2 = t2 - t1
+
+                            if (
+                                t_delta2 >= min_hash_time_delta
+                                and t_delta2 <= max_hash_time_delta
+                            ):
+                                h = hashlib.sha1(
+                                    f"{freq1-freq2}|{freq2-freq3}|{freq1//400}|{freq3//400}|{(t_delta2)/(t_delta1):.8f}".encode(
+                                        "utf-8"
+                                    )
+                                ).hexdigest()[0:FINGERPRINT_REDUCTION]
+                                if h not in hash_dict:
+                                    hash_dict[h] = [int(t1)]
+                                else:
+                                    hash_dict[h] += [int(t1)]
+    return hash_dict
+
+
+def base_three(peaks, fan_value, min_hash_time_delta, max_hash_time_delta):
+    hash_dict = {}
+    for i in range(0, len(peaks), 1):
+        freq1 = peaks[i][IDX_FREQ_I]
+        t1 = peaks[i][IDX_TIME_J]
+        for j in range(1, fan_value - 1):
+            if i + j < len(peaks):
+                freq2 = peaks[i + j][IDX_FREQ_I]
+                t2 = peaks[i + j][IDX_TIME_J]
+                for k in range(j + 1, fan_value):
+                    if (i + k) < len(peaks):
+
+                        freq3 = peaks[i + k][IDX_FREQ_I]
+                        t3 = peaks[i + k][IDX_TIME_J]
+
+                        t_delta1 = t3 - t1
+
+                        if (
+                            t_delta1 >= min_hash_time_delta
+                            and t_delta1 <= max_hash_time_delta
+                        ):
+
+                            t_delta2 = t2 - t1
+
+                            if (
+                                t_delta2 >= min_hash_time_delta
+                                and t_delta2 <= max_hash_time_delta
+                            ):
+                                h = hashlib.sha1(
+                                    f"{freq1}|{freq2}|{freq3}|{t_delta1}|{t_delta2}".encode(
+                                        "utf-8"
+                                    )
+                                ).hexdigest()[0:FINGERPRINT_REDUCTION]
+                                if h not in hash_dict:
+                                    hash_dict[h] = [int(t1)]
+                                else:
+                                    hash_dict[h] += [int(t1)]
     return hash_dict
