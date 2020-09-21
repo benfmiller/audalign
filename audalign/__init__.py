@@ -27,17 +27,17 @@ class Audalign:
 
         hash style has four options. All fingerprints must be of the same hash style to match.
 
-            'base' hash style consists of two peaks. Two frequencies and a time difference. 
-            Creates many matches but is insensitive to noise.
-        
-            'panako' hash style consists of three peaks. Two differences in frequency, two frequency
-            bands, one time difference ratio. Creates few matches, very resistant to noise.
+        'base' hash style consists of two peaks. Two frequencies and a time difference. 
+        Creates many matches but is insensitive to noise.
+    
+        'panako' hash style consists of three peaks. Two differences in frequency, two frequency
+        bands, one time difference ratio. Creates few matches, very resistant to noise.
 
-            'panako_mod' hash style consists of three peaks. Two differences in frequency and one
-            time difference ratio. Creates less matches than base, more than panako. moderately
-            resistant to noise
+        'panako_mod' hash style consists of three peaks. Two differences in frequency and one
+        time difference ratio. Creates less matches than base, more than panako. moderately
+        resistant to noise
 
-            'base_three' hash style consists of three peaks. Three frequencies and two time differences.
+        'base_three' hash style consists of three peaks. Three frequencies and two time differences.
 
         multiprocessing is set to True by default
 
@@ -52,7 +52,7 @@ class Audalign:
         multiprocessing : bool
             option to turn off multiprocessing
         hash_style : str
-            which hash style to use ; ['base','panako_mod','panako', 'base_three']
+            which hash style to use : ['base','panako_mod','panako', 'base_three']
         accuracy : int
             which accuracy level 1-4
         """
@@ -433,7 +433,7 @@ class Audalign:
         self.fingerprinted_files = []
         self.total_fingerprints = 0
 
-    def align(self, directory_path, destination_path, write_extension=None):
+    def align(self, directory_path, destination_path, write_extension=None, filter_matches=1):
         """
         Finds matches and relative offsets for all files in directory_path, aligns them, and writes them to destination_path
 
@@ -476,7 +476,7 @@ class Audalign:
             for file_path, _ in filehandler.find_files(directory_path):
                 name = os.path.basename(file_path)
                 if name in self.file_names:
-                    alignment = self.recognize(file_path)
+                    alignment = self.recognize(file_path, filter_matches=filter_matches)
                     file_names_and_paths[name] = file_path
                     total_alignment[name] = alignment
 
