@@ -19,20 +19,42 @@ class Audalign:
     OFFSET_SAMPLES = "offset_samples"
     OFFSET_SECS = "offset_seconds"
 
-    def __init__(self, *args, multiprocessing=True, accuracy=2):
+    def __init__(
+        self, *args, multiprocessing=True, hash_style="panako_mod", accuracy=2
+    ):
         """
         Constructs new audalign object
+
+        hash style has four options. All fingerprints must be of the same hash style to match.
+
+            'base' hash style consists of two peaks. Two frequencies and a time difference. 
+            Creates many matches but is insensitive to noise.
+        
+            'panako' hash style consists of three peaks. Two differences in frequency, two frequency
+            bands, one time difference ratio. Creates few matches, very resistant to noise.
+
+            'panako_mod' hash style consists of three peaks. Two differences in frequency and one
+            time difference ratio. Creates less matches than base, more than panako. moderately
+            resistant to noise
+
+            'base_three' hash style consists of three peaks. Three frequencies and two time differences.
+
+        multiprocessing is set to True by default
 
         There are four accuracy levels with 1 being the lowest accuracy but the fastest. 3 is the highest recommended.
         4 gives the highest accuracy, but can take several gigabytes of memory for a couple files.
         Accuracy settings are acheived by manipulations in fingerprinting variables.
 
-        multiprocessing is set to True by default
-
         Parameters
         ----------
         arg1 : str
             Optional file path to load json or pickle file of already fingerprinted files
+        multiprocessing : bool
+            option to turn off multiprocessing
+        hash_style : str
+            which hash style to use ; ['base','panako_mod','panako', 'base_three']
+        accuracy : int
+            which accuracy level 1-4
         """
 
         self.file_names = []
@@ -43,6 +65,8 @@ class Audalign:
         if len(args) > 0:
             self.load_fingerprinted_files(args[0])
 
+        self.hash_style = hash_style
+
         self.fan_value = fingerprint.DEFAULT_FAN_VALUE
         self.amp_min = fingerprint.DEFAULT_AMP_MIN
         self.min_hash_time_delta = fingerprint.MIN_HASH_TIME_DELTA
@@ -52,7 +76,6 @@ class Audalign:
         if accuracy != 2:
             self.set_accuracy(accuracy)
 
-        
     def set_accuracy(self, accuracy):
         """
         Sets the accuracy level of audalign object
@@ -92,7 +115,6 @@ class Audalign:
             self.min_hash_time_delta = 1
             self.max_hash_time_delta = 2000
             self.peak_sort = True
-
 
     def save_fingerprinted_files(self, filename: str) -> None:
         """
@@ -223,7 +245,16 @@ class Audalign:
             print("Directory contains 0 files or could not be found")
             return
 
-        _fingerprint_worker_directory = partial(_fingerprint_worker, fan_value=self.fan_value, amp_min=self.amp_min, min_hash_time=self.min_hash_time_delta, max_hash_time=self.max_hash_time_delta, peak_sort=self.peak_sort, plot=plot)
+        _fingerprint_worker_directory = partial(
+            _fingerprint_worker,
+            fan_value=self.fan_value,
+            amp_min=self.amp_min,
+            min_hash_time=self.min_hash_time_delta,
+            max_hash_time=self.max_hash_time_delta,
+            peak_sort=self.peak_sort,
+            hash_style=self.hash_style,
+            plot=plot,
+        )
 
         if self.multiprocessing == True:
 
@@ -310,8 +341,16 @@ class Audalign:
         [file_name, hashes]
         """
 
-        
-        file_name, hashes = _fingerprint_worker(file_path, self.fan_value, self.amp_min, self.min_hash_time_delta, self.max_hash_time_delta, self.peak_sort, plot=plot)
+        file_name, hashes = _fingerprint_worker(
+            file_path,
+            self.fan_value,
+            self.amp_min,
+            self.min_hash_time_delta,
+            self.max_hash_time_delta,
+            self.peak_sort,
+            self.hash_style,
+            plot=plot,
+        )
         file_name = set_file_name or file_name
         return [file_name, hashes]
 
@@ -510,7 +549,16 @@ class Audalign:
         filehandler.convert_audio_file(file_path, destination_path)
 
 
-def _fingerprint_worker(file_path: str, fan_value=fingerprint.DEFAULT_FAN_VALUE, amp_min=fingerprint.DEFAULT_AMP_MIN, min_hash_time=fingerprint.MIN_HASH_TIME_DELTA, max_hash_time=fingerprint.MAX_HASH_TIME_DELTA, peak_sort=fingerprint.PEAK_SORT, plot=False) -> None:
+def _fingerprint_worker(
+    file_path: str,
+    fan_value=fingerprint.DEFAULT_FAN_VALUE,
+    amp_min=fingerprint.DEFAULT_AMP_MIN,
+    min_hash_time=fingerprint.MIN_HASH_TIME_DELTA,
+    max_hash_time=fingerprint.MAX_HASH_TIME_DELTA,
+    peak_sort=fingerprint.PEAK_SORT,
+    hash_style="panako_mod",
+    plot=False,
+) -> None:
     """
     Runs the file through the fingerprinter and returns file_name and hashes
 
@@ -541,7 +589,16 @@ def _fingerprint_worker(file_path: str, fan_value=fingerprint.DEFAULT_FAN_VALUE,
         return None, None
 
     print(f"Fingerprinting {file_name}")
-    hashes = fingerprint.fingerprint(channel, fan_value=fan_value, amp_min=amp_min, min_hash_time_delta=min_hash_time, max_hash_time_delta=max_hash_time, peak_sort=peak_sort, plot=plot)
+    hashes = fingerprint.fingerprint(
+        channel,
+        fan_value=fan_value,
+        amp_min=amp_min,
+        min_hash_time_delta=min_hash_time,
+        max_hash_time_delta=max_hash_time,
+        peak_sort=peak_sort,
+        hash_style=hash_style,
+        plot=plot,
+    )
 
     print(f"Finished fingerprinting {file_name}")
 
