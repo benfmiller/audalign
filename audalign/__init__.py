@@ -481,6 +481,8 @@ class Audalign:
                     total_alignment[name] = alignment
 
             files_shifts = align.find_most_matches(total_alignment)
+            if not files_shifts:
+                return
             files_shifts = align.find_matches_not_in_file_shifts(
                 total_alignment, files_shifts
             )
