@@ -24,7 +24,7 @@ REQUIREMENTS = parse_requirements("requirements.txt")
 setup(
     name=PACKAGE_NAME,
     version=PACKAGE_VERSION,
-    packages=find_packages(),
+    # packages=audalign,
     license="MIT",
     description=SUMMARY,
     long_description=DESCRIPTION,
