@@ -12,6 +12,7 @@ Audalign is not currently listed in PyPI but can be pip installed if the package
 
 ```bash
 git clone https://github.com/benfmiller/audalign.git
+cd audalign/
 pip install audalign
 ```
 
@@ -26,6 +27,8 @@ in the directory
 Don't forget to install ffmpeg/avlib (Below in the Readme)!
 
 ## Fingerprinting
+
+
 
 ## Recognizing
 
