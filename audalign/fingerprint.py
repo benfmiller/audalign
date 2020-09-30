@@ -190,6 +190,8 @@ def generate_hashes(
         return panako(peaks, fan_value, min_hash_time_delta, max_hash_time_delta)
     elif hash_style == "base_three":
         return base_three(peaks, fan_value, min_hash_time_delta, max_hash_time_delta)
+    else:
+        print(f"Hash style \"{hash_style}\" is not inplemented")
 
 
 def panako_mod(peaks, fan_value, min_hash_time_delta, max_hash_time_delta):
