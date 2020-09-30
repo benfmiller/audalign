@@ -70,8 +70,6 @@ def read(filename, wrdestination=None):
 def shift_write_files(files_shifts, destination_path, names_and_paths, write_extension):
 
     max_shift = max(files_shifts.values())
-    # for shift in files_shifts.keys():
-    #     files_shifts[shift] -= min_shift
 
     cant_write_ext = [".mov", ".mp4"]
 
@@ -124,11 +122,11 @@ def shift_write_files(files_shifts, destination_path, names_and_paths, write_ext
 
         audsegs += [audiofile]
 
-    # lower volume so the sum is the same volume, -1 to account for match_info
-    total_files = audsegs[0] - (3 * math.log(len(files_shifts) - 1, 2))
+    # lower volume so the sum is the same volume
+    total_files = audsegs[0] - (3 * math.log(len(files_shifts), 2))
 
     for i in audsegs[1:]:
-        total_files = total_files.overlay(i - (3 * math.log(len(files_shifts) - 1, 2)))
+        total_files = total_files.overlay(i - (3 * math.log(len(files_shifts), 2)))
 
     total_files = total_files.normalize()
 
