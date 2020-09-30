@@ -1,4 +1,4 @@
-# AudioFingerprinting
+# Audalign
 Python package for aligning audio files using audio fingerprinting.
 
 The goal of audalign is to offer a package for aligning many recordings of the same event.
