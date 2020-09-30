@@ -169,7 +169,7 @@ class Audalign:
         except FileNotFoundError:
             print(f'"{filename}" not found')
 
-    def clean_fingerprinted_files(self):
+    def filter_duplicates(self):
         # TODO: clean doubles
         pass
 
@@ -433,7 +433,7 @@ class Audalign:
         self.fingerprinted_files = []
         self.total_fingerprints = 0
 
-    def align(self, directory_path, destination_path, write_extension=None, filter_matches=1):
+    def align(self, directory_path, destination_path=None, write_extension=None, filter_matches=1):
         """
         Finds matches and relative offsets for all files in directory_path, aligns them, and writes them to destination_path
 
@@ -487,9 +487,10 @@ class Audalign:
                 total_alignment, files_shifts
             )
 
-            self._write_shifted_files(
-                files_shifts, destination_path, file_names_and_paths, write_extension
-            )
+            if destination_path:
+                self._write_shifted_files(
+                    files_shifts, destination_path, file_names_and_paths, write_extension
+                )
 
             print(
                 f"{len(files_shifts)} out of {len(file_names_and_paths)} found and aligned"
