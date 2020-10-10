@@ -45,24 +45,3 @@ class TestInit:
         assert ada_single.total_fingerprints > 0
         assert len(ada_single.fingerprinted_files) > 0
 
-    def test_recognize(self):
-
-        ada = ad.Audalign()
-        ada.fingerprint_file(self.test_file)
-        assert ada.total_fingerprints > 0
-
-        ada.fingerprinted_files[0][0] = "different"
-        ada.file_names[0] = "different"
-
-        result = ada.recognize(self.test_file)
-        assert len(result) > 1
-
-        result2 = ada.recognize(
-            "audio_files/TestAudio/pink_noise.wav", filter_matches=3
-        )
-        assert not result2
-
-    def test_align(self):
-        ada = ad.Audalign()
-        result = ada.align("audio_files/shifts", "test_alignment")
-        assert result
