@@ -464,8 +464,9 @@ class Audalign:
         try:
 
             # Make target directory
-            if not os.path.exists(destination_path):
-                os.makedirs(destination_path)
+            if destination_path:
+                if not os.path.exists(destination_path):
+                    os.makedirs(destination_path)
 
             self.fingerprint_directory(directory_path)
 
