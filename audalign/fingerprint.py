@@ -33,33 +33,33 @@ DEFAULT_OVERLAP_RATIO = 0.5
 ######################################################################
 # Degree to which a fingerprint can be paired with its neighbors --
 # higher will cause more fingerprints, but potentially better accuracy.
-DEFAULT_FAN_VALUE = 15
+default_fan_value = 15
 
 ######################################################################
 # Minimum amplitude in spectrogram in order to be considered a peak.
 # This can be raised to reduce number of fingerprints, but can negatively
 # affect accuracy.
 # 50 roughly cuts number of fingerprints in half compared to 0
-DEFAULT_AMP_MIN = 65
+default_amp_min = 65
 
 ######################################################################
 # Number of cells around an amplitude peak in the spectrogram in order
 # for audalign to consider it a spectral peak. Higher values mean less
 # fingerprints and faster matching, but can potentially affect accuracy.
-PEAK_NEIGHBORHOOD_SIZE = 20
+peak_neighborhood_size = 20
 
 ######################################################################
 # Thresholds on how close or far fingerprints can be in time in order
 # to be paired as a fingerprint. If your max is too low, higher values of
-# DEFAULT_FAN_VALUE may not perform as expected.
-MIN_HASH_TIME_DELTA = 10
-MAX_HASH_TIME_DELTA = 200
+# default_fan_value may not perform as expected.
+min_hash_time_delta = 10
+max_hash_time_delta = 200
 
 ######################################################################
 # If True, will sort peaks temporally for fingerprinting;
 # not sorting will cut down number of fingerprints, but potentially
 # affect performance.
-PEAK_SORT = True
+peak_sort = True
 
 ######################################################################
 # Number of bits to grab from the front of the SHA1 hash in the
@@ -68,16 +68,17 @@ PEAK_SORT = True
 FINGERPRINT_REDUCTION = 20
 
 
+threshold = 200
+
+
 def fingerprint(
     channel_samples,
     fs=DEFAULT_FS,
     wsize=DEFAULT_WINDOW_SIZE,
     wratio=DEFAULT_OVERLAP_RATIO,
-    fan_value=DEFAULT_FAN_VALUE,
-    amp_min=DEFAULT_AMP_MIN,
-    min_hash_time_delta=MIN_HASH_TIME_DELTA,
-    max_hash_time_delta=MAX_HASH_TIME_DELTA,
-    peak_sort=PEAK_SORT,
+    fan_value=default_fan_value,
+    amp_min=default_amp_min,
+    peak_sort=peak_sort,
     plot=False,
     hash_style="panako",
 ):
@@ -107,6 +108,8 @@ def fingerprint(
         noverlap=int(wsize * wratio),
     )[0]
 
+    print(threshold)
+
     # apply log transform since specgram() returns linear array
     arr2D = 10 * np.log2(arr2D)
     arr2D[arr2D == -np.inf] = 0  # replace infs with zeros
@@ -125,10 +128,10 @@ def fingerprint(
     )
 
 
-def get_2D_peaks(arr2D, plot=False, amp_min=DEFAULT_AMP_MIN):
+def get_2D_peaks(arr2D, plot=False, amp_min=default_amp_min):
     #  http://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.iterate_structure.html#scipy.ndimage.iterate_structure
     struct = generate_binary_structure(2, 1)
-    neighborhood = iterate_structure(struct, PEAK_NEIGHBORHOOD_SIZE)
+    neighborhood = iterate_structure(struct, peak_neighborhood_size)
 
     # find local maxima using our filter shape
     local_max = maximum_filter(arr2D, footprint=neighborhood) == arr2D
@@ -147,7 +150,7 @@ def get_2D_peaks(arr2D, plot=False, amp_min=DEFAULT_AMP_MIN):
     # filter peaks
     amps = amps.flatten()
     peaks = zip(i, j, amps)
-    peaks_filtered = filter(lambda x: x[2] > amp_min, peaks)  # freq, time, amp
+    peaks_filtered = filter(lambda x: x[2] > amp_min and x[1] > threshold, peaks)  # time, freq, amp
     # get indices for frequency and time
     frequency_idx = []
     time_idx = []
