@@ -374,12 +374,7 @@ class Audalign:
             None : if no match
         """
 
-        if "recognizer" not in kwargs.keys():
-            r = recognize.FileRecognizer(self)
-        elif kwargs["recognizer"].lower() == "filerecognizer":
-            r = recognize.FileRecognizer(self)
-            kwargs.pop("recognizer")
-        return r.recognize(file_path, filter_matches, *args, **kwargs)
+        return recognize.recognize(self, file_path, filter_matches, *args, **kwargs)
 
     def write_processed_file(self, file_path, destination_file):
         """
