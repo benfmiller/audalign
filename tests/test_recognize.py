@@ -3,6 +3,7 @@ import pytest
 
 test_file = "audio_files/TestAudio/test.wav"
 
+
 def test_recognize():
 
     ada = ad.Audalign()
@@ -15,7 +16,5 @@ def test_recognize():
     result = ada.recognize(test_file)
     assert len(result) > 1
 
-    result2 = ada.recognize(
-        "audio_files/TestAudio/pink_noise.wav", filter_matches=3
-    )
+    result2 = ada.recognize("audio_files/TestAudio/pink_noise.wav", filter_matches=3)
     assert not result2

@@ -20,7 +20,13 @@ class Audalign:
     OFFSET_SECS = "offset_seconds"
 
     def __init__(
-        self, *args, multiprocessing=True, hash_style="panako_mod", accuracy=2, threshold=100, noisereduce=False
+        self,
+        *args,
+        multiprocessing=True,
+        hash_style="panako_mod",
+        accuracy=2,
+        threshold=100,
+        noisereduce=False,
     ):
         """
         Constructs new audalign object
@@ -252,9 +258,7 @@ class Audalign:
             return
 
         _fingerprint_worker_directory = partial(
-            _fingerprint_worker,
-            hash_style=self.hash_style,
-            plot=plot,
+            _fingerprint_worker, hash_style=self.hash_style, plot=plot,
         )
 
         if self.multiprocessing == True:
@@ -342,11 +346,7 @@ class Audalign:
         [file_name, hashes]
         """
 
-        file_name, hashes = _fingerprint_worker(
-            file_path,
-            self.hash_style,
-            plot=plot,
-        )
+        file_name, hashes = _fingerprint_worker(file_path, self.hash_style, plot=plot,)
         file_name = set_file_name or file_name
         return [file_name, hashes]
 
@@ -429,7 +429,13 @@ class Audalign:
         self.fingerprinted_files = []
         self.total_fingerprints = 0
 
-    def align(self, directory_path, destination_path=None, write_extension=None, filter_matches=1):
+    def align(
+        self,
+        directory_path,
+        destination_path=None,
+        write_extension=None,
+        filter_matches=1,
+    ):
         """
         Finds matches and relative offsets for all files in directory_path, aligns them, and writes them to destination_path
 
@@ -486,7 +492,10 @@ class Audalign:
 
             if destination_path:
                 self._write_shifted_files(
-                    files_shifts, destination_path, file_names_and_paths, write_extension
+                    files_shifts,
+                    destination_path,
+                    file_names_and_paths,
+                    write_extension,
                 )
 
             print(
@@ -549,11 +558,7 @@ class Audalign:
         filehandler.convert_audio_file(file_path, destination_path)
 
 
-def _fingerprint_worker(
-    file_path: str,
-    hash_style="panako_mod",
-    plot=False,
-) -> None:
+def _fingerprint_worker(file_path: str, hash_style="panako_mod", plot=False,) -> None:
     """
     Runs the file through the fingerprinter and returns file_name and hashes
 
@@ -584,11 +589,7 @@ def _fingerprint_worker(
         return None, None
 
     print(f"Fingerprinting {file_name}")
-    hashes = fingerprint.fingerprint(
-        channel,
-        hash_style=hash_style,
-        plot=plot,
-    )
+    hashes = fingerprint.fingerprint(channel, hash_style=hash_style, plot=plot,)
 
     print(f"Finished fingerprinting {file_name}")
 
