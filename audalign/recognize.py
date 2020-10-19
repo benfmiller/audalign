@@ -1,201 +1,186 @@
-# encoding: utf-8
 import audalign.fingerprint as fingerprint
-import audalign.filehandler as filehandler
-import numpy as np
 import time
 import os
 
 
-class FileRecognizer:
-    def __init__(self, audalign):
-        """
-        Creates FileRecognizer object
+def recognize(audalign_object, file_path, filter_matches):
+    """
+    Recognizes given file against already fingerprinted files
 
-        Parameters
-        ----------
-        audalign : Audalign
-            instance of Audalign
+    Parameters
+    ----------
+    file_path : str
+        file path of target file
+    filter_matches : int
+        only returns information on match counts greater than filter_matches
 
-        Returns
-        -------
-        None
-        """
-        self.audalign = audalign
-        self.fs = fingerprint.DEFAULT_FS
+    Returns
+    -------
+    match_result : dict
+        dictionary containing match time and match info
 
-    def recognize(self, file_path, filter_matches):
-        """
-        Recognizes given file against already fingerprinted files
+        or
 
-        Parameters
-        ----------
-        file_path : str
-            file path of target file
-        filter_matches : int
-            only returns information on match counts greater than filter_matches
+        None : if no match
+    """
 
-        Returns
-        -------
-        match_result : dict
-            dictionary containing match time and match info
+    t = time.time()
+    matches = find_matches(audalign_object, file_path)
+    rough_match = align_matches(audalign_object, matches)
 
-            or
+    filter_set = False
 
-            None : if no match
-        """
+    if filter_matches != 1:
+        filter_set = True
 
-        t = time.time()
-        matches = self.find_matches(file_path, fs=self.fs)
-        rough_match = self.align_matches(matches)
+    file_match = None
+    if len(rough_match) > 0:
+        file_match = process_results(
+            audalign_object, rough_match, filter_matches, filter_set
+        )
+    t = time.time() - t
 
-        filter_set = False
+    result = {}
 
-        if filter_matches != 1:
-            filter_set = True
+    if file_match:
+        result["match_time"] = t
+        result["match_info"] = file_match
+        return result
 
-        file_match = None
-        if len(rough_match) > 0:
-            file_match = self.process_results(rough_match, filter_matches, filter_set)
-        t = time.time() - t
+    return None
 
-        result = {}
 
-        if file_match:
-            result["match_time"] = t
-            result["match_info"] = file_match
-            return result
+def find_matches(audalign_object, file_path):
+    """
+    fingerprints target file, then finds every occurence of exact same hashes in already
+    fingerprinted files
 
-        return None
+    Parameters
+    ----------
+    samples : array of decoded file
+        array of decoded file from filehandler.read
+    file_name : str
+        base name of target file
 
-    def find_matches(self, file_path, fs=fingerprint.DEFAULT_FS):
-        """
-        fingerprints target file, then finds every occurence of exact same hashes in already
-        fingerprinted files
+    Returns
+    -------
+    Matches: list[str, int]
+        list of all matches, file_name match and corresponding offset
+    """
+    file_name = os.path.basename(file_path)
 
-        Parameters
-        ----------
-        samples : array of decoded file
-            array of decoded file from filehandler.read
-        file_name : str
-            base name of target file
+    target_mapper = {}
 
-        Returns
-        -------
-        Matches: list[str, int]
-            list of all matches, file_name match and corresponding offset
-        """
-        file_name = os.path.basename(file_path)
+    if file_name not in audalign_object.file_names:
+        fingerprints = audalign_object._fingerprint_file(file_path)
+        target_mapper = fingerprints[1]
+    else:
+        for audio_file in audalign_object.fingerprinted_files:
+            if audio_file[0] == file_name:
+                target_mapper = audio_file[1]
+                break
 
-        target_mapper = {}
+    matches = []
 
-        if file_name not in self.audalign.file_names:
-            fingerprints = self.audalign._fingerprint_file(file_path)
-            target_mapper = fingerprints[1]
-        else:
-            for audio_file in self.audalign.fingerprinted_files:
-                if audio_file[0] == file_name:
-                    target_mapper = audio_file[1]
-                    break
+    print(f"{file_name}: Finding Matches...  ", end="")
+    for audio_file in audalign_object.fingerprinted_files:
+        if audio_file[0].lower() != file_name.lower():
+            already_hashes = audio_file[1]
+            for t_hash in target_mapper.keys():
+                if t_hash in already_hashes.keys():
+                    for t_offset in target_mapper[t_hash]:
+                        for a_offset in already_hashes[t_hash]:
+                            sample_difference = a_offset - t_offset
+                            matches.append([audio_file[0], sample_difference])
+    return matches
 
-        matches = []
 
-        print(f"{file_name}: Finding Matches...  ", end="")
-        for audio_file in self.audalign.fingerprinted_files:
-            if audio_file[0].lower() != file_name.lower():
-                already_hashes = audio_file[1]
-                for t_hash in target_mapper.keys():
-                    if t_hash in already_hashes.keys():
-                        for t_offset in target_mapper[t_hash]:
-                            for a_offset in already_hashes[t_hash]:
-                                sample_difference = a_offset - t_offset
-                                matches.append([audio_file[0], sample_difference])
-        return matches
+def align_matches(audalign_object, matches):
+    """
+    takes matches from find_matches and converts it to a dictionary of counts per offset and file name
 
-    def align_matches(self, matches):
-        """
-        takes matches from find_matches and converts it to a dictionary of counts per offset and file name
+    Parameters
+    ----------
+    matches : list[str, int]
+        list of matches from find_matches
 
-        Parameters
-        ----------
-        matches : list[str, int]
-            list of matches from find_matches
+    Returns
+    -------
+    sample_difference_counter : dict{str{int}}
+        of the form dict{file_name{number of matching offsets}}
+    """
 
-        Returns
-        -------
-        sample_difference_counter : dict{str{int}}
-            of the form dict{file_name{number of matching offsets}}
-        """
+    print("Aligning matches")
 
-        print("Aligning matches")
+    sample_difference_counter = {}
+    for file_name, sample_difference in matches:
+        if file_name not in sample_difference_counter:
+            sample_difference_counter[file_name] = {}
+        if sample_difference not in sample_difference_counter[file_name]:
+            sample_difference_counter[file_name][sample_difference] = 0
+        sample_difference_counter[file_name][sample_difference] += 1
 
-        sample_difference_counter = {}
-        for file_name, sample_difference in matches:
-            if file_name not in sample_difference_counter:
-                sample_difference_counter[file_name] = {}
-            if sample_difference not in sample_difference_counter[file_name]:
-                sample_difference_counter[file_name][sample_difference] = 0
-            sample_difference_counter[file_name][sample_difference] += 1
+    return sample_difference_counter
 
-        return sample_difference_counter
 
-    def process_results(self, results, filter_matches=1, filter_set=False):
-        """
-        Takes matches from align_matches, filters and orders them, returns dictionary of match info
+def process_results(audalign_object, results, filter_matches=1, filter_set=False):
+    """
+    Takes matches from align_matches, filters and orders them, returns dictionary of match info
 
-        Parameters
-        ----------
-        results : dict{str{int}}
-            of the form dict{file_name{number of matching offsets}}
+    Parameters
+    ----------
+    results : dict{str{int}}
+        of the form dict{file_name{number of matching offsets}}
 
-        filter_matches : int
-            cutout all matches equal to or less than in frequency, goes down if no matches found above filter
+    filter_matches : int
+        cutout all matches equal to or less than in frequency, goes down if no matches found above filter
 
-        filter_set : bool
-            if the filter is manually set, doesn't lower filter if no results
+    filter_set : bool
+        if the filter is manually set, doesn't lower filter if no results
 
-        Returns
-        -------
-        match_info : dict{dict{}}
-            dict of file_names with match info as values
-        """
+    Returns
+    -------
+    match_info : dict{dict{}}
+        dict of file_names with match info as values
+    """
 
-        complete_match_info = {}
+    complete_match_info = {}
 
-        for file_name in results.keys():
-            match_offsets = []
-            offset_count = []
-            offset_diff = []
-            for sample_difference, num_of_matches in results[file_name].items():
-                match_offsets.append((num_of_matches, sample_difference))
-            match_offsets = sorted(match_offsets, reverse=True, key=lambda x: x[0])
-            if match_offsets[0][0] <= filter_matches:
+    for file_name in results.keys():
+        match_offsets = []
+        offset_count = []
+        offset_diff = []
+        for sample_difference, num_of_matches in results[file_name].items():
+            match_offsets.append((num_of_matches, sample_difference))
+        match_offsets = sorted(match_offsets, reverse=True, key=lambda x: x[0])
+        if match_offsets[0][0] <= filter_matches:
+            continue
+        for i in match_offsets:
+            if i[0] <= filter_matches:
                 continue
-            for i in match_offsets:
-                if i[0] <= filter_matches:
-                    continue
-                offset_count.append(i[0])
-                offset_diff.append(i[1])
+            offset_count.append(i[0])
+            offset_diff.append(i[1])
 
-            complete_match_info[file_name] = {}
-            complete_match_info[file_name][self.audalign.CONFIDENCE] = offset_count
-            complete_match_info[file_name][self.audalign.OFFSET_SAMPLES] = offset_diff
+        complete_match_info[file_name] = {}
+        complete_match_info[file_name][audalign_object.CONFIDENCE] = offset_count
+        complete_match_info[file_name][audalign_object.OFFSET_SAMPLES] = offset_diff
 
-            # extract idenfication
+        # extract idenfication
 
-            complete_match_info[file_name][self.audalign.OFFSET_SECS] = []
-            for i in offset_diff:
-                nseconds = round(
-                    float(i)
-                    / fingerprint.DEFAULT_FS
-                    * fingerprint.DEFAULT_WINDOW_SIZE
-                    * fingerprint.DEFAULT_OVERLAP_RATIO,
-                    5,
-                )
-                complete_match_info[file_name][self.audalign.OFFSET_SECS].append(
-                    nseconds
-                )
+        complete_match_info[file_name][audalign_object.OFFSET_SECS] = []
+        for i in offset_diff:
+            nseconds = round(
+                float(i)
+                / fingerprint.DEFAULT_FS
+                * fingerprint.DEFAULT_WINDOW_SIZE
+                * fingerprint.DEFAULT_OVERLAP_RATIO,
+                5,
+            )
+            complete_match_info[file_name][audalign_object.OFFSET_SECS].append(nseconds)
 
-        if len(complete_match_info) == 0 and filter_set == False:
-            return self.process_results(results, filter_matches=filter_matches - 1)
+    if len(complete_match_info) == 0 and filter_set == False:
+        return process_results(
+            audalign_object, results, filter_matches=filter_matches - 1
+        )
 
-        return complete_match_info
+    return complete_match_info
