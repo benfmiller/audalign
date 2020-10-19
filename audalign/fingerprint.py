@@ -76,9 +76,6 @@ def fingerprint(
     fs=DEFAULT_FS,
     wsize=DEFAULT_WINDOW_SIZE,
     wratio=DEFAULT_OVERLAP_RATIO,
-    fan_value=default_fan_value,
-    amp_min=default_amp_min,
-    peak_sort=peak_sort,
     plot=False,
     hash_style="panako",
 ):
@@ -115,20 +112,16 @@ def fingerprint(
     arr2D[arr2D == -np.inf] = 0  # replace infs with zeros
 
     # find local maxima
-    local_maxima = get_2D_peaks(arr2D, plot=plot, amp_min=amp_min)
+    local_maxima = get_2D_peaks(arr2D, plot=plot)
 
     # return hashes
     return generate_hashes(
         local_maxima,
-        fan_value,
-        min_hash_time_delta,
-        max_hash_time_delta,
-        peak_sort,
         hash_style,
     )
 
 
-def get_2D_peaks(arr2D, plot=False, amp_min=default_amp_min):
+def get_2D_peaks(arr2D, plot=False):
     #  http://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.iterate_structure.html#scipy.ndimage.iterate_structure
     struct = generate_binary_structure(2, 1)
     neighborhood = iterate_structure(struct, peak_neighborhood_size)
@@ -150,7 +143,7 @@ def get_2D_peaks(arr2D, plot=False, amp_min=default_amp_min):
     # filter peaks
     amps = amps.flatten()
     peaks = zip(i, j, amps)
-    peaks_filtered = filter(lambda x: x[2] > amp_min and x[1] > threshold, peaks)  # time, freq, amp
+    peaks_filtered = filter(lambda x: x[2] > default_amp_min and x[1] > threshold, peaks)  # time, freq, amp
     # get indices for frequency and time
     frequency_idx = []
     time_idx = []
@@ -173,7 +166,7 @@ def get_2D_peaks(arr2D, plot=False, amp_min=default_amp_min):
 
 
 def generate_hashes(
-    peaks, fan_value, min_hash_time_delta, max_hash_time_delta, peak_sort, hash_style
+    peaks, hash_style
 ):
     """
     Hash list structure:
@@ -186,27 +179,27 @@ def generate_hashes(
     # print("Length of Peaks List is: {}".format(len(peaks)))
 
     if hash_style == "panako_mod":
-        return panako_mod(peaks, fan_value, min_hash_time_delta, max_hash_time_delta)
+        return panako_mod(peaks)
     elif hash_style == "base":
-        return base(peaks, fan_value, min_hash_time_delta, max_hash_time_delta)
+        return base(peaks)
     elif hash_style == "panako":
-        return panako(peaks, fan_value, min_hash_time_delta, max_hash_time_delta)
+        return panako(peaks)
     elif hash_style == "base_three":
-        return base_three(peaks, fan_value, min_hash_time_delta, max_hash_time_delta)
+        return base_three(peaks)
     else:
         print(f"Hash style \"{hash_style}\" is not inplemented")
 
 
-def panako_mod(peaks, fan_value, min_hash_time_delta, max_hash_time_delta):
+def panako_mod(peaks):
     hash_dict = {}
     for i in range(0, len(peaks), 1):
         freq1 = peaks[i][IDX_FREQ_I]
         t1 = peaks[i][IDX_TIME_J]
-        for j in range(1, fan_value - 1):
+        for j in range(1, default_fan_value - 1):
             if i + j < len(peaks):
                 freq2 = peaks[i + j][IDX_FREQ_I]
                 t2 = peaks[i + j][IDX_TIME_J]
-                for k in range(j + 1, fan_value):
+                for k in range(j + 1, default_fan_value):
                     if (i + k) < len(peaks):
 
                         freq3 = peaks[i + k][IDX_FREQ_I]
@@ -237,12 +230,12 @@ def panako_mod(peaks, fan_value, min_hash_time_delta, max_hash_time_delta):
     return hash_dict
 
 
-def base(peaks, fan_value, min_hash_time_delta, max_hash_time_delta):
+def base(peaks):
     hash_dict = {}
     for i in range(0, len(peaks), 1):
         freq1 = peaks[i][IDX_FREQ_I]
         t1 = peaks[i][IDX_TIME_J]
-        for j in range(1, fan_value):
+        for j in range(1, default_fan_value):
             if i + j < len(peaks):
                 freq2 = peaks[i + j][IDX_FREQ_I]
                 t2 = peaks[i + j][IDX_TIME_J]
@@ -260,16 +253,16 @@ def base(peaks, fan_value, min_hash_time_delta, max_hash_time_delta):
     return hash_dict
 
 
-def panako(peaks, fan_value, min_hash_time_delta, max_hash_time_delta):
+def panako(peaks):
     hash_dict = {}
     for i in range(0, len(peaks), 1):
         freq1 = peaks[i][IDX_FREQ_I]
         t1 = peaks[i][IDX_TIME_J]
-        for j in range(1, fan_value - 1):
+        for j in range(1, default_fan_value - 1):
             if i + j < len(peaks):
                 freq2 = peaks[i + j][IDX_FREQ_I]
                 t2 = peaks[i + j][IDX_TIME_J]
-                for k in range(j + 1, fan_value):
+                for k in range(j + 1, default_fan_value):
                     if (i + k) < len(peaks):
 
                         freq3 = peaks[i + k][IDX_FREQ_I]
@@ -300,16 +293,16 @@ def panako(peaks, fan_value, min_hash_time_delta, max_hash_time_delta):
     return hash_dict
 
 
-def base_three(peaks, fan_value, min_hash_time_delta, max_hash_time_delta):
+def base_three(peaks):
     hash_dict = {}
     for i in range(0, len(peaks), 1):
         freq1 = peaks[i][IDX_FREQ_I]
         t1 = peaks[i][IDX_TIME_J]
-        for j in range(1, fan_value - 1):
+        for j in range(1, default_fan_value - 1):
             if i + j < len(peaks):
                 freq2 = peaks[i + j][IDX_FREQ_I]
                 t2 = peaks[i + j][IDX_TIME_J]
-                for k in range(j + 1, fan_value):
+                for k in range(j + 1, default_fan_value):
                     if (i + k) < len(peaks):
 
                         freq3 = peaks[i + k][IDX_FREQ_I]

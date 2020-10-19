@@ -20,7 +20,7 @@ class Audalign:
     OFFSET_SECS = "offset_seconds"
 
     def __init__(
-        self, *args, multiprocessing=True, hash_style="panako_mod", accuracy=2
+        self, *args, multiprocessing=True, hash_style="panako_mod", accuracy=2, threshold=100, noisereduce=False
     ):
         """
         Constructs new audalign object
@@ -55,7 +55,13 @@ class Audalign:
             which hash style to use : ['base','panako_mod','panako', 'base_three']
         accuracy : int
             which accuracy level 1-4
+        threshold: int
+            filters fingerprints below threshold
+        noisereduce: bool
+            runs noise reduce on audio
         """
+
+        fingerprint.threshold = 100
 
         self.file_names = []
         self.fingerprinted_files = []
@@ -67,11 +73,11 @@ class Audalign:
 
         self.hash_style = hash_style
 
-        self.fan_value = fingerprint.DEFAULT_FAN_VALUE
-        self.amp_min = fingerprint.DEFAULT_AMP_MIN
-        self.min_hash_time_delta = fingerprint.MIN_HASH_TIME_DELTA
-        self.max_hash_time_delta = fingerprint.MAX_HASH_TIME_DELTA
-        self.peak_sort = fingerprint.PEAK_SORT
+        self.fan_value = fingerprint.default_fan_value
+        self.amp_min = fingerprint.default_amp_min
+        self.min_hash_time_delta = fingerprint.min_hash_time_delta
+        self.max_hash_time_delta = fingerprint.max_hash_time_delta
+        self.peak_sort = fingerprint.peak_sort
 
         if accuracy != 2:
             self.set_accuracy(accuracy)
@@ -92,29 +98,29 @@ class Audalign:
                 which accuracy level: 1-4
         """
         if accuracy == 1:
-            self.fan_value = 15
-            self.amp_min = 80
-            self.min_hash_time_delta = fingerprint.MIN_HASH_TIME_DELTA
-            self.max_hash_time_delta = fingerprint.MAX_HASH_TIME_DELTA
-            self.peak_sort = True
+            fingerprint.default_fan_value = 15
+            fingerprint.default_amp_min = 80
+            fingerprint.min_hash_time_delta = 10
+            fingerprint.max_hash_time_delta = 200
+            fingerprint.peak_sort = True
         elif accuracy == 2:
-            self.fan_value = fingerprint.DEFAULT_FAN_VALUE
-            self.amp_min = fingerprint.DEFAULT_AMP_MIN
-            self.min_hash_time_delta = fingerprint.MIN_HASH_TIME_DELTA
-            self.max_hash_time_delta = fingerprint.MAX_HASH_TIME_DELTA
-            self.peak_sort = fingerprint.PEAK_SORT
+            fingerprint.default_fan_value = 15
+            fingerprint.default_amp_min = 65
+            fingerprint.min_hash_time_delta = 10
+            fingerprint.max_hash_time_delta = 200
+            fingerprint.peak_sort = True
         elif accuracy == 3:
-            self.fan_value = 40
-            self.amp_min = 60
-            self.min_hash_time_delta = 1
-            self.max_hash_time_delta = 400
-            self.peak_sort = True
+            fingerprint.default_fan_value = 40
+            fingerprint.default_amp_min = 60
+            fingerprint.min_hash_time_delta = 1
+            fingerprint.max_hash_time_delta = 400
+            fingerprint.peak_sort = True
         elif accuracy == 4:
-            self.fan_value = 60
-            self.amp_min = 55
-            self.min_hash_time_delta = 1
-            self.max_hash_time_delta = 2000
-            self.peak_sort = True
+            fingerprint.default_fan_value = 60
+            fingerprint.default_amp_min = 55
+            fingerprint.min_hash_time_delta = 1
+            fingerprint.max_hash_time_delta = 2000
+            fingerprint.peak_sort = True
 
     def save_fingerprinted_files(self, filename: str) -> None:
         """
@@ -247,11 +253,6 @@ class Audalign:
 
         _fingerprint_worker_directory = partial(
             _fingerprint_worker,
-            fan_value=self.fan_value,
-            amp_min=self.amp_min,
-            min_hash_time=self.min_hash_time_delta,
-            max_hash_time=self.max_hash_time_delta,
-            peak_sort=self.peak_sort,
             hash_style=self.hash_style,
             plot=plot,
         )
@@ -343,11 +344,6 @@ class Audalign:
 
         file_name, hashes = _fingerprint_worker(
             file_path,
-            self.fan_value,
-            self.amp_min,
-            self.min_hash_time_delta,
-            self.max_hash_time_delta,
-            self.peak_sort,
             self.hash_style,
             plot=plot,
         )
@@ -555,11 +551,6 @@ class Audalign:
 
 def _fingerprint_worker(
     file_path: str,
-    fan_value=fingerprint.DEFAULT_FAN_VALUE,
-    amp_min=fingerprint.DEFAULT_AMP_MIN,
-    min_hash_time=fingerprint.MIN_HASH_TIME_DELTA,
-    max_hash_time=fingerprint.MAX_HASH_TIME_DELTA,
-    peak_sort=fingerprint.PEAK_SORT,
     hash_style="panako_mod",
     plot=False,
 ) -> None:
@@ -584,7 +575,7 @@ def _fingerprint_worker(
     file_name = os.path.basename(file_path)
 
     try:
-        channel, fs = filehandler.read(file_path)
+        channel, _ = filehandler.read(file_path)
     except FileNotFoundError:
         print(f'"{file_path}" not found')
         return None, None
@@ -595,11 +586,6 @@ def _fingerprint_worker(
     print(f"Fingerprinting {file_name}")
     hashes = fingerprint.fingerprint(
         channel,
-        fan_value=fan_value,
-        amp_min=amp_min,
-        min_hash_time_delta=min_hash_time,
-        max_hash_time_delta=max_hash_time,
-        peak_sort=peak_sort,
         hash_style=hash_style,
         plot=plot,
     )
