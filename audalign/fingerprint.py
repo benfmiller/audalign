@@ -115,10 +115,7 @@ def fingerprint(
     local_maxima = get_2D_peaks(arr2D, plot=plot)
 
     # return hashes
-    return generate_hashes(
-        local_maxima,
-        hash_style,
-    )
+    return generate_hashes(local_maxima, hash_style,)
 
 
 def get_2D_peaks(arr2D, plot=False):
@@ -143,7 +140,9 @@ def get_2D_peaks(arr2D, plot=False):
     # filter peaks
     amps = amps.flatten()
     peaks = zip(i, j, amps)
-    peaks_filtered = filter(lambda x: x[2] > default_amp_min and x[1] > threshold, peaks)  # time, freq, amp
+    peaks_filtered = filter(
+        lambda x: x[2] > default_amp_min and x[1] > threshold, peaks
+    )  # time, freq, amp
     # get indices for frequency and time
     frequency_idx = []
     time_idx = []
@@ -165,9 +164,7 @@ def get_2D_peaks(arr2D, plot=False):
     return zip(frequency_idx, time_idx)
 
 
-def generate_hashes(
-    peaks, hash_style
-):
+def generate_hashes(peaks, hash_style):
     """
     Hash list structure:
        sha1_hash[0:30]    time_offset
@@ -187,7 +184,7 @@ def generate_hashes(
     elif hash_style == "base_three":
         return base_three(peaks)
     else:
-        print(f"Hash style \"{hash_style}\" is not inplemented")
+        print(f'Hash style "{hash_style}" is not inplemented')
 
 
 def panako_mod(peaks):

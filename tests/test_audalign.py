@@ -44,4 +44,3 @@ class TestInit:
         ada_single.fingerprint_directory("audio_files/processed_audio")
         assert ada_single.total_fingerprints > 0
         assert len(ada_single.fingerprinted_files) > 0
-
