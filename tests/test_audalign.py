@@ -44,3 +44,17 @@ class TestInit:
         ada_single.fingerprint_directory("audio_files/processed_audio")
         assert ada_single.total_fingerprints > 0
         assert len(ada_single.fingerprinted_files) > 0
+
+    def test_filter_duplicates(self):
+        ada1 = ad.Audalign()
+
+        ada1.load_fingerprinted_files("all_audio_panako.json")
+        a = len(ada1.file_names)
+        b = ada1.total_fingerprints
+        c = len(ada1.fingerprinted_files)
+        ada1.load_fingerprinted_files("all_audio_panako.json")
+        ada1.filter_duplicates()
+        assert a == len(ada1.file_names)
+        assert b == ada1.total_fingerprints
+        assert c == len(ada1.fingerprinted_files)
+        

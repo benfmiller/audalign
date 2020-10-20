@@ -67,7 +67,7 @@ class Audalign:
             runs noise reduce on audio
         """
 
-        self.freq_set_threshold(freq_threshold)
+        self.set_freq_threshold(freq_threshold)
 
         self.file_names = []
         self.fingerprinted_files = []
@@ -179,13 +179,24 @@ class Audalign:
             self.fingerprinted_files.extend(data[0])
             self.total_fingerprints += data[1]
             self.file_names.extend(data[2])
-            self.clean_fingerprinted_files()
+            self.filter_duplicates()
         except FileNotFoundError:
             print(f'"{filename}" not found')
 
     def filter_duplicates(self):
-        # TODO: clean doubles
-        pass
+        """
+        Removes copies of fingerprinted files with the same name
+        """
+        name_checker = set()
+        i = 0
+        while i < len(self.file_names):
+            if self.file_names[i] in name_checker:
+                self.total_fingerprints -= len(self.fingerprinted_files[i][1])
+                self.fingerprinted_files.pop(i)
+                self.file_names.pop(i)
+            else:
+                name_checker.add(self.file_names[i])
+                i += 1
 
     def fingerprint_directory(
         self, path: str, plot=False, nprocesses=None, extensions=["*"]
