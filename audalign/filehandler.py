@@ -1,9 +1,11 @@
+from math import nan
 import os
 import fnmatch
 import numpy as np
 from pydub import AudioSegment
 import math
 from audalign.fingerprint import DEFAULT_FS
+import noisereduce
 
 
 def find_files(path, extensions=["*"]):
@@ -66,6 +68,39 @@ def read(filename, wrdestination=None):
 
     return data, audiofile.frame_rate
 
+def noise_remove(filepath, noise_start, noise_end, destination, use_tensorflow=False, verbose=False):
+
+    # if not os.path.exists(destination_path):
+
+    audiofile = AudioSegment.from_file(filepath)
+
+    audiofile = audiofile.set_frame_rate(DEFAULT_FS)
+    audiofile = audiofile.set_sample_width(2)
+    audiofile = audiofile.set_channels(1)
+    audiofile = audiofile.normalize()
+
+    data = np.frombuffer(audiofile._data, np.float16)
+
+    # for i in range(len(data)):
+    #     if data[i] == None:
+    #        data[i] = 0.0
+    data = np.nan_to_num(data)
+
+    noisy_part = data[(noise_start*DEFAULT_FS):(noise_end*DEFAULT_FS)]
+
+    reduced_noise_data = noisereduce.reduce_noise(data, noisy_part, use_tensorflow=use_tensorflow, verbose=verbose)
+
+    reduced_noise_segment = AudioSegment(
+        reduced_noise_data.tobytes(), 
+        frame_rate=DEFAULT_FS,
+        sample_width=2, 
+        channels=1
+    )
+
+    reduced_noise_segment.export(destination, format=os.path.splitext(destination)[1][1:])
+    # with open(destination, "wb") as file_place:
+    #     reduced_noise_segment.export(file_place, format=os.path.splitext(file_place)[1][1:])
+    
 
 def shift_write_files(files_shifts, destination_path, names_and_paths, write_extension):
 
@@ -101,9 +136,7 @@ def shift_write_files(files_shifts, destination_path, names_and_paths, write_ext
             destination_name = os.path.splitext(destination_name)[0] + ".wav"
 
         if write_extension:
-            destination_name = os.path.join(
-                os.path.splitext(destination_name)[0], write_extension
-            )
+            destination_name = os.path.splitext(destination_name)[0] + write_extension
 
             print(f"Writing {destination_name}")
 
@@ -132,7 +165,7 @@ def shift_write_files(files_shifts, destination_path, names_and_paths, write_ext
 
     if write_extension:
 
-        total_name = os.path.join(destination_path, "total", write_extension)
+        total_name = os.path.join(destination_path, "total") + write_extension
 
         print(f"Writing {total_name}")
 
