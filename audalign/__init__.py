@@ -26,7 +26,6 @@ class Audalign:
         hash_style="panako_mod",
         accuracy=2,
         freq_threshold=100,
-        noisereduce=False,
     ):
         """
         Constructs new audalign object
@@ -455,7 +454,7 @@ class Audalign:
             String of path to write alignments to
 
         write_extension : str
-            if given, writes all alignments with given extension
+            if given, writes all alignments with given extension (ex. ".wav" or "wav")
 
         Returns
         -------
@@ -563,6 +562,13 @@ class Audalign:
             where to write file to and file name
         """
         filehandler.convert_audio_file(file_path, destination_path)
+
+    def remove_noise_file(self, filepath, noise_start, noise_end, destination, use_tensorflow=False, verbose=False):
+        filehandler.noise_remove(filepath, noise_start, noise_end, destination, use_tensorflow=use_tensorflow, verbose=verbose)
+
+    def remove_noise_directory(self, directory, noise_filepath, noise_start, noise_end, destination_directory):
+        # getting file going first
+        pass
 
 
 def _fingerprint_worker(file_path: str, hash_style="panako_mod", plot=False,) -> None:
