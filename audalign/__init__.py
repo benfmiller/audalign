@@ -25,7 +25,7 @@ class Audalign:
         multiprocessing=True,
         hash_style="panako_mod",
         accuracy=2,
-        threshold=100,
+        freq_threshold=100,
         noisereduce=False,
     ):
         """
@@ -67,7 +67,7 @@ class Audalign:
             runs noise reduce on audio
         """
 
-        fingerprint.threshold = 100
+        self.freq_set_threshold(freq_threshold)
 
         self.file_names = []
         self.fingerprinted_files = []
@@ -78,12 +78,6 @@ class Audalign:
             self.load_fingerprinted_files(args[0])
 
         self.hash_style = hash_style
-
-        self.fan_value = fingerprint.default_fan_value
-        self.amp_min = fingerprint.default_amp_min
-        self.min_hash_time_delta = fingerprint.min_hash_time_delta
-        self.max_hash_time_delta = fingerprint.max_hash_time_delta
-        self.peak_sort = fingerprint.peak_sort
 
         if accuracy != 2:
             self.set_accuracy(accuracy)
@@ -127,6 +121,14 @@ class Audalign:
             fingerprint.min_hash_time_delta = 1
             fingerprint.max_hash_time_delta = 2000
             fingerprint.peak_sort = True
+
+    def set_freq_threshold(self, threshold):
+        """[Sets minimum frequency threshold for fingerprint]
+
+        Args:
+            threshold ([int]): [threshold]
+        """
+        fingerprint.threshold = threshold
 
     def save_fingerprinted_files(self, filename: str) -> None:
         """
@@ -373,7 +375,6 @@ class Audalign:
 
             None : if no match
         """
-
         return recognize.recognize(self, file_path, filter_matches, *args, **kwargs)
 
     def write_processed_file(self, file_path, destination_file):

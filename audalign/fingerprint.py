@@ -105,8 +105,6 @@ def fingerprint(
         noverlap=int(wsize * wratio),
     )[0]
 
-    print(threshold)
-
     # apply log transform since specgram() returns linear array
     arr2D = 10 * np.log2(arr2D)
     arr2D[arr2D == -np.inf] = 0  # replace infs with zeros
