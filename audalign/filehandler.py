@@ -4,8 +4,11 @@ import fnmatch
 import re
 from librosa.core import audio
 import numpy as np
+from numpy.core.defchararray import array
 from pydub import AudioSegment
 import math
+
+from pydub import audio_segment
 from audalign.fingerprint import DEFAULT_FS
 import noisereduce
 
@@ -36,7 +39,16 @@ def find_files(path, extensions=["*"]):
                 yield (p, extension)
 
 
-def read(filename, wrdestination=None):
+def create_audiosegment(filepath: str):
+    audiofile = AudioSegment.from_file(filepath)
+    audiofile = audiofile.set_frame_rate(DEFAULT_FS)
+    audiofile = audiofile.set_sample_width(2)
+    audiofile = audiofile.set_channels(1)
+    audiofile = audiofile.normalize()
+    return audiofile
+
+
+def read(filename: str, wrdestination=None):
     """
     Reads any file supported by pydub (ffmpeg) and returns a numpy array and the bit depth
 
@@ -71,21 +83,9 @@ def read(filename, wrdestination=None):
     return data, audiofile.frame_rate
 
 
-def noise_remove(
-    filepath, noise_start, noise_end, destination, use_tensorflow=False, verbose=False
-):
-
-    audiofile = AudioSegment.from_file(filepath)
-
-    audiofile = audiofile.set_frame_rate(DEFAULT_FS)
-    audiofile = audiofile.set_sample_width(2)
-    audiofile = audiofile.set_channels(1)
-    audiofile = audiofile.normalize()
-
-    data = np.frombuffer(audiofile._data, np.int16)
-
+def _floatify_data(audio_segment: AudioSegment):
+    data = np.frombuffer(audio_segment._data, np.int16)
     new_data = np.zeros(len(data))
-
     for i in range(len(data)):
         if data[i] < 0:
             new_data[i] = float(data[i]) / 32768
@@ -93,24 +93,62 @@ def noise_remove(
             new_data[i] = 0.0
         if data[i] > 0:
             new_data[i] = float(data[i]) / 32767
+    return new_data
 
-    noisy_part = new_data[(noise_start * DEFAULT_FS) : (noise_end * DEFAULT_FS)]
+
+def _int16ify_data(data: array):
+    for i in range(len(data)):
+        if data[i] < 0:
+            data[i] = int(data[i] * 32768)
+        elif data[i] == 0:
+            data[i] = int(0)
+        else:
+            data[i] = int(data[i] * 32767)
+    return data
+
+
+def noise_remove(
+    filepath,
+    noise_start,
+    noise_end,
+    destination,
+    alt_noise_filepath=None,
+    use_tensorflow=False,
+    verbose=False,
+):
+
+    audiofile = create_audiosegment(filepath)
+    new_data = _floatify_data(audiofile)
+
+    if not alt_noise_filepath:
+        noisy_part = new_data[(noise_start * DEFAULT_FS) : (noise_end * DEFAULT_FS)]
+    else:
+        noise_audiofile = create_audiosegment(alt_noise_filepath)
+        noise_new_data = _floatify_data(noise_audiofile)
+        noisy_part = noise_new_data[
+            (noise_start * DEFAULT_FS) : (noise_end * DEFAULT_FS)
+        ]
 
     reduced_noise_data = noisereduce.reduce_noise(
         new_data, noisy_part, use_tensorflow=use_tensorflow, verbose=verbose
     )
 
-    for i in range(len(reduced_noise_data)):
-        if reduced_noise_data[i] < 0:
-            reduced_noise_data[i] = int(reduced_noise_data[i] * 32768)
-        elif reduced_noise_data[i] == 0:
-            reduced_noise_data[i] = int(0)
-        else:
-            reduced_noise_data[i] = int(reduced_noise_data[i] * 32767)
-
+    reduced_noise_data = _int16ify_data(reduced_noise_data)
     audiofile._data = reduced_noise_data.astype(np.int16)
-
     audiofile.export(destination, format=os.path.splitext(destination)[1][1:])
+
+
+def noise_remove_directory(
+    directory,
+    noise_filepath,
+    noise_start,
+    noise_end,
+    destination_directory,
+    use_tensorflow=False,
+    verbose=False,
+):
+    # asdf
+    pass
 
 
 def shift_write_files(files_shifts, destination_path, names_and_paths, write_extension):
