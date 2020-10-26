@@ -1,6 +1,8 @@
 from math import nan
 import os
 import fnmatch
+import re
+from librosa.core import audio
 import numpy as np
 from pydub import AudioSegment
 import math
@@ -68,9 +70,10 @@ def read(filename, wrdestination=None):
 
     return data, audiofile.frame_rate
 
-def noise_remove(filepath, noise_start, noise_end, destination, use_tensorflow=False, verbose=False):
 
-    # if not os.path.exists(destination_path):
+def noise_remove(
+    filepath, noise_start, noise_end, destination, use_tensorflow=False, verbose=False
+):
 
     audiofile = AudioSegment.from_file(filepath)
 
@@ -79,28 +82,36 @@ def noise_remove(filepath, noise_start, noise_end, destination, use_tensorflow=F
     audiofile = audiofile.set_channels(1)
     audiofile = audiofile.normalize()
 
-    data = np.frombuffer(audiofile._data, np.float16)
+    data = np.frombuffer(audiofile._data, np.int16)
 
-    # for i in range(len(data)):
-    #     if data[i] == None:
-    #        data[i] = 0.0
-    data = np.nan_to_num(data)
+    new_data = np.zeros(len(data))
 
-    noisy_part = data[(noise_start*DEFAULT_FS):(noise_end*DEFAULT_FS)]
+    for i in range(len(data)):
+        if data[i] < 0:
+            new_data[i] = float(data[i]) / 32768
+        elif data[i] == 0:
+            new_data[i] = 0.0
+        if data[i] > 0:
+            new_data[i] = float(data[i]) / 32767
 
-    reduced_noise_data = noisereduce.reduce_noise(data, noisy_part, use_tensorflow=use_tensorflow, verbose=verbose)
+    noisy_part = new_data[(noise_start * DEFAULT_FS) : (noise_end * DEFAULT_FS)]
 
-    reduced_noise_segment = AudioSegment(
-        reduced_noise_data.tobytes(), 
-        frame_rate=DEFAULT_FS,
-        sample_width=2, 
-        channels=1
+    reduced_noise_data = noisereduce.reduce_noise(
+        new_data, noisy_part, use_tensorflow=use_tensorflow, verbose=verbose
     )
 
-    reduced_noise_segment.export(destination, format=os.path.splitext(destination)[1][1:])
-    # with open(destination, "wb") as file_place:
-    #     reduced_noise_segment.export(file_place, format=os.path.splitext(file_place)[1][1:])
-    
+    for i in range(len(reduced_noise_data)):
+        if reduced_noise_data[i] < 0:
+            reduced_noise_data[i] = int(reduced_noise_data[i] * 32768)
+        elif reduced_noise_data[i] == 0:
+            reduced_noise_data[i] = int(0)
+        else:
+            reduced_noise_data[i] = int(reduced_noise_data[i] * 32767)
+
+    audiofile._data = reduced_noise_data.astype(np.int16)
+
+    audiofile.export(destination, format=os.path.splitext(destination)[1][1:])
+
 
 def shift_write_files(files_shifts, destination_path, names_and_paths, write_extension):
 
