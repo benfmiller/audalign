@@ -6,6 +6,7 @@ from pydub import AudioSegment
 import math
 from audalign.fingerprint import DEFAULT_FS
 import noisereduce
+from functools import partial
 
 cant_write_ext = [".mov", ".mp4"]
 
@@ -136,8 +137,34 @@ def noise_remove_directory(
     use_tensorflow=False,
     verbose=False,
 ):
-    #asd
-    pass
+    noise_data = _floatify_data(create_audiosegment(noise_filepath))[
+            (noise_start * DEFAULT_FS) : (noise_end * DEFAULT_FS)
+        ]
+    for file_path, _ in find_files(directory):
+        try:
+            audiofile = create_audiosegment(file_path)
+            new_data = _floatify_data(audiofile)
+
+            reduced_noise_data = noisereduce.reduce_noise(
+                new_data, noise_data, use_tensorflow=use_tensorflow, verbose=verbose
+            )
+
+            reduced_noise_data = _int16ify_data(reduced_noise_data)
+            audiofile._data = reduced_noise_data.astype(np.int16)
+
+            file_name = os.path.basename(file_path)
+            destination_name = os.path.join(destination_directory, file_name)
+
+            if os.path.splitext(destination_name)[1] in cant_write_ext:
+                destination_name = os.path.splitext(destination_name)[0] + ".wav"
+
+            print(destination_name)
+
+            audiofile.export(destination_name, format=os.path.splitext(destination_name)[1][1:])
+            """with open(destination_name, "wb") as file_place:
+                audiofile.export(file_place, format=os.path.splitext(file_place)[1][1:])"""
+        except CouldntDecodeError:
+            print(f"Coudn't Decode {file_path}")
 
 
 def shift_write_files(files_shifts, destination_path, names_and_paths, write_extension):
@@ -225,3 +252,6 @@ def convert_audio_file(file_path, destination_path):
     audiofile = create_audiosegment(file_path)
     with open(destination_path, "wb") as file_place:
         audiofile.export(file_place, format=os.path.splitext(destination_path)[1][1:])
+
+class CouldntDecodeError(Exception):
+    pass

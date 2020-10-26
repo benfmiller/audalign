@@ -605,7 +605,7 @@ class Audalign:
         use_tensorflow=False,
         verbose=False,
     ):
-        filehandler.noise_remove_direcory(
+        filehandler.noise_remove_directory(
             directory,
             noise_filepath,
             noise_start,
@@ -642,7 +642,7 @@ def _fingerprint_worker(file_path: str, hash_style="panako_mod", plot=False,) ->
     except FileNotFoundError:
         print(f'"{file_path}" not found')
         return None, None
-    except Exception:
+    except Exception:#filehandler.CouldntDecodeError:
         print(f'File "{file_name}" could not be decoded')
         return None, None
 
