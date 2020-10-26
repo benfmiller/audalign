@@ -1,3 +1,4 @@
+from typing import Tuple
 import audalign.filehandler as filehandler
 import audalign.fingerprint as fingerprint
 import audalign.recognize as recognize
@@ -563,15 +564,42 @@ class Audalign:
         """
         filehandler.convert_audio_file(file_path, destination_path)
 
-    def remove_noise_file(self, filepath, noise_start, noise_end, destination, use_tensorflow=False, verbose=False):
-        filehandler.noise_remove(filepath, noise_start, noise_end, destination, use_tensorflow=use_tensorflow, verbose=verbose)
+    def remove_noise_file(
+        self,
+        filepath,
+        noise_start,
+        noise_end,
+        destination,
+        use_tensorflow=False,
+        verbose=False,
+    ):
+        """Remove noise from audio file by specifying start and end seconds of representative sound sections. Writes file to destination
 
-    def remove_noise_directory(self, directory, noise_filepath, noise_start, noise_end, destination_directory):
+        Args:
+            filepath (str): filepath to read audio file
+            noise_start (float): positition in seconds of start of noise section
+            noise_end (float): position in seconds of end of noise section
+            destination (str): filepath of destination to write to
+            use_tensorflow (bool, optional): Uses tensorflow to increase speed if available. Defaults to False.
+            verbose (bool, optional): Shows several plots of noise removal process. Defaults to False.
+        """
+        filehandler.noise_remove(
+            filepath,
+            noise_start,
+            noise_end,
+            destination,
+            use_tensorflow=use_tensorflow,
+            verbose=verbose,
+        )
+
+    def remove_noise_directory(
+        self, directory, noise_filepath, noise_start, noise_end, destination_directory
+    ):
         # getting file going first
         pass
 
 
-def _fingerprint_worker(file_path: str, hash_style="panako_mod", plot=False,) -> None:
+def _fingerprint_worker(file_path: str, hash_style="panako_mod", plot=False,) -> Tuple:
     """
     Runs the file through the fingerprinter and returns file_name and hashes
 

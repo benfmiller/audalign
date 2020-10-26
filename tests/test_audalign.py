@@ -57,4 +57,3 @@ class TestInit:
         assert a == len(ada1.file_names)
         assert b == ada1.total_fingerprints
         assert c == len(ada1.fingerprinted_files)
-        
