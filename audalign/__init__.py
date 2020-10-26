@@ -570,6 +570,7 @@ class Audalign:
         noise_start,
         noise_end,
         destination,
+        alt_noise_filepath=None,
         use_tensorflow=False,
         verbose=False,
     ):
@@ -580,6 +581,7 @@ class Audalign:
             noise_start (float): positition in seconds of start of noise section
             noise_end (float): position in seconds of end of noise section
             destination (str): filepath of destination to write to
+            alt_noise_filepath (str): path of different file for noise sample
             use_tensorflow (bool, optional): Uses tensorflow to increase speed if available. Defaults to False.
             verbose (bool, optional): Shows several plots of noise removal process. Defaults to False.
         """
@@ -588,15 +590,30 @@ class Audalign:
             noise_start,
             noise_end,
             destination,
+            alt_noise_filepath=alt_noise_filepath,
             use_tensorflow=use_tensorflow,
             verbose=verbose,
         )
 
     def remove_noise_directory(
-        self, directory, noise_filepath, noise_start, noise_end, destination_directory
+        self,
+        directory,
+        noise_filepath,
+        noise_start,
+        noise_end,
+        destination_directory,
+        use_tensorflow=False,
+        verbose=False,
     ):
-        # getting file going first
-        pass
+        filehandler.noise_remove_direcory(
+            directory,
+            noise_filepath,
+            noise_start,
+            noise_end,
+            destination_directory,
+            use_tensorflow=use_tensorflow,
+            verbose=verbose,
+        )
 
 
 def _fingerprint_worker(file_path: str, hash_style="panako_mod", plot=False,) -> Tuple:
