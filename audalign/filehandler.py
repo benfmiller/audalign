@@ -1,17 +1,13 @@
-from math import nan
 import os
 import fnmatch
-import re
-from librosa.core import audio
 import numpy as np
 from numpy.core.defchararray import array
 from pydub import AudioSegment
 import math
-
-from pydub import audio_segment
 from audalign.fingerprint import DEFAULT_FS
 import noisereduce
 
+cant_write_ext = [".mov", ".mp4"]
 
 def find_files(path, extensions=["*"]):
     """
@@ -67,19 +63,11 @@ def read(filename: str, wrdestination=None):
         returns the bit depth
     """
 
-    audiofile = AudioSegment.from_file(filename)
-
-    audiofile = audiofile.set_frame_rate(DEFAULT_FS)
-    audiofile = audiofile.set_sample_width(2)
-    audiofile = audiofile.set_channels(1)
-    audiofile = audiofile.normalize()
-
+    audiofile = create_audiosegment(filename)
     data = np.frombuffer(audiofile._data, np.int16)
-
     if wrdestination:
         with open(wrdestination, "wb") as file_place:
             audiofile.export(file_place, format=os.path.splitext(file_place)[1][1:])
-
     return data, audiofile.frame_rate
 
 
@@ -135,7 +123,8 @@ def noise_remove(
 
     reduced_noise_data = _int16ify_data(reduced_noise_data)
     audiofile._data = reduced_noise_data.astype(np.int16)
-    audiofile.export(destination, format=os.path.splitext(destination)[1][1:])
+    with open(destination, "wb") as file_place:
+        audiofile.export(file_place, format=os.path.splitext(file_place)[1][1:])
 
 
 def noise_remove_directory(
@@ -147,7 +136,7 @@ def noise_remove_directory(
     use_tensorflow=False,
     verbose=False,
 ):
-    # asdf
+    #asd
     pass
 
 
@@ -155,7 +144,6 @@ def shift_write_files(files_shifts, destination_path, names_and_paths, write_ext
 
     max_shift = max(files_shifts.values())
 
-    cant_write_ext = [".mov", ".mp4"]
 
     if write_extension:
         if write_extension[0] != ".":
@@ -169,16 +157,10 @@ def shift_write_files(files_shifts, destination_path, names_and_paths, write_ext
             (max_shift - files_shifts[name]) * 1000, frame_rate=DEFAULT_FS
         )
 
-        audiofile = AudioSegment.from_file(file_path)
-
-        audiofile = audiofile.set_frame_rate(DEFAULT_FS)
-        audiofile = audiofile.set_sample_width(2)
-        audiofile = audiofile.set_channels(1)
-        audiofile = audiofile.normalize()
+        audiofile = create_audiosegment(file_path)
 
         file_name = os.path.basename(file_path)
         destination_name = os.path.join(destination_path, file_name)
-
         audiofile = silence + audiofile
 
         if os.path.splitext(destination_name)[1] in cant_write_ext:
@@ -213,11 +195,8 @@ def shift_write_files(files_shifts, destination_path, names_and_paths, write_ext
     total_files = total_files.normalize()
 
     if write_extension:
-
         total_name = os.path.join(destination_path, "total") + write_extension
-
         print(f"Writing {total_name}")
-
         with open(total_name, "wb") as file_place:
             total_files.export(file_place, format=os.path.splitext(total_name)[1][1:])
 
@@ -235,13 +214,7 @@ def shift_write_file(file_path, destination_path, offset_seconds):
 
     silence = AudioSegment.silent(offset_seconds * 1000, frame_rate=DEFAULT_FS)
 
-    audiofile = AudioSegment.from_file(file_path)
-
-    audiofile = audiofile.set_frame_rate(DEFAULT_FS)
-    audiofile = audiofile.set_sample_width(2)
-    audiofile = audiofile.set_channels(1)
-    audiofile = audiofile.normalize()
-
+    audiofile = create_audiosegment(file_path)
     audiofile = silence + audiofile
 
     with open(destination_path, "wb") as file_place:
@@ -249,12 +222,6 @@ def shift_write_file(file_path, destination_path, offset_seconds):
 
 
 def convert_audio_file(file_path, destination_path):
-    audiofile = AudioSegment.from_file(file_path)
-
-    audiofile = audiofile.set_frame_rate(DEFAULT_FS)
-    audiofile = audiofile.set_sample_width(2)
-    audiofile = audiofile.set_channels(1)
-    audiofile = audiofile.normalize()
-
+    audiofile = create_audiosegment(file_path)
     with open(destination_path, "wb") as file_place:
         audiofile.export(file_place, format=os.path.splitext(destination_path)[1][1:])
