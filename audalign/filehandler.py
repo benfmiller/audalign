@@ -252,6 +252,3 @@ def convert_audio_file(file_path, destination_path):
     audiofile = create_audiosegment(file_path)
     with open(destination_path, "wb") as file_place:
         audiofile.export(file_place, format=os.path.splitext(destination_path)[1][1:])
-
-class CouldntDecodeError(Exception):
-    pass

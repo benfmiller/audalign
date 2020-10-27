@@ -1,6 +1,7 @@
 from typing import Tuple
 import audalign.filehandler as filehandler
 import audalign.fingerprint as fingerprint
+from pydub.exceptions import CouldntDecodeError
 import audalign.recognize as recognize
 import audalign.align as align
 from functools import partial
@@ -298,17 +299,13 @@ class Audalign:
             result = []
 
             for filename in filenames_to_fingerprint:
-                try:
-                    file_name = os.path.basename(filename)
-                    if file_name in self.file_names:
-                        print(f"{file_name} already fingerprinted, continuing...")
-                        continue
-                    file_name, hashes = _fingerprint_worker_directory(filename)
-                    result.append([file_name, hashes])
-                except Exception:
-                    print(f'Failed fingerprinting "{filename}"')
-                    # Print traceback because we can't reraise it here
-                    traceback.print_exc(file=sys.stdout)
+                file_name = os.path.basename(filename)
+                if file_name in self.file_names:
+                    print(f"{file_name} already fingerprinted, continuing...")
+                    continue
+                file_name, hashes = _fingerprint_worker_directory(filename)
+                if file_name == None: continue
+                result.append([file_name, hashes])
         return result
 
     def fingerprint_file(self, file_path, set_file_name=None, plot=False):
@@ -642,7 +639,7 @@ def _fingerprint_worker(file_path: str, hash_style="panako_mod", plot=False,) ->
     except FileNotFoundError:
         print(f'"{file_path}" not found')
         return None, None
-    except Exception:#filehandler.CouldntDecodeError:
+    except CouldntDecodeError:
         print(f'File "{file_name}" could not be decoded')
         return None, None
 
