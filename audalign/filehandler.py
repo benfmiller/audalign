@@ -3,6 +3,7 @@ import fnmatch
 import numpy as np
 from numpy.core.defchararray import array
 from pydub import AudioSegment
+from pydub.exceptions import CouldntDecodeError
 import math
 from audalign.fingerprint import DEFAULT_FS
 import noisereduce
