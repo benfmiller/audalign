@@ -602,6 +602,18 @@ class Audalign:
         use_tensorflow=False,
         verbose=False,
     ):
+        """Remove noise from audio files in directory by specifying start and end seconds of representative sound sections. Writes file to destination directory
+        Uses multiprocessing if self.multiprocessing is true
+
+        Args:
+            directory (str): filepath for directory to quiet
+            nosie_filepath (str): filepath to read noise file
+            noise_start (float): positition in seconds of start of noise section
+            noise_end (float): position in seconds of end of noise section
+            destination_directory (str): filepath of destination directory to write to
+            use_tensorflow (bool, optional): Uses tensorflow to increase speed if available. Defaults to False.
+            verbose (bool, optional): Shows several plots of noise removal process. Defaults to False.
+        """
         filehandler.noise_remove_directory(
             directory,
             noise_filepath,
@@ -610,6 +622,7 @@ class Audalign:
             destination_directory,
             use_tensorflow=use_tensorflow,
             verbose=verbose,
+            use_multiprocessing=self.multiprocessing
         )
 
 

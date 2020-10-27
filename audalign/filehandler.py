@@ -1,3 +1,4 @@
+import multiprocessing
 import os
 import fnmatch
 import numpy as np
@@ -8,6 +9,7 @@ import math
 from audalign.fingerprint import DEFAULT_FS
 import noisereduce
 from functools import partial
+from itertools import product
 
 cant_write_ext = [".mov", ".mp4"]
 
@@ -137,36 +139,68 @@ def noise_remove_directory(
     destination_directory,
     use_tensorflow=False,
     verbose=False,
+    use_multiprocessing=False
 ):
     noise_data = _floatify_data(create_audiosegment(noise_filepath))[
             (noise_start * DEFAULT_FS) : (noise_end * DEFAULT_FS)
         ]
+    file_names = []
     for file_path, _ in find_files(directory):
-        try:
-            audiofile = create_audiosegment(file_path)
-            new_data = _floatify_data(audiofile)
+        file_names += [file_path]
 
-            reduced_noise_data = noisereduce.reduce_noise(
-                new_data, noise_data, use_tensorflow=use_tensorflow, verbose=verbose
+    _reduce_noise = partial(
+        _remove_noise, noise_section=noise_data, destination_directory=destination_directory, use_tensorflow=use_tensorflow, verbose=verbose
+    )
+
+    if use_multiprocessing == True:
+
+        try:
+            nprocesses = multiprocessing.cpu_count()
+        except NotImplementedError:
+            nprocesses = 1
+        else:
+            nprocesses = 1 if nprocesses <= 0 else nprocesses
+
+        with multiprocessing.Pool(nprocesses) as pool:
+
+            pool.map(
+                _reduce_noise, file_names
             )
 
-            reduced_noise_data = _int16ify_data(reduced_noise_data)
-            audiofile._data = reduced_noise_data.astype(np.int16)
+            pool.close()
+            pool.join()
+    else:
+        for i in file_names:
+            _reduce_noise(i, noise_data, destination_directory[0])
 
-            file_name = os.path.basename(file_path)
-            destination_name = os.path.join(destination_directory, file_name)
 
-            if os.path.splitext(destination_name)[1] in cant_write_ext:
-                destination_name = os.path.splitext(destination_name)[0] + ".wav"
 
-            print(destination_name)
+def _remove_noise(file_path, noise_section=[], destination_directory="", use_tensorflow=False, verbose=False):
 
-            audiofile.export(destination_name, format=os.path.splitext(destination_name)[1][1:])
-            """with open(destination_name, "wb") as file_place:
-                audiofile.export(file_place, format=os.path.splitext(file_place)[1][1:])"""
-        except CouldntDecodeError:
-            print(f"Coudn't Decode {file_path}")
+    try:
+        print(f"Reducing noise: {file_path}")
+        audiofile = create_audiosegment(file_path)
+        new_data = _floatify_data(audiofile)
 
+        reduced_noise_data = noisereduce.reduce_noise(
+            new_data, noise_section, use_tensorflow=use_tensorflow, verbose=verbose
+        )
+
+        reduced_noise_data = _int16ify_data(reduced_noise_data)
+        audiofile._data = reduced_noise_data.astype(np.int16)
+
+        file_name = os.path.basename(file_path)
+        destination_name = os.path.join(destination_directory, file_name)
+        if os.path.splitext(destination_name)[1] in cant_write_ext:
+            destination_name = os.path.splitext(destination_name)[0] + ".wav"
+
+        print(f"Noise reduced for \"{file_path}\" writing to \"{destination_name}\"")
+
+        with open(destination_name, "wb") as file_place:
+            audiofile.export(file_place, format=os.path.splitext(destination_name)[1][1:])
+
+    except CouldntDecodeError:
+        print(f"    Coudn't Decode {file_path}")
 
 def shift_write_files(files_shifts, destination_path, names_and_paths, write_extension):
 
