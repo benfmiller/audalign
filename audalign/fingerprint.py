@@ -113,7 +113,10 @@ def fingerprint(
     local_maxima = get_2D_peaks(arr2D, plot=plot)
 
     # return hashes
-    return generate_hashes(local_maxima, hash_style,)
+    return generate_hashes(
+        local_maxima,
+        hash_style,
+    )
 
 
 def get_2D_peaks(arr2D, plot=False):

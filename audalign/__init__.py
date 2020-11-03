@@ -34,9 +34,9 @@ class Audalign:
 
         hash style has four options. All fingerprints must be of the same hash style to match.
 
-        'base' hash style consists of two peaks. Two frequencies and a time difference. 
+        'base' hash style consists of two peaks. Two frequencies and a time difference.
         Creates many matches but is insensitive to noise.
-    
+
         'panako' hash style consists of three peaks. Two differences in frequency, two frequency
         bands, one time difference ratio. Creates few matches, very resistant to noise.
 
@@ -90,7 +90,7 @@ class Audalign:
         There are four accuracy levels with 1 being the lowest accuracy but the fastest. 3 is the highest recommended.
         4 gives the highest accuracy, but can take several gigabytes of memory for a couple files.
         Accuracy settings are acheived by manipulations in fingerprinting variables.
-        
+
         Specific values for accuracy levels were chosen semi-arbitrarily from experimentation to give a few good options.
 
         Parameters
@@ -272,7 +272,9 @@ class Audalign:
             return
 
         _fingerprint_worker_directory = partial(
-            _fingerprint_worker, hash_style=self.hash_style, plot=plot,
+            _fingerprint_worker,
+            hash_style=self.hash_style,
+            plot=plot,
         )
 
         if self.multiprocessing == True:
@@ -304,7 +306,8 @@ class Audalign:
                     print(f"{file_name} already fingerprinted, continuing...")
                     continue
                 file_name, hashes = _fingerprint_worker_directory(filename)
-                if file_name == None: continue
+                if file_name == None:
+                    continue
                 result.append([file_name, hashes])
         return result
 
@@ -356,7 +359,11 @@ class Audalign:
         [file_name, hashes]
         """
 
-        file_name, hashes = _fingerprint_worker(file_path, self.hash_style, plot=plot,)
+        file_name, hashes = _fingerprint_worker(
+            file_path,
+            self.hash_style,
+            plot=plot,
+        )
         file_name = set_file_name or file_name
         return [file_name, hashes]
 
@@ -622,11 +629,15 @@ class Audalign:
             destination_directory,
             use_tensorflow=use_tensorflow,
             verbose=verbose,
-            use_multiprocessing=self.multiprocessing
+            use_multiprocessing=self.multiprocessing,
         )
 
 
-def _fingerprint_worker(file_path: str, hash_style="panako_mod", plot=False,) -> Tuple:
+def _fingerprint_worker(
+    file_path: str,
+    hash_style="panako_mod",
+    plot=False,
+) -> Tuple:
     """
     Runs the file through the fingerprinter and returns file_name and hashes
 
@@ -657,7 +668,11 @@ def _fingerprint_worker(file_path: str, hash_style="panako_mod", plot=False,) ->
         return None, None
 
     print(f"Fingerprinting {file_name}")
-    hashes = fingerprint.fingerprint(channel, hash_style=hash_style, plot=plot,)
+    hashes = fingerprint.fingerprint(
+        channel,
+        hash_style=hash_style,
+        plot=plot,
+    )
 
     print(f"Finished fingerprinting {file_name}")
 
