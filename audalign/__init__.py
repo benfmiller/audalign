@@ -272,9 +272,7 @@ class Audalign:
             return
 
         _fingerprint_worker_directory = partial(
-            _fingerprint_worker,
-            hash_style=self.hash_style,
-            plot=plot,
+            _fingerprint_worker, hash_style=self.hash_style, plot=plot,
         )
 
         if self.multiprocessing == True:
@@ -359,20 +357,18 @@ class Audalign:
         [file_name, hashes]
         """
 
-        file_name, hashes = _fingerprint_worker(
-            file_path,
-            self.hash_style,
-            plot=plot,
-        )
+        file_name, hashes = _fingerprint_worker(file_path, self.hash_style, plot=plot,)
         file_name = set_file_name or file_name
         return [file_name, hashes]
 
-    def recognize(self, file_path, filter_matches=1, *args, **kwargs):
+    def recognize(self, file_path, filter_matches=1, locality=None, *args, **kwargs):
         """
         Recognizes given file against already fingerprinted files
 
         Offset describes duration that the recognized file aligns after the target file
         Does not recognize against files with same name and extention
+
+        Locality option used to only return match results within certain second range
 
         Parameters
         ----------
@@ -380,6 +376,8 @@ class Audalign:
             file path of target file to recognize
         filter_matches : int
             filters all matches lower than given argument, 1 is recommended
+        locality : int
+            filters results by locality in seconds
 
         Returns
         -------
@@ -390,7 +388,9 @@ class Audalign:
 
             None : if no match
         """
-        return recognize.recognize(self, file_path, filter_matches, *args, **kwargs)
+        return recognize.recognize(
+            self, file_path, filter_matches, locality, *args, **kwargs
+        )
 
     def write_processed_file(self, file_path, destination_file):
         """
@@ -633,11 +633,7 @@ class Audalign:
         )
 
 
-def _fingerprint_worker(
-    file_path: str,
-    hash_style="panako_mod",
-    plot=False,
-) -> Tuple:
+def _fingerprint_worker(file_path: str, hash_style="panako_mod", plot=False,) -> Tuple:
     """
     Runs the file through the fingerprinter and returns file_name and hashes
 
@@ -668,11 +664,7 @@ def _fingerprint_worker(
         return None, None
 
     print(f"Fingerprinting {file_name}")
-    hashes = fingerprint.fingerprint(
-        channel,
-        hash_style=hash_style,
-        plot=plot,
-    )
+    hashes = fingerprint.fingerprint(channel, hash_style=hash_style, plot=plot,)
 
     print(f"Finished fingerprinting {file_name}")
 
