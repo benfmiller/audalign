@@ -272,7 +272,9 @@ class Audalign:
             return
 
         _fingerprint_worker_directory = partial(
-            _fingerprint_worker, hash_style=self.hash_style, plot=plot,
+            _fingerprint_worker,
+            hash_style=self.hash_style,
+            plot=plot,
         )
 
         if self.multiprocessing == True:
@@ -357,7 +359,11 @@ class Audalign:
         [file_name, hashes]
         """
 
-        file_name, hashes = _fingerprint_worker(file_path, self.hash_style, plot=plot,)
+        file_name, hashes = _fingerprint_worker(
+            file_path,
+            self.hash_style,
+            plot=plot,
+        )
         file_name = set_file_name or file_name
         return [file_name, hashes]
 
@@ -633,7 +639,11 @@ class Audalign:
         )
 
 
-def _fingerprint_worker(file_path: str, hash_style="panako_mod", plot=False,) -> Tuple:
+def _fingerprint_worker(
+    file_path: str,
+    hash_style="panako_mod",
+    plot=False,
+) -> Tuple:
     """
     Runs the file through the fingerprinter and returns file_name and hashes
 
@@ -664,7 +674,11 @@ def _fingerprint_worker(file_path: str, hash_style="panako_mod", plot=False,) ->
         return None, None
 
     print(f"Fingerprinting {file_name}")
-    hashes = fingerprint.fingerprint(channel, hash_style=hash_style, plot=plot,)
+    hashes = fingerprint.fingerprint(
+        channel,
+        hash_style=hash_style,
+        plot=plot,
+    )
 
     print(f"Finished fingerprinting {file_name}")
 
