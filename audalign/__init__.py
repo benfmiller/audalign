@@ -1,14 +1,13 @@
-from typing import Tuple
 import audalign.filehandler as filehandler
 import audalign.fingerprint as fingerprint
-from pydub.exceptions import CouldntDecodeError
 import audalign.recognize as recognize
 import audalign.align as align
+import audalign.visrecognize as visrecognize
+from pydub.exceptions import CouldntDecodeError
+from typing import Tuple
 from functools import partial
 import multiprocessing
 import os
-import traceback
-import sys
 import pickle
 import json
 
@@ -397,6 +396,44 @@ class Audalign:
         return recognize.recognize(
             self, file_path, filter_matches, locality, *args, **kwargs
         )
+
+    def visrecognize(self, target_file_path: str, against_file_path: str):
+        """Recognize target file against against file visually.
+        Uses image processing similarity techniques to identify areas with similar spectrums.
+
+        Args:
+            target_file_path (str): File to recognize
+            against_file_path (str): Recognize against
+
+        Returns
+        -------
+        match_result : dict
+            dictionary containing match time and match info
+
+            or
+
+            None : if no match
+        """
+        return visrecognize.visrecognize(target_file_path, against_file_path)
+
+    def visrecognize_directory(self, target_file_path: str, against_directory: str):
+        """Recognize target file against against directory visually.
+        Uses image processing similarity techniques to identify areas with similar spectrums.
+
+        Args:
+            target_file_path (str): File to recognize
+            against_directory (str): Recognize against
+
+        Returns
+        -------
+        match_result : dict
+            dictionary containing match time and match info
+
+            or
+
+            None : if no match
+        """
+        return visrecognize.visrecognize_directory(target_file_path, against_directory)
 
     def write_processed_file(self, file_path, destination_file):
         """
