@@ -78,7 +78,7 @@ def fingerprint(
     wratio=DEFAULT_OVERLAP_RATIO,
     plot=False,
     hash_style="panako",
-    retSpec=False,
+    retspec=False,
 ):
     """
     FFT the channel, log transform output, find local maxima, then return
@@ -115,14 +115,14 @@ def fingerprint(
     # print(f"length of arr2d {len(arr2D)}")
     # print(f"length of arr2d height {len(arr2D[1])}")
 
+    if retspec:
+        return arr2D
+
     # find local maxima
     local_maxima = get_2D_peaks(arr2D, plot=plot)
 
     # return hashes
-    return generate_hashes(
-        local_maxima,
-        hash_style,
-    )
+    return generate_hashes(local_maxima, hash_style,)
 
 
 def get_2D_peaks(arr2D, plot=False):
