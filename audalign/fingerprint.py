@@ -22,6 +22,7 @@ DEFAULT_FS = 44100
 
 ######################################################################
 # Size of the FFT window, affects frequency granularity
+# Which is 0.0929 seconds
 DEFAULT_WINDOW_SIZE = 4096
 
 ######################################################################
@@ -122,7 +123,10 @@ def fingerprint(
     local_maxima = get_2D_peaks(arr2D, plot=plot)
 
     # return hashes
-    return generate_hashes(local_maxima, hash_style,)
+    return generate_hashes(
+        local_maxima,
+        hash_style,
+    )
 
 
 def get_2D_peaks(arr2D, plot=False):

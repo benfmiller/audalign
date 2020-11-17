@@ -1,6 +1,6 @@
-import audalign.fingerprint
 import cv2
-from skimage.measure import structural_similarity as ssim
+from skimage.metrics import structural_similarity as ssim
+from skimage.metrics import mean_squared_error
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -8,23 +8,56 @@ from audalign.fingerprint import fingerprint
 from audalign.filehandler import read
 
 
-def visrecognize(self, target_file_path: str, against_file_path: str):
+def visrecognize(target_file_path: str, against_file_path: str):
+    # With frequency of 44100
+    # Each frame is 0.0929 seconds with an overlap ratio of .5,
+    # so moving over one frame moves 0.046 seconds
+    # 1 second of frames is 21.55 frames.
+
     results = {}
-    target_samples = read(target_file_path)
+    target_samples, _ = read(target_file_path)
     target_arr2d = fingerprint(target_samples, retspec=True)
-    target_arr2d = np.transpose(target_arr2d)
-    against_samples = read(against_file_path)
+    transposed_target_arr2d = np.transpose(target_arr2d)
+
+    against_samples, _ = read(against_file_path)
     against_arr2d = fingerprint(against_samples, retspec=True)
-    against_arr2d = np.transpose(against_arr2d)
+    transposed_against_arr2d = np.transpose(against_arr2d)
+
+    # print(f"target max = {np.amax(target_arr2d)}")
+    # print(f"against max = {np.amax(against_arr2d)}")
+
+    th, tw = target_arr2d.shape
+    ah, aw = against_arr2d.shape
+
+    print(f"Target height: {th}, target width: {tw}")
+    print(f"against height: {ah}")
+    print(f"length of target: {len(target_arr2d)}")
+
+    m = mean_squared_error(target_arr2d[0:4000], against_arr2d[0:4000])
+    s = ssim(target_arr2d[0:4000], against_arr2d[0:4000])
+
+    fig = plt.figure("Test")
+    # show first image
+    plt.suptitle("MSE: %.2f, SSIM: %.2f" % (m, s))
+    ax = fig.add_subplot(1, 2, 1)
+    plt.imshow(target_arr2d)  # , cmap=plt.cm.gray) for gray colors
+    # plt.axis("off")
+    # show the second image
+    ax = fig.add_subplot(1, 2, 2)
+    plt.imshow(against_arr2d)  # , cmap=plt.cm.gray) for gray colors
+    # plt.axis("off")
+    # show the images
+    plt.show()
 
     return results
 
 
-def visrecognize_directory(self, target_file_path: str, against_directory: str):
+def visrecognize_directory(target_file_path: str, against_directory: str):
     results = {}
     return results
 
 
+"""
 def mse(imageA, imageB):
     # the 'Mean Squared Error' between the two images is the
     # sum of the squared difference between the two images;
@@ -35,24 +68,27 @@ def mse(imageA, imageB):
     # return the MSE, the lower the error, the more "similar"
     # the two images are
     return err
+"""
 
 
-def compare_images(imageA, imageB, title="comparison"):
+def plot_two_images(imageA, imageB, title="comparison", mse=None, ssim_value=None):
     # compute the mean squared error and structural similarity
     # index for the images
-    m = mse(imageA, imageB)
-    s = ssim(imageA, imageB)
+    m, s = 0, 0
+    # m = mse(imageA, imageB)
+    # s = ssim(imageA, imageB)
     # setup the figure
     fig = plt.figure(title)
-    plt.suptitle("MSE: %.2f, SSIM: %.2f" % (m, s))
+    if mse and ssim_value:
+        plt.suptitle("MSE: %.2f, SSIM: %.2f" % (m, s))
     # show first image
     ax = fig.add_subplot(1, 2, 1)
-    plt.imshow(imageA, cmap=plt.cm.gray)
-    plt.axis("off")
+    plt.imshow(imageA)  # , cmap=plt.cm.gray)
+    # plt.axis("off")
     # show the second image
     ax = fig.add_subplot(1, 2, 2)
-    plt.imshow(imageB, cmap=plt.cm.gray)
-    plt.axis("off")
+    plt.imshow(imageB)  # , cmap=plt.cm.gray)
+    # plt.axis("off")
     # show the images
     plt.show()
 
@@ -81,14 +117,6 @@ def included():
     # show the figure
     plt.show()
     # compare the images
-    compare_images(original, original, "Original vs. Original")
-    compare_images(original, contrast, "Original vs. Contrast")
-    compare_images(original, shopped, "Original vs. Photoshopped")
-
-
-def main():
-    included()
-
-
-if __name__ == "__main__":
-    main()
+    plot_two_images(original, original, "Original vs. Original")
+    plot_two_images(original, contrast, "Original vs. Contrast")
+    plot_two_images(original, shopped, "Original vs. Photoshopped")
