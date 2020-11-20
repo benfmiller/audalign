@@ -22,6 +22,7 @@ DEFAULT_FS = 44100
 
 ######################################################################
 # Size of the FFT window, affects frequency granularity
+# Which is 0.0929 seconds
 DEFAULT_WINDOW_SIZE = 4096
 
 ######################################################################
@@ -78,6 +79,7 @@ def fingerprint(
     wratio=DEFAULT_OVERLAP_RATIO,
     plot=False,
     hash_style="panako",
+    retspec=False,
 ):
     """
     FFT the channel, log transform output, find local maxima, then return
@@ -106,8 +108,16 @@ def fingerprint(
     )[0]
 
     # apply log transform since specgram() returns linear array
+    # print(arr2D)
+    # print(max(arr2D[0]))
     arr2D = 10 * np.log2(arr2D)
     arr2D[arr2D == -np.inf] = 0  # replace infs with zeros
+    # print(max(arr2D[0]))
+    # print(f"length of arr2d {len(arr2D)}")
+    # print(f"length of arr2d height {len(arr2D[1])}")
+
+    if retspec:
+        return arr2D
 
     # find local maxima
     local_maxima = get_2D_peaks(arr2D, plot=plot)
