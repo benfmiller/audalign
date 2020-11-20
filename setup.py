@@ -17,14 +17,14 @@ def parse_requirements(requirements):
 PACKAGE_NAME = "audalign"
 PACKAGE_VERSION = "0.0.2"
 SUMMARY = "Audalign: Audio Alignment in Python"
-DESCRIPTION = "Fun Description"
+DESCRIPTION = "This package offers fingerprinting, Recognizing, and aligning tools."
 
 REQUIREMENTS = parse_requirements("requirements.txt")
 
 setup(
     name=PACKAGE_NAME,
     version=PACKAGE_VERSION,
-    # packages=audalign,
+    packages=audalign,
     license="MIT",
     description=SUMMARY,
     long_description=DESCRIPTION,
