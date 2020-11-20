@@ -3,7 +3,7 @@ import time
 import os
 
 
-def recognize(audalign_object, file_path, filter_matches):
+def recognize(audalign_object, file_path, filter_matches, locality):
     """
     Recognizes given file against already fingerprinted files
 
@@ -26,7 +26,7 @@ def recognize(audalign_object, file_path, filter_matches):
 
     t = time.time()
     matches = find_matches(audalign_object, file_path)
-    rough_match = align_matches(audalign_object, matches)
+    rough_match = align_matches(matches, locality)
 
     filter_set = False
 
@@ -36,7 +36,7 @@ def recognize(audalign_object, file_path, filter_matches):
     file_match = None
     if len(rough_match) > 0:
         file_match = process_results(
-            audalign_object, rough_match, filter_matches, filter_set
+            audalign_object, rough_match, locality, filter_matches, filter_set
         )
     t = time.time() - t
 
@@ -64,8 +64,8 @@ def find_matches(audalign_object, file_path):
 
     Returns
     -------
-    Matches: list[str, int]
-        list of all matches, file_name match and corresponding offset
+    Matches: list[str, int, int, int]
+        list of all matches, file_name match, corresponding offset, target location, file_match offset
     """
     file_name = os.path.basename(file_path)
 
@@ -91,11 +91,13 @@ def find_matches(audalign_object, file_path):
                     for t_offset in target_mapper[t_hash]:
                         for a_offset in already_hashes[t_hash]:
                             sample_difference = a_offset - t_offset
-                            matches.append([audio_file[0], sample_difference])
+                            matches.append(
+                                [audio_file[0], sample_difference, t_offset, a_offset]
+                            )
     return matches
 
 
-def align_matches(audalign_object, matches):
+def align_matches(matches, locality):
     """
     takes matches from find_matches and converts it to a dictionary of counts per offset and file name
 
@@ -112,18 +114,31 @@ def align_matches(audalign_object, matches):
 
     print("Aligning matches")
 
-    sample_difference_counter = {}
-    for file_name, sample_difference in matches:
-        if file_name not in sample_difference_counter:
-            sample_difference_counter[file_name] = {}
-        if sample_difference not in sample_difference_counter[file_name]:
-            sample_difference_counter[file_name][sample_difference] = 0
-        sample_difference_counter[file_name][sample_difference] += 1
+    if locality:
+        sample_difference_counter = {}
+        for file_name, sample_difference, _, _ in matches:
+            if file_name not in sample_difference_counter:
+                sample_difference_counter[file_name] = {}
+            if sample_difference not in sample_difference_counter[file_name]:
+                sample_difference_counter[file_name][sample_difference] = 0
+            sample_difference_counter[file_name][sample_difference] += 1
 
-    return sample_difference_counter
+        return (sample_difference_counter, None)
+    else:
+        sample_difference_counter = {}
+        for file_name, sample_difference, t_offset, a_offset in matches:
+            if file_name not in sample_difference_counter:
+                sample_difference_counter[file_name] = {}
+            if sample_difference not in sample_difference_counter[file_name]:
+                sample_difference_counter[file_name][sample_difference] = 0
+            sample_difference_counter[file_name][sample_difference] += 1
+
+        return (sample_difference_counter, None)
 
 
-def process_results(audalign_object, results, filter_matches=1, filter_set=False):
+def process_results(
+    audalign_object, results, locality, filter_matches=1, filter_set=False
+):
     """
     Takes matches from align_matches, filters and orders them, returns dictionary of match info
 
@@ -144,6 +159,7 @@ def process_results(audalign_object, results, filter_matches=1, filter_set=False
         dict of file_names with match info as values
     """
 
+    results = results[0]
     complete_match_info = {}
 
     for file_name in results.keys():
@@ -180,7 +196,7 @@ def process_results(audalign_object, results, filter_matches=1, filter_set=False
 
     if len(complete_match_info) == 0 and filter_set == False:
         return process_results(
-            audalign_object, results, filter_matches=filter_matches - 1
+            audalign_object, results, locality, filter_matches=filter_matches - 1
         )
 
     return complete_match_info
