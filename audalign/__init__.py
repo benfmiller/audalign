@@ -398,13 +398,21 @@ class Audalign:
             self, file_path, filter_matches, locality, *args, **kwargs
         )
 
-    def visrecognize(self, target_file_path: str, against_file_path: str):
+    def visrecognize(
+        self,
+        target_file_path: str,
+        against_file_path: str,
+        img_width=1.0,
+        overlap_ratio=0.5,
+    ):
         """Recognize target file against against file visually.
         Uses image processing similarity techniques to identify areas with similar spectrums.
 
         Args:
             target_file_path (str): File to recognize
             against_file_path (str): Recognize against
+            img_width (float): width of spectrogram image for recognition
+            overlap_ratio (float): overlap of window for matching
 
         Returns
         -------
@@ -415,7 +423,12 @@ class Audalign:
 
             None : if no match
         """
-        return visrecognize.visrecognize(target_file_path, against_file_path)
+        return visrecognize.visrecognize(
+            target_file_path,
+            against_file_path,
+            img_width=img_width,
+            overlap_ratio=overlap_ratio,
+        )
 
     def visrecognize_directory(self, target_file_path: str, against_directory: str):
         """Recognize target file against against directory visually.
