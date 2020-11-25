@@ -404,6 +404,7 @@ class Audalign:
         against_file_path: str,
         img_width=1.0,
         overlap_ratio=0.5,
+        plot=False,
     ):
         """Recognize target file against against file visually.
         Uses image processing similarity techniques to identify areas with similar spectrums.
@@ -413,6 +414,7 @@ class Audalign:
             against_file_path (str): Recognize against
             img_width (float): width of spectrogram image for recognition
             overlap_ratio (float): overlap of window for matching
+            plot (bool): plot the spectrogram of each audio file
 
         Returns
         -------
@@ -428,6 +430,7 @@ class Audalign:
             against_file_path,
             img_width=img_width,
             overlap_ratio=overlap_ratio,
+            plot=plot,
         )
 
     def visrecognize_directory(self, target_file_path: str, against_directory: str):
