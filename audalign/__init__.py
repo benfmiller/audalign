@@ -130,6 +130,14 @@ class Audalign:
         """
         fingerprint.threshold = threshold
 
+    def set_multiprocessing(self, true_or_false: bool):
+        """Sets to true for on or false for off
+
+        Args:
+            true_or_false (bool): [true on or false off]
+        """
+        self.multiprocessing = true_or_false
+
     def save_fingerprinted_files(self, filename: str) -> None:
         """
         Serializes fingerprinted files to json or pickle file
@@ -408,6 +416,7 @@ class Audalign:
     ):
         """Recognize target file against against file visually.
         Uses image processing similarity techniques to identify areas with similar spectrums.
+        Uses multiprocessing if multiprocessing variable is set to true
 
         Args:
             target_file_path (str): File to recognize
@@ -430,6 +439,7 @@ class Audalign:
             against_file_path,
             img_width=img_width,
             overlap_ratio=overlap_ratio,
+            use_multiprocessing=self.multiprocessing,
             plot=plot,
         )
 

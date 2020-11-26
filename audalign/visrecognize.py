@@ -1,9 +1,12 @@
+from operator import index
+import re
 import cv2
 from skimage.metrics import structural_similarity as ssim
 from skimage.metrics import mean_squared_error
 import matplotlib.pyplot as plt
 import numpy as np
 import multiprocessing
+from functools import partial
 
 import audalign.fingerprint as fingerprint
 from audalign.filehandler import read
@@ -25,16 +28,24 @@ def get_frame_width_and_overlap(seconds_width: float, overlap_ratio: float):
     return seconds_width, overlap_ratio
 
 
-def calculate_comp_values(target_frame, against_frame):
+def calculate_comp_values(
+    index_tuple, img_width=0, target_arr2d=[[]], against_arr2d=[[]]
+):
     try:
-        m = mean_squared_error(target_frame, against_frame)
-        s = ssim(target_frame, against_frame)
-        return (m, s)
+        m = mean_squared_error(
+            target_arr2d[index_tuple[0] : index_tuple[0] + img_width],
+            against_arr2d[index_tuple[1] : index_tuple[1] + img_width],
+        )
+        s = ssim(
+            target_arr2d[index_tuple[0] : index_tuple[0] + img_width],
+            against_arr2d[index_tuple[1] : index_tuple[1] + img_width],
+        )
+        return (index_tuple[0], index_tuple[1], (m, s))
     except ZeroDivisionError as e:
         m = 10000000
-        print("zero division error")
+        print(f"zero division error for index {index_tuple} and img width{img_width}")
         s = 10000000
-        return (m, s)
+        return (index_tuple[0], index_tuple[1], (m, s))
 
 
 def visrecognize(
@@ -42,6 +53,7 @@ def visrecognize(
     against_file_path: str,
     img_width=1.0,
     overlap_ratio=0.5,
+    use_multiprocessing=True,
     plot=False,
 ) -> dict:
     # With frequency of 44100
@@ -70,73 +82,55 @@ def visrecognize(
     print(f"against height: {ah}")
     print(f"length of target: {len(transposed_target_arr2d)}")
 
-    results_list = []
-
-    # if use_multiprocessing == True:
-
-    #     try:
-    #         nprocesses = multiprocessing.cpu_count()
-    #     except NotImplementedError:
-    #         nprocesses = 1
-    #     else:
-    #         nprocesses = 1 if nprocesses <= 0 else nprocesses
-
-    #     with multiprocessing.Pool(nprocesses) as pool:
-
-    #         pool.map(_reduce_noise, file_names)
-
-    #         pool.close()
-    #         pool.join()
-    # else:
-    #     for i in file_names:
-    #         _reduce_noise(i, noise_data, destination_directory[0])
-
-    # create time location list
-
+    # create index list
     index_list = []
     for i in range(0, th, overlap_ratio):
         for j in range(0, ah, overlap_ratio):
             if i + img_width < th and j + img_width < ah:
                 # print(f"{i}, {j}")
-                index_list += (i, j)
-
+                index_list += [(i, j)]
     if th > overlap_ratio and ah > overlap_ratio:
-        index_list += (th - img_width - 1, ah - img_width - 1)
+        index_list += [(th - img_width - 1, ah - img_width - 1)]
 
-    # calculate mse and ssim for last frame
-    if th > overlap_ratio and ah > overlap_ratio:
-        # average signal power filter?
-        results_list += [
-            (
-                th - img_width - 1,
-                ah - img_width - 1,
-                calculate_comp_values(
-                    transposed_target_arr2d[th - overlap_ratio - 1 : th - 1],
-                    transposed_against_arr2d[ah - overlap_ratio - 1 : ah - 1],
-                ),
-            )
-        ]
-
-    results_list = sorted(results_list, key=lambda x: x[2][0])
-    print(results_list)
-
-    return
+    _calculate_comp_values = partial(
+        calculate_comp_values,
+        img_width=img_width,
+        target_arr2d=transposed_target_arr2d,
+        against_arr2d=transposed_against_arr2d,
+    )
 
     # calculate all mse and ssim values
-    for i in range(0, th - img_width, overlap_ratio):
-        for j in range(0, ah - img_width, overlap_ratio):
-            if i + img_width < tw and j + img_width < aw:
-                # average signal power filter?
-                results_list += [
-                    (
-                        i,
-                        j,
-                        calculate_comp_values(
-                            transposed_target_arr2d[i : i + img_width],
-                            transposed_against_arr2d[j : j + img_width],
-                        ),
-                    )
-                ]
+    if use_multiprocessing == True:
+
+        try:
+            nprocesses = multiprocessing.cpu_count()
+        except NotImplementedError:
+            nprocesses = 1
+        else:
+            nprocesses = 1 if nprocesses <= 0 else nprocesses
+
+        with multiprocessing.Pool(nprocesses) as pool:
+            results_list = pool.map(_calculate_comp_values, index_list)
+            pool.close()
+            pool.join()
+    else:
+        results_list = []
+        for i in index_list:
+            results_list += _calculate_comp_values(i)
+
+    # results_list = [
+    #     (
+    #         x[0],
+    #         x[1],
+    #         calculate_comp_values(
+    #             transposed_target_arr2d[x[0] : x[0] + img_width],
+    #             transposed_against_arr2d[x[1] : x[1] + img_width],
+    #         ),
+    #     )
+    #     for x in index_list
+    # ]
+
+    results_list = sorted(results_list, key=lambda x: x[2][0])
 
     if plot:
         plot_two_images(target_arr2d, against_arr2d)
