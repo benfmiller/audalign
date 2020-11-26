@@ -3,6 +3,7 @@ from skimage.metrics import structural_similarity as ssim
 from skimage.metrics import mean_squared_error
 import matplotlib.pyplot as plt
 import numpy as np
+import multiprocessing
 
 import audalign.fingerprint as fingerprint
 from audalign.filehandler import read
@@ -71,6 +72,56 @@ def visrecognize(
 
     results_list = []
 
+    # if use_multiprocessing == True:
+
+    #     try:
+    #         nprocesses = multiprocessing.cpu_count()
+    #     except NotImplementedError:
+    #         nprocesses = 1
+    #     else:
+    #         nprocesses = 1 if nprocesses <= 0 else nprocesses
+
+    #     with multiprocessing.Pool(nprocesses) as pool:
+
+    #         pool.map(_reduce_noise, file_names)
+
+    #         pool.close()
+    #         pool.join()
+    # else:
+    #     for i in file_names:
+    #         _reduce_noise(i, noise_data, destination_directory[0])
+
+    # create time location list
+
+    index_list = []
+    for i in range(0, th, overlap_ratio):
+        for j in range(0, ah, overlap_ratio):
+            if i + img_width < th and j + img_width < ah:
+                # print(f"{i}, {j}")
+                index_list += (i, j)
+
+    if th > overlap_ratio and ah > overlap_ratio:
+        index_list += (th - img_width - 1, ah - img_width - 1)
+
+    # calculate mse and ssim for last frame
+    if th > overlap_ratio and ah > overlap_ratio:
+        # average signal power filter?
+        results_list += [
+            (
+                th - img_width - 1,
+                ah - img_width - 1,
+                calculate_comp_values(
+                    transposed_target_arr2d[th - overlap_ratio - 1 : th - 1],
+                    transposed_against_arr2d[ah - overlap_ratio - 1 : ah - 1],
+                ),
+            )
+        ]
+
+    results_list = sorted(results_list, key=lambda x: x[2][0])
+    print(results_list)
+
+    return
+
     # calculate all mse and ssim values
     for i in range(0, th - img_width, overlap_ratio):
         for j in range(0, ah - img_width, overlap_ratio):
@@ -86,22 +137,6 @@ def visrecognize(
                         ),
                     )
                 ]
-
-    # calculate mse and ssim for last frame
-    if th > img_width and ah > img_width:
-        # average signal power filter?
-        results_list += [
-            (
-                th - img_width - 1,
-                ah - img_width - 1,
-                calculate_comp_values(
-                    transposed_target_arr2d[th - img_width - 1 : th - 1],
-                    transposed_against_arr2d[ah - img_width - 1 : ah - 1],
-                ),
-            )
-        ]
-    results_list = sorted(results_list, key=lambda x: x[2][0])
-    print(results_list)
 
     if plot:
         plot_two_images(target_arr2d, against_arr2d)
