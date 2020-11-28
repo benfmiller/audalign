@@ -412,6 +412,7 @@ class Audalign:
         against_file_path: str,
         img_width=1.0,
         overlap_ratio=0.5,
+        volume_threshold=130,
         plot=False,
     ):
         """Recognize target file against against file visually.
@@ -423,6 +424,7 @@ class Audalign:
             against_file_path (str): Recognize against
             img_width (float): width of spectrogram image for recognition
             overlap_ratio (float): overlap of window for matching
+            volume_threshold (int): doesn't find stats for sections with average volume below threshold
             plot (bool): plot the spectrogram of each audio file
 
         Returns
@@ -439,6 +441,7 @@ class Audalign:
             against_file_path,
             img_width=img_width,
             overlap_ratio=overlap_ratio,
+            volume_threshold=volume_threshold,
             use_multiprocessing=self.multiprocessing,
             plot=plot,
         )
