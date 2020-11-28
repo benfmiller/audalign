@@ -1,6 +1,8 @@
 from operator import index
+import time
 import re
 import cv2
+import os
 from skimage.metrics import structural_similarity as ssim
 from skimage.metrics import mean_squared_error
 import matplotlib.pyplot as plt
@@ -29,9 +31,14 @@ def get_frame_width_and_overlap(seconds_width: float, overlap_ratio: float):
 
 
 def calculate_comp_values(
-    index_tuple, img_width=0, target_arr2d=[[]], against_arr2d=[[]]
+    index_tuple, img_width=0, target_arr2d=[[]], against_arr2d=[[]], threshold=130
 ):
     try:
+        if (
+            target_arr2d[index_tuple[0] : index_tuple[0] + img_width].mean() < threshold
+            or against_arr2d[index_tuple[1] : index_tuple[1] + img_width] < threshold
+        ):
+            return (index_tuple[0], index_tuple[1], (10000000, 10000000))
         m = mean_squared_error(
             target_arr2d[index_tuple[0] : index_tuple[0] + img_width],
             against_arr2d[index_tuple[1] : index_tuple[1] + img_width],
@@ -53,6 +60,7 @@ def visrecognize(
     against_file_path: str,
     img_width=1.0,
     overlap_ratio=0.5,
+    volume_threshold=130,
     use_multiprocessing=True,
     plot=False,
 ) -> dict:
@@ -61,9 +69,10 @@ def visrecognize(
     # so moving over one frame moves 0.046 seconds
     # 1 second of frames is 21.55 frames.
 
+    t = time.time()
+
     img_width, overlap_ratio = get_frame_width_and_overlap(img_width, overlap_ratio)
 
-    results = {}
     target_samples, _ = read(target_file_path)
     target_arr2d = fingerprint.fingerprint(target_samples, retspec=True)
     transposed_target_arr2d = np.transpose(target_arr2d)
@@ -81,13 +90,16 @@ def visrecognize(
     print(f"Target height: {th}, target width: {tw}")
     print(f"against height: {ah}")
     print(f"length of target: {len(transposed_target_arr2d)}")
+    print(
+        f"Comparing {os.path.basename(target_file_path)} against {os.path.basename(against_file_path)} ",
+        end="",
+    )
 
     # create index list
     index_list = []
     for i in range(0, th, overlap_ratio):
         for j in range(0, ah, overlap_ratio):
             if i + img_width < th and j + img_width < ah:
-                # print(f"{i}, {j}")
                 index_list += [(i, j)]
     if th > overlap_ratio and ah > overlap_ratio:
         index_list += [(th - img_width - 1, ah - img_width - 1)]
@@ -97,6 +109,7 @@ def visrecognize(
         img_width=img_width,
         target_arr2d=transposed_target_arr2d,
         against_arr2d=transposed_against_arr2d,
+        threshold=volume_threshold,
     )
 
     # calculate all mse and ssim values
@@ -118,24 +131,22 @@ def visrecognize(
         for i in index_list:
             results_list += _calculate_comp_values(i)
 
-    # results_list = [
-    #     (
-    #         x[0],
-    #         x[1],
-    #         calculate_comp_values(
-    #             transposed_target_arr2d[x[0] : x[0] + img_width],
-    #             transposed_against_arr2d[x[1] : x[1] + img_width],
-    #         ),
-    #     )
-    #     for x in index_list
-    # ]
-
-    results_list = sorted(results_list, key=lambda x: x[2][0])
+    print(f"done")
+    print("Calculating results... ", end="")
 
     if plot:
         plot_two_images(target_arr2d, against_arr2d)
 
-    return results
+    file_match = results_list
+
+    t = time.time() - t
+
+    result = {}
+
+    result["match_time"] = t
+    result["match_info"] = file_match
+
+    return result
 
 
 def visrecognize_directory(target_file_path: str, against_directory: str):
