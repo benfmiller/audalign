@@ -1,4 +1,5 @@
 from operator import index
+from re import match
 import time
 import re
 import cv2
@@ -33,10 +34,14 @@ def get_frame_width_and_overlap(seconds_width: float, overlap_ratio: float):
 def calculate_comp_values(
     index_tuple, img_width=0, target_arr2d=[[]], against_arr2d=[[]], threshold=130
 ):
+    # print(np.amax(target_arr2d[index_tuple[0] : index_tuple[0] + img_width]))
+    # array.mean() very small range of values, usually between 0.4 and 2
     try:
         if (
-            target_arr2d[index_tuple[0] : index_tuple[0] + img_width].mean() < threshold
-            or against_arr2d[index_tuple[1] : index_tuple[1] + img_width] < threshold
+            np.amax(target_arr2d[index_tuple[0] : index_tuple[0] + img_width])
+            < threshold
+            or np.amax(against_arr2d[index_tuple[1] : index_tuple[1] + img_width])
+            < threshold
         ):
             return (index_tuple[0], index_tuple[1], (10000000, 10000000))
         m = mean_squared_error(
@@ -62,8 +67,10 @@ def visrecognize(
     overlap_ratio=0.5,
     volume_threshold=130,
     use_multiprocessing=True,
+    freq_threshold=200,
     plot=False,
 ) -> dict:
+    # ad option to specify which value to sort by?
     # With frequency of 44100
     # Each frame is 0.0929 seconds with an overlap ratio of .5,
     # so moving over one frame moves 0.046 seconds
@@ -75,11 +82,11 @@ def visrecognize(
 
     target_samples, _ = read(target_file_path)
     target_arr2d = fingerprint.fingerprint(target_samples, retspec=True)
-    transposed_target_arr2d = np.transpose(target_arr2d)
+    transposed_target_arr2d = np.clip(np.transpose(target_arr2d), 0, 255)
 
     against_samples, _ = read(against_file_path)
     against_arr2d = fingerprint.fingerprint(against_samples, retspec=True)
-    transposed_against_arr2d = np.transpose(against_arr2d)
+    transposed_against_arr2d = np.clip(np.transpose(against_arr2d), 0, 255)
 
     # print(f"target max = {np.amax(target_arr2d)}")
     # print(f"against max = {np.amax(against_arr2d)}")
@@ -137,7 +144,9 @@ def visrecognize(
     if plot:
         plot_two_images(target_arr2d, against_arr2d)
 
-    file_match = results_list
+    file_match = process_results(results_list, os.path.basename(against_file_path))
+
+    print("done")
 
     t = time.time() - t
 
@@ -154,23 +163,71 @@ def visrecognize_directory(target_file_path: str, against_directory: str):
     return results
 
 
-"""
-def mse(imageA, imageB):
-    # the 'Mean Squared Error' between the two images is the
-    # sum of the squared difference between the two images;
-    # NOTE: the two images must have the same dimension
-    err = np.sum((imageA.astype("float") - imageB.astype("float")) ** 2)
-    err /= float(imageA.shape[0] * imageA.shape[1])
+def process_results(results_list, filename):
+    i = 0  # remove bad results or results below threshold
+    while i < len(results_list):
+        if results_list[i][2][0] == 10000000 or results_list[i][2][1] == 10000000:
+            results_list.pop(i)
+            continue
+        i += 1
 
-    # return the MSE, the lower the error, the more "similar"
-    # the two images are
-    return err
-"""
+    offset_dict = {}  # aggregate results by time difference
+    for i in results_list:
+        if i[0] - i[1] not in offset_dict:
+            offset_dict[i[0] - i[1]] = [0, 0, 0]  # mse,ssim,total
+        temp_result = offset_dict[i[0] - i[1]]
+        temp_result[0] += i[2][0]
+        temp_result[1] += i[2][1]
+        temp_result[2] += 1
+        offset_dict[i[0] - i[1]] = temp_result
+
+    for i in offset_dict.keys():  # average mse and ssim
+        temp_result = offset_dict[i]
+        temp_result[0] /= temp_result[2]
+        temp_result[1] /= temp_result[2]
+        offset_dict[i] = temp_result
+
+    match_offsets = []
+    for t_difference, match_data in offset_dict.items():
+        match_offsets.append((match_data, t_difference))
+    match_offsets = sorted(match_offsets, key=lambda x: x[0][1])  # sort by ssim
+
+    offset_count = []
+    offset_diff = []
+    offset_ssim = []
+    offset_mse = []
+    for i in match_offsets:
+        offset_count.append(i[0][2])
+        offset_diff.append(i[1])
+        offset_ssim.append(i[0][1])
+        offset_mse.append(i[0][0])
+
+    match = {}
+    match[filename] = {}
+
+    match[filename]["num_matches"] = offset_count
+    match[filename]["offset_samples"] = offset_diff
+    match[filename]["mse"] = offset_mse
+    match[filename]["ssim"] = offset_ssim
+
+    offset_seconds = []
+    for i in offset_diff:
+        nseconds = round(
+            float(i)
+            / fingerprint.DEFAULT_FS
+            * fingerprint.DEFAULT_WINDOW_SIZE
+            * fingerprint.DEFAULT_OVERLAP_RATIO,
+            5,
+        )
+        offset_seconds.append(nseconds)
+
+    match[filename]["offset_seconds"] = offset_seconds
+
+    return match
 
 
 def plot_two_images(imageA, imageB, title="Comparison", mse=None, ssim_value=None):
     # setup the figure
-
     fig = plt.figure(title)
     if mse or ssim_value:
         plt.suptitle(f"MSE: {mse:.4f}, SSIM: {ssim_value:.4f}")

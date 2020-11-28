@@ -181,7 +181,7 @@ def process_results(
         complete_match_info[file_name][audalign_object.CONFIDENCE] = offset_count
         complete_match_info[file_name][audalign_object.OFFSET_SAMPLES] = offset_diff
 
-        # extract idenfication
+        # calculate seconds
 
         complete_match_info[file_name][audalign_object.OFFSET_SECS] = []
         for i in offset_diff:
