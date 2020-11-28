@@ -418,7 +418,7 @@ class Audalign:
         """Recognize target file against against file visually.
         Uses image processing similarity techniques to identify areas with similar spectrums.
         Uses multiprocessing if multiprocessing variable is set to true
-        Uses freq_threshold as well
+        Uses audalign freq_threshold as well
 
         Args:
             target_file_path (str): File to recognize
@@ -444,7 +444,6 @@ class Audalign:
             overlap_ratio=overlap_ratio,
             volume_threshold=volume_threshold,
             use_multiprocessing=self.multiprocessing,
-            freq_threshold=fingerprint.threshold,
             plot=plot,
         )
 

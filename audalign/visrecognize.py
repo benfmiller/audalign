@@ -36,6 +36,8 @@ def calculate_comp_values(
 ):
     # print(np.amax(target_arr2d[index_tuple[0] : index_tuple[0] + img_width]))
     # array.mean() very small range of values, usually between 0.4 and 2
+    # Plus, finding the max only uses regions with large peaks, which could reduce
+    # noisy secions being included.
     try:
         if (
             np.amax(target_arr2d[index_tuple[0] : index_tuple[0] + img_width])
@@ -67,14 +69,17 @@ def visrecognize(
     overlap_ratio=0.5,
     volume_threshold=130,
     use_multiprocessing=True,
-    freq_threshold=200,
     plot=False,
 ) -> dict:
-    # ad option to specify which value to sort by?
     # With frequency of 44100
     # Each frame is 0.0929 seconds with an overlap ratio of .5,
     # so moving over one frame moves 0.046 seconds
     # 1 second of frames is 21.55 frames.
+    #
+    # add option to specify which value to sort by?
+    # add number of processes
+    # PSNR
+    # method to weight mse and ssim equally?
 
     t = time.time()
 
@@ -82,10 +87,12 @@ def visrecognize(
 
     target_samples, _ = read(target_file_path)
     target_arr2d = fingerprint.fingerprint(target_samples, retspec=True)
+    target_arr2d = target_arr2d[0 : -fingerprint.threshold]
     transposed_target_arr2d = np.clip(np.transpose(target_arr2d), 0, 255)
 
     against_samples, _ = read(against_file_path)
     against_arr2d = fingerprint.fingerprint(against_samples, retspec=True)
+    against_arr2d = against_arr2d[0 : -fingerprint.threshold]
     transposed_against_arr2d = np.clip(np.transpose(against_arr2d), 0, 255)
 
     # print(f"target max = {np.amax(target_arr2d)}")
@@ -190,7 +197,9 @@ def process_results(results_list, filename):
     match_offsets = []
     for t_difference, match_data in offset_dict.items():
         match_offsets.append((match_data, t_difference))
-    match_offsets = sorted(match_offsets, key=lambda x: x[0][1])  # sort by ssim
+    match_offsets = sorted(
+        match_offsets, reverse=True, key=lambda x: x[0][1]
+    )  # sort by ssim must be reversed for ssim
 
     offset_count = []
     offset_diff = []
