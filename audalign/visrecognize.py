@@ -1,8 +1,4 @@
-from operator import index
-from re import match
 import time
-import re
-import cv2
 import os
 from skimage.metrics import structural_similarity as ssim
 from skimage.metrics import mean_squared_error
@@ -94,15 +90,12 @@ def visrecognize(
     against_arr2d = against_arr2d[0 : -fingerprint.threshold]
     transposed_against_arr2d = np.clip(np.transpose(against_arr2d), 0, 255)
 
-    # print(f"target max = {np.amax(target_arr2d)}")
-    # print(f"against max = {np.amax(against_arr2d)}")
-
     th, tw = transposed_target_arr2d.shape
     ah, aw = transposed_against_arr2d.shape
 
-    print(f"Target height: {th}, target width: {tw}")
-    print(f"against height: {ah}")
-    print(f"length of target: {len(transposed_target_arr2d)}")
+    # print(f"Target height: {th}, target width: {tw}")
+    # print(f"against height: {ah}")
+    # print(f"length of target: {len(transposed_target_arr2d)}")
     print(
         f"Comparing {os.path.basename(target_file_path)} against {os.path.basename(against_file_path)} ",
         end="",
