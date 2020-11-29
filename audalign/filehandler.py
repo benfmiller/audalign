@@ -141,6 +141,7 @@ def noise_remove_directory(
     use_tensorflow=False,
     verbose=False,
     use_multiprocessing=False,
+    num_processes=None,
 ):
     noise_data = _floatify_data(create_audiosegment(noise_filepath))[
         (noise_start * DEFAULT_FS) : (noise_end * DEFAULT_FS)
@@ -160,7 +161,7 @@ def noise_remove_directory(
     if use_multiprocessing == True:
 
         try:
-            nprocesses = multiprocessing.cpu_count()
+            nprocesses = num_processes or multiprocessing.cpu_count()
         except NotImplementedError:
             nprocesses = 1
         else:

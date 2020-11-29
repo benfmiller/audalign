@@ -32,7 +32,7 @@ def get_frame_width_and_overlap(seconds_width: float, overlap_ratio: float):
 
 
 def calculate_comp_values(
-    index_tuple, img_width=0, target_arr2d=[[]], against_arr2d=[[]], threshold=130
+    index_tuple, img_width=0, target_arr2d=[[]], against_arr2d=[[]], threshold=215
 ):
     # print(np.amax(target_arr2d[index_tuple[0] : index_tuple[0] + img_width]))
     # array.mean() very small range of values, usually between 0.4 and 2
@@ -67,8 +67,9 @@ def visrecognize(
     against_file_path: str,
     img_width=1.0,
     overlap_ratio=0.5,
-    volume_threshold=130,
+    volume_threshold=215,
     use_multiprocessing=True,
+    num_processes=None,
     plot=False,
 ) -> dict:
     # With frequency of 44100
@@ -77,9 +78,7 @@ def visrecognize(
     # 1 second of frames is 21.55 frames.
     #
     # add option to specify which value to sort by?
-    # add number of processes
     # PSNR
-    # method to weight mse and ssim equally?
 
     t = time.time()
 
@@ -130,7 +129,7 @@ def visrecognize(
     if use_multiprocessing == True:
 
         try:
-            nprocesses = multiprocessing.cpu_count()
+            nprocesses = num_processes or multiprocessing.cpu_count()
         except NotImplementedError:
             nprocesses = 1
         else:
@@ -216,8 +215,8 @@ def process_results(results_list, filename):
 
     match[filename]["num_matches"] = offset_count
     match[filename]["offset_samples"] = offset_diff
-    match[filename]["mse"] = offset_mse
     match[filename]["ssim"] = offset_ssim
+    match[filename]["mse"] = offset_mse
 
     offset_seconds = []
     for i in offset_diff:
