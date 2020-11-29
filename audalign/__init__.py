@@ -24,6 +24,7 @@ class Audalign:
         self,
         *args,
         multiprocessing=True,
+        num_processors=None,
         hash_style="panako_mod",
         accuracy=2,
         freq_threshold=100,
@@ -57,6 +58,8 @@ class Audalign:
             Optional file path to load json or pickle file of already fingerprinted files
         multiprocessing : bool
             option to turn off multiprocessing
+        num_processors : int
+            number of processors or threads to use for multiprocessing. Uses all if not given
         hash_style : str
             which hash style to use : ['base','panako_mod','panako', 'base_three']
         accuracy : int
@@ -72,6 +75,7 @@ class Audalign:
         self.file_names = []
         self.fingerprinted_files = []
         self.multiprocessing = multiprocessing
+        self.num_processors = num_processors
         self.total_fingerprints = 0
 
         if len(args) > 0:
@@ -123,7 +127,7 @@ class Audalign:
             fingerprint.peak_sort = True
 
     def set_freq_threshold(self, threshold):
-        """[Sets minimum frequency threshold for fingerprint]
+        """Sets minimum frequency threshold for fingerprint
 
         Args:
             threshold ([int]): [threshold]
@@ -137,6 +141,14 @@ class Audalign:
             true_or_false (bool): [true on or false off]
         """
         self.multiprocessing = true_or_false
+
+    def set_num_processors(self, num_processors: int):
+        """Set to none to use all processors by default if multiprocessing is true
+
+        Args:
+            num_processors (int): number of processors to use or None for all of them
+        """
+        self.num_processors = num_processors
 
     def save_fingerprinted_files(self, filename: str) -> None:
         """
@@ -206,9 +218,7 @@ class Audalign:
                 name_checker.add(self.file_names[i])
                 i += 1
 
-    def fingerprint_directory(
-        self, path: str, plot=False, nprocesses=None, extensions=["*"]
-    ) -> None:
+    def fingerprint_directory(self, path: str, plot=False, extensions=["*"]) -> None:
         """
         Fingerprints all files in given directory and all subdirectories
 
@@ -218,8 +228,6 @@ class Audalign:
             path to directory to be fingerprinted
         plot : boolean
             if true, plots the peaks to be fingerprinted on a spectrogram
-        nprocesses : int
-            specifies number of threads to use
         extensions : list[str]
             specify which extensions to fingerprint
 
@@ -228,7 +236,7 @@ class Audalign:
         None
         """
 
-        result = self._fingerprint_directory(path, plot, nprocesses, extensions)
+        result = self._fingerprint_directory(path, plot, extensions)
 
         if result:
             for processed_file in result:
@@ -240,9 +248,7 @@ class Audalign:
                     self.file_names.append(processed_file[0])
                     self.total_fingerprints += len(processed_file[1])
 
-    def _fingerprint_directory(
-        self, path, plot=False, nprocesses=None, extensions=["*"]
-    ):
+    def _fingerprint_directory(self, path, plot=False, extensions=["*"]):
         """
         Worker function for fingerprint_directory
 
@@ -254,8 +260,6 @@ class Audalign:
             path to directory to be fingerprinted
         plot : boolean
             if true, plots the peaks to be fingerprinted on a spectrogram
-        nprocesses : int
-            specifies number of threads to use
         extensions : list[str]
             specify which extensions to fingerprint
 
@@ -288,7 +292,7 @@ class Audalign:
 
             # Try to use the maximum amount of processes if not given.
             try:
-                nprocesses = nprocesses or multiprocessing.cpu_count()
+                nprocesses = self.num_processors or multiprocessing.cpu_count()
             except NotImplementedError:
                 nprocesses = 1
             else:
@@ -412,7 +416,7 @@ class Audalign:
         against_file_path: str,
         img_width=1.0,
         overlap_ratio=0.5,
-        volume_threshold=100,
+        volume_threshold=215,
         plot=False,
     ):
         """Recognize target file against against file visually.
@@ -444,6 +448,7 @@ class Audalign:
             overlap_ratio=overlap_ratio,
             volume_threshold=volume_threshold,
             use_multiprocessing=self.multiprocessing,
+            num_processes=self.num_processors,
             plot=plot,
         )
 
@@ -704,6 +709,7 @@ class Audalign:
             use_tensorflow=use_tensorflow,
             verbose=verbose,
             use_multiprocessing=self.multiprocessing,
+            num_processes=self.num_processors,
         )
 
 
