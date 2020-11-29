@@ -175,7 +175,7 @@ def noise_remove_directory(
             pool.join()
     else:
         for i in file_names:
-            _reduce_noise(i, noise_data, destination_directory[0])
+            _reduce_noise(i)
 
 
 def _remove_noise(
