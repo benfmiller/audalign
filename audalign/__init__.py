@@ -418,7 +418,7 @@ class Audalign:
         overlap_ratio=0.5,
         volume_threshold=215,
         plot=False,
-    ):
+    ) -> dict:
         """Recognize target file against against file visually.
         Uses image processing similarity techniques to identify areas with similar spectrums.
         Uses multiprocessing if multiprocessing variable is set to true
@@ -452,13 +452,27 @@ class Audalign:
             plot=plot,
         )
 
-    def visrecognize_directory(self, target_file_path: str, against_directory: str):
+    def visrecognize_directory(
+        self,
+        target_file_path: str,
+        against_directory: str,
+        img_width=1.0,
+        overlap_ratio=0.5,
+        volume_threshold=215,
+        plot=False,
+    ) -> dict:
         """Recognize target file against against directory visually.
         Uses image processing similarity techniques to identify areas with similar spectrums.
+        Uses multiprocessing if multiprocessing variable is set to true
+        Uses audalign freq_threshold as well
 
         Args:
             target_file_path (str): File to recognize
-            against_directory (str): Recognize against
+            against_directory (str): Recognize against all files in directory
+            img_width (float): width of spectrogram image for recognition
+            overlap_ratio (float): overlap of window for matching
+            volume_threshold (int): doesn't find stats for sections with average volume below threshold
+            plot (bool): plot the spectrogram of each audio file
 
         Returns
         -------
@@ -469,7 +483,16 @@ class Audalign:
 
             None : if no match
         """
-        return visrecognize.visrecognize_directory(target_file_path, against_directory)
+        return visrecognize.visrecognize_directory(
+            target_file_path,
+            against_directory,
+            img_width=img_width,
+            overlap_ratio=overlap_ratio,
+            volume_threshold=volume_threshold,
+            use_multiprocessing=self.multiprocessing,
+            num_processes=self.num_processors,
+            plot=plot,
+        )
 
     def write_processed_file(self, file_path, destination_file):
         """
