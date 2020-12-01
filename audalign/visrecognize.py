@@ -1,3 +1,5 @@
+import audalign.fingerprint as fingerprint
+from audalign.filehandler import read
 import time
 import os
 from skimage.metrics import structural_similarity as ssim
@@ -6,9 +8,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import multiprocessing
 from functools import partial
-
-import audalign.fingerprint as fingerprint
-from audalign.filehandler import read
 
 
 def get_frame_width_and_overlap(seconds_width: float, overlap_ratio: float):
@@ -58,7 +57,8 @@ def calculate_comp_values(
         return (index_tuple[0], index_tuple[1], (m, s))
 
 
-def visrecognize(
+def _visrecognize(
+    transposed_target_arr2d,
     target_file_path: str,
     against_file_path: str,
     img_width=1.0,
@@ -66,32 +66,14 @@ def visrecognize(
     volume_threshold=215,
     use_multiprocessing=True,
     num_processes=None,
-    plot=False,
-) -> dict:
-    # With frequency of 44100
-    # Each frame is 0.0929 seconds with an overlap ratio of .5,
-    # so moving over one frame moves 0.046 seconds
-    # 1 second of frames is 21.55 frames.
-    #
-    # add option to specify which value to sort by?
-    # PSNR
-
-    t = time.time()
-
-    img_width, overlap_ratio = get_frame_width_and_overlap(img_width, overlap_ratio)
-
-    target_samples, _ = read(target_file_path)
-    target_arr2d = fingerprint.fingerprint(target_samples, retspec=True)
-    target_arr2d = target_arr2d[0 : -fingerprint.threshold]
-    transposed_target_arr2d = np.clip(np.transpose(target_arr2d), 0, 255)
-
+):
     against_samples, _ = read(against_file_path)
     against_arr2d = fingerprint.fingerprint(against_samples, retspec=True)
     against_arr2d = against_arr2d[0 : -fingerprint.threshold]
     transposed_against_arr2d = np.clip(np.transpose(against_arr2d), 0, 255)
 
-    th, tw = transposed_target_arr2d.shape
-    ah, aw = transposed_against_arr2d.shape
+    th, _ = transposed_target_arr2d.shape
+    ah, _ = transposed_against_arr2d.shape
 
     # print(f"Target height: {th}, target width: {tw}")
     # print(f"against height: {ah}")
@@ -135,19 +117,57 @@ def visrecognize(
     else:
         results_list = []
         for i in index_list:
-            results_list += _calculate_comp_values(i)
-
+            results_list += [_calculate_comp_values(i)]
     print(f"done")
+
     print("Calculating results... ", end="")
+    file_match = process_results(results_list, os.path.basename(against_file_path))
+    print("done")
+    return file_match, against_arr2d
+
+
+def visrecognize(
+    target_file_path: str,
+    against_file_path: str,
+    img_width=1.0,
+    overlap_ratio=0.5,
+    volume_threshold=215,
+    use_multiprocessing=True,
+    num_processes=None,
+    plot=False,
+) -> dict:
+    # With frequency of 44100
+    # Each frame is 0.0929 seconds with an overlap ratio of .5,
+    # so moving over one frame moves 0.046 seconds
+    # 1 second of frames is 21.55 frames.
+    #
+    # add option to specify which value to sort by?
+    # PSNR
+
+    t = time.time()
+
+    img_width, overlap_ratio = get_frame_width_and_overlap(img_width, overlap_ratio)
+
+    target_samples, _ = read(target_file_path)
+    target_arr2d = fingerprint.fingerprint(target_samples, retspec=True)
+    target_arr2d = target_arr2d[0 : -fingerprint.threshold]
+    transposed_target_arr2d = np.clip(np.transpose(target_arr2d), 0, 255)
+
+    file_match, against_arr2d = _visrecognize(
+        transposed_target_arr2d=transposed_target_arr2d,
+        target_file_path=target_file_path,
+        against_file_path=against_file_path,
+        img_width=img_width,
+        overlap_ratio=overlap_ratio,
+        volume_threshold=volume_threshold,
+        use_multiprocessing=use_multiprocessing,
+        num_processes=num_processes,
+    )
+
+    t = time.time() - t
 
     if plot:
         plot_two_images(target_arr2d, against_arr2d)
-
-    file_match = process_results(results_list, os.path.basename(against_file_path))
-
-    print("done")
-
-    t = time.time() - t
 
     result = {}
 
