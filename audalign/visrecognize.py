@@ -1,5 +1,6 @@
 import audalign.fingerprint as fingerprint
-from audalign.filehandler import read
+from audalign.filehandler import read, find_files
+from pydub.exceptions import CouldntDecodeError
 import time
 import os
 from skimage.metrics import structural_similarity as ssim
@@ -79,7 +80,7 @@ def _visrecognize(
     # print(f"against height: {ah}")
     # print(f"length of target: {len(transposed_target_arr2d)}")
     print(
-        f"Comparing {os.path.basename(target_file_path)} against {os.path.basename(against_file_path)} ",
+        f"Comparing {os.path.basename(target_file_path)} against {os.path.basename(against_file_path)}... ",
         end="",
     )
 
@@ -177,9 +178,61 @@ def visrecognize(
     return result
 
 
-def visrecognize_directory(target_file_path: str, against_directory: str):
-    results = {}
-    return results
+def visrecognize_directory(
+    target_file_path: str,
+    against_directory: str,
+    img_width=1.0,
+    overlap_ratio=0.5,
+    volume_threshold=215,
+    use_multiprocessing=True,
+    num_processes=None,
+    plot=False,
+) -> dict:
+    # With frequency of 44100
+    # Each frame is 0.0929 seconds with an overlap ratio of .5,
+    # so moving over one frame moves 0.046 seconds
+    # 1 second of frames is 21.55 frames.
+    #
+    # add option to specify which value to sort by?
+    # PSNR
+
+    t = time.time()
+
+    img_width, overlap_ratio = get_frame_width_and_overlap(img_width, overlap_ratio)
+
+    target_samples, _ = read(target_file_path)
+    target_arr2d = fingerprint.fingerprint(target_samples, retspec=True)
+    target_arr2d = target_arr2d[0 : -fingerprint.threshold]
+    transposed_target_arr2d = np.clip(np.transpose(target_arr2d), 0, 255)
+
+    against_files = find_files(against_directory)
+    file_match = {}
+
+    for file_path, _ in against_files:
+
+        try:
+            single_file_match, against_arr2d = _visrecognize(
+                transposed_target_arr2d=transposed_target_arr2d,
+                target_file_path=target_file_path,
+                against_file_path=file_path,
+                img_width=img_width,
+                overlap_ratio=overlap_ratio,
+                volume_threshold=volume_threshold,
+                use_multiprocessing=use_multiprocessing,
+                num_processes=num_processes,
+            )
+            if plot:
+                plot_two_images(target_arr2d, against_arr2d)
+            file_match = {**file_match, **single_file_match}
+        except CouldntDecodeError:
+            print(f'File "{file_path}" could not be decoded')
+
+    t = time.time() - t
+
+    result = {}
+    result["match_time"] = t
+    result["match_info"] = file_match
+    return result
 
 
 def process_results(results_list, filename):
