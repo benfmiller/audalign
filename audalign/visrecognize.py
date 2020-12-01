@@ -23,7 +23,7 @@ def get_frame_width_and_overlap(seconds_width: float, overlap_ratio: float):
         ),
         1,
     )
-    overlap_ratio = max(int(overlap_ratio * seconds_width), 1)
+    overlap_ratio = max(int((1 - overlap_ratio) * seconds_width), 1)
     return seconds_width, overlap_ratio
 
 
