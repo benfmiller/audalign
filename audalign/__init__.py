@@ -83,8 +83,8 @@ class Audalign:
 
         self.hash_style = hash_style
 
-        if accuracy != 2:
-            self.set_accuracy(accuracy)
+        self.accuracy = accuracy
+        self.set_accuracy(accuracy)
 
     def set_accuracy(self, accuracy):
         """
@@ -101,6 +101,7 @@ class Audalign:
             accuracy : int
                 which accuracy level: 1-4
         """
+        self.accuracy = accuracy
         if accuracy == 1:
             fingerprint.default_fan_value = 15
             fingerprint.default_amp_min = 80
@@ -125,6 +126,14 @@ class Audalign:
             fingerprint.min_hash_time_delta = 1
             fingerprint.max_hash_time_delta = 2000
             fingerprint.peak_sort = True
+
+    def get_accuracy(self):
+        """Current Accuracy from 1-4
+
+        Returns:
+            [int]: Accuracy level
+        """
+        return self.accuracy
 
     def set_freq_threshold(self, threshold):
         """Sets minimum frequency threshold for fingerprint
