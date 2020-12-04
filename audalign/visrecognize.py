@@ -27,6 +27,22 @@ def get_frame_width_and_overlap(seconds_width: float, overlap_ratio: float):
     return seconds_width, overlap_ratio
 
 
+def find_index_arr(arr2d, threshold, img_width):
+    index_list = []
+    for i in range(0, len(arr2d) - img_width):
+        if np.amax(arr2d[i : i + img_width]) >= threshold:
+            index_list += i
+    return index_list
+
+
+def pair_index_tuples(target_list, against_list):
+    index_pairs = []
+    for i in target_list:
+        for j in against_list:
+            index_pairs += [(i, j)]
+    return index_pairs
+
+
 def calculate_comp_values(
     index_tuple, img_width=0, target_arr2d=[[]], against_arr2d=[[]], threshold=215
 ):
