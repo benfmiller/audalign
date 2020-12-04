@@ -31,7 +31,7 @@ def find_index_arr(arr2d, threshold, img_width):
     index_list = []
     for i in range(0, len(arr2d) - img_width):
         if np.amax(arr2d[i : i + img_width]) >= threshold:
-            index_list += i
+            index_list += [i]
     return index_list
 
 
@@ -44,20 +44,13 @@ def pair_index_tuples(target_list, against_list):
 
 
 def calculate_comp_values(
-    index_tuple, img_width=0, target_arr2d=[[]], against_arr2d=[[]], threshold=215
+    index_tuple, img_width=0, target_arr2d=[[]], against_arr2d=[[]]
 ):
     # print(np.amax(target_arr2d[index_tuple[0] : index_tuple[0] + img_width]))
     # array.mean() very small range of values, usually between 0.4 and 2
     # Plus, finding the max only uses regions with large peaks, which could reduce
     # noisy secions being included.
     try:
-        if (
-            np.amax(target_arr2d[index_tuple[0] : index_tuple[0] + img_width])
-            < threshold
-            or np.amax(against_arr2d[index_tuple[1] : index_tuple[1] + img_width])
-            < threshold
-        ):
-            return (index_tuple[0], index_tuple[1], (10000000, 10000000))
         m = mean_squared_error(
             target_arr2d[index_tuple[0] : index_tuple[0] + img_width],
             against_arr2d[index_tuple[1] : index_tuple[1] + img_width],
@@ -77,10 +70,11 @@ def calculate_comp_values(
 def _visrecognize(
     transposed_target_arr2d,
     target_file_path: str,
+    target_index_list: list,
     against_file_path: str,
     img_width=1.0,
     overlap_ratio=0.5,
-    volume_threshold=215,
+    volume_threshold=215.0,
     use_multiprocessing=True,
     num_processes=None,
 ):
@@ -101,20 +95,23 @@ def _visrecognize(
     )
 
     # create index list
-    index_list = []
-    for i in range(0, th, overlap_ratio):
-        for j in range(0, ah, overlap_ratio):
-            if i + img_width < th and j + img_width < ah:
-                index_list += [(i, j)]
-    if th > overlap_ratio and ah > overlap_ratio:
-        index_list += [(th - img_width - 1, ah - img_width - 1)]
+    against_index_list = find_index_arr(
+        transposed_against_arr2d, volume_threshold, img_width
+    )
+    index_list = pair_index_tuples(target_index_list, against_index_list)
+    print(len(index_list))
+    # for i in range(0, th, overlap_ratio):
+    #     for j in range(0, ah, overlap_ratio):
+    #         if i + img_width < th and j + img_width < ah:
+    #             index_list += [(i, j)]
+    # if th > overlap_ratio and ah > overlap_ratio:
+    #     index_list += [(th - img_width - 1, ah - img_width - 1)]
 
     _calculate_comp_values = partial(
         calculate_comp_values,
         img_width=img_width,
         target_arr2d=transposed_target_arr2d,
         against_arr2d=transposed_against_arr2d,
-        threshold=volume_threshold,
     )
 
     # calculate all mse and ssim values
@@ -148,7 +145,7 @@ def visrecognize(
     against_file_path: str,
     img_width=1.0,
     overlap_ratio=0.5,
-    volume_threshold=215,
+    volume_threshold=215.0,
     use_multiprocessing=True,
     num_processes=None,
     plot=False,
@@ -170,9 +167,14 @@ def visrecognize(
     target_arr2d = target_arr2d[0 : -fingerprint.threshold]
     transposed_target_arr2d = np.clip(np.transpose(target_arr2d), 0, 255)
 
+    target_index_list = find_index_arr(
+        transposed_target_arr2d, volume_threshold, img_width
+    )
+
     file_match, against_arr2d = _visrecognize(
         transposed_target_arr2d=transposed_target_arr2d,
         target_file_path=target_file_path,
+        target_index_list=target_index_list,
         against_file_path=against_file_path,
         img_width=img_width,
         overlap_ratio=overlap_ratio,
@@ -199,7 +201,7 @@ def visrecognize_directory(
     against_directory: str,
     img_width=1.0,
     overlap_ratio=0.5,
-    volume_threshold=215,
+    volume_threshold=215.0,
     use_multiprocessing=True,
     num_processes=None,
     plot=False,
@@ -221,15 +223,22 @@ def visrecognize_directory(
     target_arr2d = target_arr2d[0 : -fingerprint.threshold]
     transposed_target_arr2d = np.clip(np.transpose(target_arr2d), 0, 255)
 
+    target_index_list = find_index_arr(
+        transposed_target_arr2d, volume_threshold, img_width
+    )
+
     against_files = find_files(against_directory)
     file_match = {}
 
     for file_path, _ in against_files:
 
+        if os.path.basename(file_path) == os.path.basename(target_file_path):
+            continue
         try:
             single_file_match, against_arr2d = _visrecognize(
                 transposed_target_arr2d=transposed_target_arr2d,
                 target_file_path=target_file_path,
+                target_index_list=target_index_list,
                 against_file_path=file_path,
                 img_width=img_width,
                 overlap_ratio=overlap_ratio,
