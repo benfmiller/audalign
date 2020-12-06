@@ -1,6 +1,7 @@
 import audalign.fingerprint as fingerprint
 from audalign.filehandler import read, find_files
 from pydub.exceptions import CouldntDecodeError
+import tqdm
 import time
 import os
 from skimage.metrics import structural_similarity as ssim
@@ -90,8 +91,7 @@ def _visrecognize(
     # print(f"against height: {ah}")
     # print(f"length of target: {len(transposed_target_arr2d)}")
     print(
-        f"Comparing {os.path.basename(target_file_path)} against {os.path.basename(against_file_path)}... ",
-        end="",
+        f"Comparing {os.path.basename(target_file_path)} against {os.path.basename(against_file_path)}... "
     )
 
     # create index list
@@ -99,7 +99,7 @@ def _visrecognize(
         transposed_against_arr2d, volume_threshold, img_width
     )
     index_list = pair_index_tuples(target_index_list, against_index_list)
-    print(len(index_list))
+    # print(len(index_list))
     # for i in range(0, th, overlap_ratio):
     #     for j in range(0, ah, overlap_ratio):
     #         if i + img_width < th and j + img_width < ah:
@@ -125,14 +125,14 @@ def _visrecognize(
             nprocesses = 1 if nprocesses <= 0 else nprocesses
 
         with multiprocessing.Pool(nprocesses) as pool:
-            results_list = pool.map(_calculate_comp_values, index_list)
+            results_list = pool.map(_calculate_comp_values, tqdm.tqdm(index_list))
             pool.close()
             pool.join()
     else:
         results_list = []
         for i in index_list:
             results_list += [_calculate_comp_values(i)]
-    print(f"done")
+    # print(f"done")
 
     print("Calculating results... ", end="")
     file_match = process_results(results_list, os.path.basename(against_file_path))
