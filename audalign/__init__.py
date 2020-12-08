@@ -102,6 +102,10 @@ class Audalign:
                 which accuracy level: 1-4
         """
         self.accuracy = accuracy
+        self._set_accuracy(accuracy)
+
+    @staticmethod
+    def _set_accuracy(accuracy):
         if accuracy == 1:
             fingerprint.default_fan_value = 15
             fingerprint.default_amp_min = 80
@@ -295,6 +299,7 @@ class Audalign:
             _fingerprint_worker,
             hash_style=self.hash_style,
             plot=plot,
+            accuracy=self.accuracy,
         )
 
         if self.multiprocessing == True:
@@ -383,6 +388,7 @@ class Audalign:
             file_path,
             self.hash_style,
             plot=plot,
+            accuracy=self.accuracy,
         )
         file_name = set_file_name or file_name
         return [file_name, hashes]
@@ -821,6 +827,7 @@ def _fingerprint_worker(
     file_path: str,
     hash_style="panako_mod",
     plot=False,
+    accuracy=2,
 ) -> Tuple:
     """
     Runs the file through the fingerprinter and returns file_name and hashes
@@ -839,6 +846,8 @@ def _fingerprint_worker(
     file_name : str, hashes : dict{str: [int]}
         file_name and hash dictionary
     """
+
+    Audalign._set_accuracy(accuracy)
 
     file_name = os.path.basename(file_path)
 
