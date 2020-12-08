@@ -60,12 +60,12 @@ def calculate_comp_values(
             target_arr2d[index_tuple[0] : index_tuple[0] + img_width],
             against_arr2d[index_tuple[1] : index_tuple[1] + img_width],
         )
-        return (index_tuple[0], index_tuple[1], (m, s))
+        return (index_tuple[1], index_tuple[0], (m, s))
     except ZeroDivisionError as e:
         m = 10000000
         print(f"zero division error for index {index_tuple} and img width{img_width}")
         s = 10000000
-        return (index_tuple[0], index_tuple[1], (m, s))
+        return (index_tuple[1], index_tuple[0], (m, s))
 
 
 def _visrecognize(
@@ -87,9 +87,9 @@ def _visrecognize(
     th, _ = transposed_target_arr2d.shape
     ah, _ = transposed_against_arr2d.shape
 
-    # print(f"Target height: {th}, target width: {tw}")
-    # print(f"against height: {ah}")
-    # print(f"length of target: {len(transposed_target_arr2d)}")
+    print(f"Target height: {th}, target width:")
+    print(f"against height: {ah}")
+    print(f"length of target: {len(transposed_target_arr2d)}")
     print(
         f"Comparing {os.path.basename(target_file_path)} against {os.path.basename(against_file_path)}... "
     )
@@ -98,14 +98,15 @@ def _visrecognize(
     against_index_list = find_index_arr(
         transposed_against_arr2d, volume_threshold, img_width
     )
+
     index_list = pair_index_tuples(target_index_list, against_index_list)
+
+    # offsets = [x[0] - x[1] for x in index_list]
+    # print()
+    # print(offsets.count(215))
+
+    # print()
     # print(len(index_list))
-    # for i in range(0, th, overlap_ratio):
-    #     for j in range(0, ah, overlap_ratio):
-    #         if i + img_width < th and j + img_width < ah:
-    #             index_list += [(i, j)]
-    # if th > overlap_ratio and ah > overlap_ratio:
-    #     index_list += [(th - img_width - 1, ah - img_width - 1)]
 
     _calculate_comp_values = partial(
         calculate_comp_values,
