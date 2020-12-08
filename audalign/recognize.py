@@ -34,7 +34,7 @@ def recognize(audalign_object, file_path, filter_matches, locality):
         filter_set = True
 
     file_match = None
-    if len(rough_match) > 0:
+    if len(rough_match[0]) > 0:
         file_match = process_results(
             audalign_object, rough_match, locality, filter_matches, filter_set
         )
@@ -196,7 +196,10 @@ def process_results(
 
     if len(complete_match_info) == 0 and filter_set == False:
         return process_results(
-            audalign_object, results, locality, filter_matches=filter_matches - 1
+            audalign_object,
+            (results, None),
+            locality,
+            filter_matches=filter_matches - 1,
         )
 
     return complete_match_info
