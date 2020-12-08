@@ -551,6 +551,78 @@ class Audalign:
         self.fingerprinted_files = []
         self.total_fingerprints = 0
 
+    def write_target_alignment(
+        self,
+        target_file: str,
+        directory_path: str,
+        destination_path: str,
+        write_extension: str = None,
+        use_fingerprints: bool = True,
+        filter_matches: int = 1,
+        volume_threshold: float = 216,
+    ):
+        self.file_names, temp_file_names = [], self.file_names
+        self.fingerprinted_files, temp_fingerprinted_files = (
+            [],
+            self.fingerprinted_files,
+        )
+        self.total_fingerprints, temp_total_fingerprints = 0, self.total_fingerprints
+
+        try:
+            # Make target directory
+            if not os.path.exists(destination_path):
+                os.makedirs(destination_path)
+
+            target_name = os.path.basename(target_file)
+            total_alignment = {}
+            file_names_and_paths = {}
+
+            if use_fingerprints:
+
+                self.fingerprint_directory(directory_path)
+
+                alignment = self.recognize(target_file, filter_matches=filter_matches)
+
+            else:
+                alignment = self.visrecognize_directory(
+                    target_file_path=target_file,
+                    against_directory=directory_path,
+                    volume_threshold=volume_threshold,
+                )
+
+            file_names_and_paths[target_name] = target_file
+            total_alignment[target_name] = alignment
+
+            for file_path, _ in filehandler.find_files(directory_path):
+                if (
+                    os.path.basename(file_path)
+                    in total_alignment[target_name]["match_info"].keys()
+                ):
+                    total_alignment[os.path.basename(file_path)] = file_path
+
+            files_shifts = align.find_most_matches(total_alignment)
+            if not files_shifts:
+                return
+
+            self._write_shifted_files(
+                files_shifts,
+                destination_path,
+                file_names_and_paths,
+                write_extension,
+            )
+
+            print(
+                f"{len(files_shifts)} out of {len(file_names_and_paths)} found and aligned"
+            )
+
+            files_shifts["match_info"] = total_alignment
+            return files_shifts
+
+        finally:
+            self.file_names = temp_file_names
+            self.fingerprinted_files = temp_fingerprinted_files
+            self.total_fingerprints = temp_total_fingerprints
+
     def align(
         self,
         directory_path,
