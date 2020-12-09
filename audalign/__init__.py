@@ -564,6 +564,7 @@ class Audalign:
         destination_path: str,
         write_extension: str = None,
         use_fingerprints: bool = True,
+        alternate_strength_stat: str = None,
         filter_matches: int = 1,
         volume_threshold: float = 216,
     ):
@@ -604,9 +605,16 @@ class Audalign:
                     os.path.basename(file_path)
                     in total_alignment[target_name]["match_info"].keys()
                 ):
-                    total_alignment[os.path.basename(file_path)] = file_path
+                    file_names_and_paths[os.path.basename(file_path)] = file_path
 
-            files_shifts = align.find_most_matches(total_alignment)
+            if not alternate_strength_stat:
+                if use_fingerprints:
+                    alternate_strength_stat = self.CONFIDENCE
+                else:
+                    alternate_strength_stat = "ssim"
+            files_shifts = align.find_most_matches(
+                total_alignment, strength_stat=alternate_strength_stat
+            )
             if not files_shifts:
                 return
 
