@@ -557,17 +557,34 @@ class Audalign:
         self.fingerprinted_files = []
         self.total_fingerprints = 0
 
-    def write_target_alignment(
+    def target_align(
         self,
         target_file: str,
         directory_path: str,
-        destination_path: str,
+        destination_path: str = None,
         write_extension: str = None,
         use_fingerprints: bool = True,
         alternate_strength_stat: str = None,
         filter_matches: int = 1,
         volume_threshold: float = 216,
     ):
+        """matches and relative offsets for all files in directory_path using only target file,
+        aligns them, and writes them to destination_path if given. Uses fingerprinting by defualt,
+        but uses visual recognition if false
+
+        Args:
+            target_file (str): File to find alignments against
+            directory_path (str): Directory to align against
+            destination_path (str, optional): Directory to write alignments to
+            write_extension (str, optional): audio file format to write to. Defaults to None.
+            use_fingerprints (bool, optional): Fingerprints if True, visual recognition if False. Defaults to True.
+            alternate_strength_stat (str, optional): confidence for fingerprints, ssim for visual, mse or count also work for visual. Defaults to None.
+            filter_matches (int, optional): filter matches level for fingerprinting. Defaults to 1.
+            volume_threshold (float, optional): volume threshold for visual recognition. Defaults to 216.
+
+        Returns:
+            [type]: [description]
+        """
         self.file_names, temp_file_names = [], self.file_names
         self.fingerprinted_files, temp_fingerprinted_files = (
             [],
@@ -576,9 +593,6 @@ class Audalign:
         self.total_fingerprints, temp_total_fingerprints = 0, self.total_fingerprints
 
         try:
-            # Make target directory
-            if not os.path.exists(destination_path):
-                os.makedirs(destination_path)
 
             target_name = os.path.basename(target_file)
             total_alignment = {}
@@ -618,12 +632,16 @@ class Audalign:
             if not files_shifts:
                 return
 
-            self._write_shifted_files(
-                files_shifts,
-                destination_path,
-                file_names_and_paths,
-                write_extension,
-            )
+            if destination_path:
+                # Make target directory
+                if not os.path.exists(destination_path):
+                    os.makedirs(destination_path)
+                self._write_shifted_files(
+                    files_shifts,
+                    destination_path,
+                    file_names_and_paths,
+                    write_extension,
+                )
 
             print(
                 f"{len(files_shifts)} out of {len(file_names_and_paths)} found and aligned"
