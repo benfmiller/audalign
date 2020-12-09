@@ -82,14 +82,20 @@ def _visrecognize(
     against_samples, _ = read(against_file_path)
     against_arr2d = fingerprint.fingerprint(against_samples, retspec=True)
     against_arr2d = against_arr2d[0 : -fingerprint.threshold]
-    transposed_against_arr2d = np.clip(np.transpose(against_arr2d), 0, 255)
+    transposed_against_arr2d = np.transpose(against_arr2d)
+
+    # plot_two_images(transposed_target_arr2d, transposed_against_arr2d)
+
+    # transposed_against_arr2d = np.clip(transposed_against_arr2d, 0, 255)
 
     th, _ = transposed_target_arr2d.shape
     ah, _ = transposed_against_arr2d.shape
 
-    print(f"Target height: {th}, target width:")
-    print(f"against height: {ah}")
-    print(f"length of target: {len(transposed_target_arr2d)}")
+    # plot_two_images(transposed_target_arr2d, transposed_against_arr2d)
+
+    # print(f"Target height: {th}, target width:")
+    # print(f"against height: {ah}")
+    # print(f"length of target: {len(transposed_target_arr2d)}")
     print(
         f"Comparing {os.path.basename(target_file_path)} against {os.path.basename(against_file_path)}... "
     )
@@ -131,7 +137,7 @@ def _visrecognize(
             pool.join()
     else:
         results_list = []
-        for i in index_list:
+        for i in tqdm.tqdm(index_list):
             results_list += [_calculate_comp_values(i)]
     # print(f"done")
 
@@ -166,7 +172,8 @@ def visrecognize(
     target_samples, _ = read(target_file_path)
     target_arr2d = fingerprint.fingerprint(target_samples, retspec=True)
     target_arr2d = target_arr2d[0 : -fingerprint.threshold]
-    transposed_target_arr2d = np.clip(np.transpose(target_arr2d), 0, 255)
+    transposed_target_arr2d = np.transpose(target_arr2d)
+    # transposed_target_arr2d = np.clip(np.transpose(target_arr2d), 0, 255)
 
     target_index_list = find_index_arr(
         transposed_target_arr2d, volume_threshold, img_width
@@ -227,7 +234,8 @@ def visrecognize_directory(
     target_samples, _ = read(target_file_path)
     target_arr2d = fingerprint.fingerprint(target_samples, retspec=True)
     target_arr2d = target_arr2d[0 : -fingerprint.threshold]
-    transposed_target_arr2d = np.clip(np.transpose(target_arr2d), 0, 255)
+    transposed_target_arr2d = np.transpose(target_arr2d)
+    # transposed_target_arr2d = np.clip(np.transpose(target_arr2d), 0, 255)
 
     target_index_list = find_index_arr(
         transposed_target_arr2d, volume_threshold, img_width
