@@ -1,7 +1,7 @@
 import audalign
 
 
-def find_most_matches(total_alignment):
+def find_most_matches(total_alignment, strength_stat: str = "confidence"):
     """
     Finds the file that matches with the most files and has the most matches, returns its matches and shifts
 
@@ -45,7 +45,7 @@ def find_most_matches(total_alignment):
     for file_match in most_matches_file["tied"]:
         running_strength = 0
         for _, match in total_alignment[file_match]["match_info"].items():
-            running_strength += match[audalign.Audalign.CONFIDENCE][0]
+            running_strength += match[strength_stat][0]
         if running_strength > total_match_strength:
             total_match_strength = running_strength
             most_matches_file["most_matches"] = file_match
