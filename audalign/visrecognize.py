@@ -187,7 +187,12 @@ def visrecognize(
     t = time.time() - t
 
     if plot:
-        plot_two_images(target_arr2d, against_arr2d)
+        plot_two_images(
+            target_arr2d,
+            against_arr2d,
+            imgA_title=os.path.basename(target_file_path),
+            imgB_title=os.path.basename(against_file_path),
+        )
 
     result = {}
 
@@ -248,7 +253,12 @@ def visrecognize_directory(
                 num_processes=num_processes,
             )
             if plot:
-                plot_two_images(target_arr2d, against_arr2d)
+                plot_two_images(
+                    target_arr2d,
+                    against_arr2d,
+                    imgA_title=os.path.basename(target_file_path),
+                    imgB_title=os.path.basename(file_path),
+                )
             file_match = {**file_match, **single_file_match}
         except CouldntDecodeError:
             print(f'File "{file_path}" could not be decoded')
@@ -326,7 +336,15 @@ def process_results(results_list, filename):
     return match
 
 
-def plot_two_images(imageA, imageB, title="Comparison", mse=None, ssim_value=None):
+def plot_two_images(
+    imageA,
+    imageB,
+    title="Comparison",
+    imgA_title=None,
+    imgB_title=None,
+    mse=None,
+    ssim_value=None,
+):
     # setup the figure
     fig = plt.figure(title)
     if mse or ssim_value:
@@ -335,11 +353,15 @@ def plot_two_images(imageA, imageB, title="Comparison", mse=None, ssim_value=Non
     ax = fig.add_subplot(1, 2, 1)
     plt.imshow(imageA)  # , cmap=plt.cm.gray)
     plt.gca().invert_yaxis()
+    if imgA_title:
+        plt.title(imgA_title)
     # plt.axis("off")
     # show the second image
     ax = fig.add_subplot(1, 2, 2)
     plt.imshow(imageB)  # , cmap=plt.cm.gray)
     plt.gca().invert_yaxis()
+    if imgB_title:
+        plt.title(imgB_title)
     # plt.axis("off")
     # show the images
     plt.show()
