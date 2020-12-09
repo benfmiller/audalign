@@ -156,7 +156,7 @@ def visrecognize(
     use_multiprocessing=True,
     num_processes=None,
     plot=False,
-) -> dict:
+):
     # With frequency of 44100
     # Each frame is 0.0929 seconds with an overlap ratio of .5,
     # so moving over one frame moves 0.046 seconds
@@ -203,10 +203,12 @@ def visrecognize(
 
     result = {}
 
-    result["match_time"] = t
-    result["match_info"] = file_match
+    if file_match:
+        result["match_time"] = t
+        result["match_info"] = file_match
+        return result
 
-    return result
+    return None
 
 
 def visrecognize_directory(
@@ -218,7 +220,7 @@ def visrecognize_directory(
     use_multiprocessing=True,
     num_processes=None,
     plot=False,
-) -> dict:
+):
     # With frequency of 44100
     # Each frame is 0.0929 seconds with an overlap ratio of .5,
     # so moving over one frame moves 0.046 seconds
@@ -267,16 +269,20 @@ def visrecognize_directory(
                     imgA_title=os.path.basename(target_file_path),
                     imgB_title=os.path.basename(file_path),
                 )
-            file_match = {**file_match, **single_file_match}
+            if single_file_match:
+                file_match = {**file_match, **single_file_match}
         except CouldntDecodeError:
             print(f'File "{file_path}" could not be decoded')
 
     t = time.time() - t
 
     result = {}
-    result["match_time"] = t
-    result["match_info"] = file_match
-    return result
+    if file_match:
+        result["match_time"] = t
+        result["match_info"] = file_match
+        return result
+
+    return None
 
 
 def process_results(results_list, filename):
@@ -341,7 +347,9 @@ def process_results(results_list, filename):
 
     match[filename]["offset_seconds"] = offset_seconds
 
-    return match
+    if len(match[filename]["offset_seconds"]) > 0:
+        return match
+    return None
 
 
 def plot_two_images(
