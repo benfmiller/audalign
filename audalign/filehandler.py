@@ -9,7 +9,6 @@ import math
 from audalign.fingerprint import DEFAULT_FS
 import noisereduce
 from functools import partial
-from itertools import product
 
 cant_write_ext = [".mov", ".mp4"]
 
