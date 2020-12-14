@@ -81,7 +81,8 @@ def _visrecognize(
 ):
     against_samples, _ = read(against_file_path)
     against_arr2d = fingerprint.fingerprint(against_samples, retspec=True)
-    against_arr2d = against_arr2d[0 : -fingerprint.threshold]
+    if fingerprint.threshold > 0:
+        against_arr2d = against_arr2d[0 : -fingerprint.threshold]
     transposed_against_arr2d = np.transpose(against_arr2d)
 
     # plot_two_images(transposed_target_arr2d, transposed_against_arr2d)
@@ -171,7 +172,8 @@ def visrecognize(
 
     target_samples, _ = read(target_file_path)
     target_arr2d = fingerprint.fingerprint(target_samples, retspec=True)
-    target_arr2d = target_arr2d[0 : -fingerprint.threshold]
+    if fingerprint.threshold > 0:
+        target_arr2d = target_arr2d[0 : -fingerprint.threshold]
     transposed_target_arr2d = np.transpose(target_arr2d)
     transposed_target_arr2d = np.clip(transposed_target_arr2d, 0, 255)
 
@@ -235,7 +237,8 @@ def visrecognize_directory(
 
     target_samples, _ = read(target_file_path)
     target_arr2d = fingerprint.fingerprint(target_samples, retspec=True)
-    target_arr2d = target_arr2d[0 : -fingerprint.threshold]
+    if fingerprint.threshold > 0:
+        target_arr2d = target_arr2d[0 : -fingerprint.threshold]
     transposed_target_arr2d = np.transpose(target_arr2d)
     transposed_target_arr2d = np.clip(np.transpose(transposed_target_arr2d), 0, 255)
 
