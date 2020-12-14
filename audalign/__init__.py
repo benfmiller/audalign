@@ -430,7 +430,6 @@ class Audalign:
         target_file_path: str,
         against_file_path: str,
         img_width=1.0,
-        overlap_ratio=0.5,
         volume_threshold=215.0,
         plot=False,
     ) -> dict:
@@ -443,7 +442,6 @@ class Audalign:
             target_file_path (str): File to recognize
             against_file_path (str): Recognize against
             img_width (float): width of spectrogram image for recognition
-            overlap_ratio (float): overlap of window for matching
             volume_threshold (float): doesn't find stats for sections with average volume below threshold
             plot (bool): plot the spectrogram of each audio file
 
@@ -460,7 +458,6 @@ class Audalign:
             target_file_path,
             against_file_path,
             img_width=img_width,
-            overlap_ratio=overlap_ratio,
             volume_threshold=volume_threshold,
             use_multiprocessing=self.multiprocessing,
             num_processes=self.num_processors,
@@ -472,7 +469,6 @@ class Audalign:
         target_file_path: str,
         against_directory: str,
         img_width=1.0,
-        overlap_ratio=0.5,
         volume_threshold=215,
         plot=False,
     ) -> dict:
@@ -485,7 +481,6 @@ class Audalign:
             target_file_path (str): File to recognize
             against_directory (str): Recognize against all files in directory
             img_width (float): width of spectrogram image for recognition
-            overlap_ratio (float): overlap of window for matching. 0-1 with 0 as no overlap
             volume_threshold (int): doesn't find stats for sections with average volume below threshold
             plot (bool): plot the spectrogram of each audio file
 
@@ -502,7 +497,6 @@ class Audalign:
             target_file_path,
             against_directory,
             img_width=img_width,
-            overlap_ratio=overlap_ratio,
             volume_threshold=volume_threshold,
             use_multiprocessing=self.multiprocessing,
             num_processes=self.num_processors,

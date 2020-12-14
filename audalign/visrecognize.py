@@ -12,7 +12,7 @@ import multiprocessing
 from functools import partial
 
 
-def get_frame_width_and_overlap(seconds_width: float, overlap_ratio: float):
+def get_frame_width(seconds_width: float):
     seconds_width = max(
         int(
             seconds_width
@@ -24,8 +24,7 @@ def get_frame_width_and_overlap(seconds_width: float, overlap_ratio: float):
         ),
         1,
     )
-    overlap_ratio = max(int((1 - overlap_ratio) * seconds_width), 1)
-    return seconds_width, overlap_ratio
+    return seconds_width
 
 
 def find_index_arr(arr2d, threshold, img_width):
@@ -74,7 +73,6 @@ def _visrecognize(
     target_index_list: list,
     against_file_path: str,
     img_width=1.0,
-    overlap_ratio=0.5,
     volume_threshold=215.0,
     use_multiprocessing=True,
     num_processes=None,
@@ -152,7 +150,6 @@ def visrecognize(
     target_file_path: str,
     against_file_path: str,
     img_width=1.0,
-    overlap_ratio=0.5,
     volume_threshold=215.0,
     use_multiprocessing=True,
     num_processes=None,
@@ -168,7 +165,7 @@ def visrecognize(
 
     t = time.time()
 
-    img_width, overlap_ratio = get_frame_width_and_overlap(img_width, overlap_ratio)
+    img_width = get_frame_width(img_width)
 
     target_samples, _ = read(target_file_path)
     target_arr2d = fingerprint.fingerprint(target_samples, retspec=True)
@@ -187,7 +184,6 @@ def visrecognize(
         target_index_list=target_index_list,
         against_file_path=against_file_path,
         img_width=img_width,
-        overlap_ratio=overlap_ratio,
         volume_threshold=volume_threshold,
         use_multiprocessing=use_multiprocessing,
         num_processes=num_processes,
@@ -217,7 +213,6 @@ def visrecognize_directory(
     target_file_path: str,
     against_directory: str,
     img_width=1.0,
-    overlap_ratio=0.5,
     volume_threshold=215.0,
     use_multiprocessing=True,
     num_processes=None,
@@ -233,7 +228,7 @@ def visrecognize_directory(
 
     t = time.time()
 
-    img_width, overlap_ratio = get_frame_width_and_overlap(img_width, overlap_ratio)
+    img_width = get_frame_width(img_width)
 
     target_samples, _ = read(target_file_path)
     target_arr2d = fingerprint.fingerprint(target_samples, retspec=True)
@@ -260,7 +255,6 @@ def visrecognize_directory(
                 target_index_list=target_index_list,
                 against_file_path=file_path,
                 img_width=img_width,
-                overlap_ratio=overlap_ratio,
                 volume_threshold=volume_threshold,
                 use_multiprocessing=use_multiprocessing,
                 num_processes=num_processes,
