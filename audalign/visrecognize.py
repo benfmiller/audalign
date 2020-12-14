@@ -86,7 +86,7 @@ def _visrecognize(
 
     # plot_two_images(transposed_target_arr2d, transposed_against_arr2d)
 
-    # transposed_against_arr2d = np.clip(transposed_against_arr2d, 0, 255)
+    transposed_against_arr2d = np.clip(transposed_against_arr2d, 0, 255)
 
     th, _ = transposed_target_arr2d.shape
     ah, _ = transposed_against_arr2d.shape
@@ -173,7 +173,7 @@ def visrecognize(
     target_arr2d = fingerprint.fingerprint(target_samples, retspec=True)
     target_arr2d = target_arr2d[0 : -fingerprint.threshold]
     transposed_target_arr2d = np.transpose(target_arr2d)
-    # transposed_target_arr2d = np.clip(np.transpose(target_arr2d), 0, 255)
+    transposed_target_arr2d = np.clip(transposed_target_arr2d, 0, 255)
 
     target_index_list = find_index_arr(
         transposed_target_arr2d, volume_threshold, img_width
@@ -237,7 +237,7 @@ def visrecognize_directory(
     target_arr2d = fingerprint.fingerprint(target_samples, retspec=True)
     target_arr2d = target_arr2d[0 : -fingerprint.threshold]
     transposed_target_arr2d = np.transpose(target_arr2d)
-    # transposed_target_arr2d = np.clip(np.transpose(target_arr2d), 0, 255)
+    transposed_target_arr2d = np.clip(np.transpose(transposed_target_arr2d), 0, 255)
 
     target_index_list = find_index_arr(
         transposed_target_arr2d, volume_threshold, img_width
