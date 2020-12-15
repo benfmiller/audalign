@@ -746,8 +746,9 @@ class Audalign:
             self.fingerprinted_files = temp_fingerprinted_files
             self.total_fingerprints = temp_total_fingerprints
 
+    @staticmethod
     def _write_shifted_files(
-        self, files_shifts, destination_path, names_and_paths, write_extension
+        files_shifts, destination_path, names_and_paths, write_extension
     ):
         """
         Writes files to destination_path with specified shift
@@ -765,7 +766,8 @@ class Audalign:
             files_shifts, destination_path, names_and_paths, write_extension
         )
 
-    def write_shifted_file(self, file_path, destination_path, offset_seconds):
+    @staticmethod
+    def write_shifted_file(file_path, destination_path, offset_seconds):
         """
         Writes file to destination_path with specified shift in seconds
 
@@ -780,7 +782,8 @@ class Audalign:
         """
         filehandler.shift_write_file(file_path, destination_path, offset_seconds)
 
-    def convert_audio_file(self, file_path, destination_path):
+    @staticmethod
+    def convert_audio_file(file_path, destination_path):
         """
         Convert audio file to type specified in destination path
 
@@ -793,8 +796,8 @@ class Audalign:
         """
         filehandler.convert_audio_file(file_path, destination_path)
 
+    @staticmethod
     def remove_noise_file(
-        self,
         filepath,
         noise_start,
         noise_end,

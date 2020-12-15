@@ -77,6 +77,36 @@ class TestObject:
         assert len(ada.file_names) > 0
 
 
+class TestRemoveNoise:
+    test_file = "audio_files/TestAudio/test.wav"
+
+    def test_remove_noise_directory(self):
+        ada = ad.Audalign()
+        ada.remove_noise_directory(
+            "audio_files/processed_audio",
+            "audio_files/TestAudio/pink_noise.wav",
+            10,
+            30,
+            "audio_files/noiseless",
+        )
+
+    def test_remove_noise(self):
+        ad.Audalign.remove_noise_file(
+            self.test_file,
+            10,
+            20,
+            "audio_files/noiseless/test.wav",
+        )
+
+        ad.Audalign.remove_noise_file(
+            self.test_file,
+            1,
+            3,
+            "audio_files/noiseless/test.wav",
+            alt_noise_filepath="audio_files/TestAudio/pink_noise.wav",
+        )
+
+
 class TestFingerprinting:
     test_file = "audio_files/TestAudio/test.wav"
 
