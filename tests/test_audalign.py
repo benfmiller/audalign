@@ -6,7 +6,7 @@ def test_always_true():
     assert True
 
 
-class TestInit:
+class TestObject:
 
     test_file = "audio_files/TestAudio/test.wav"
 
@@ -14,6 +14,7 @@ class TestInit:
     def test_initialization(self):
 
         ada = ad.Audalign()
+        assert ada.total_fingerprints == 0
 
         ada2 = ad.Audalign("all_audio.json")
         assert ada2.total_fingerprints > 0
