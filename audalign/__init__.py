@@ -70,21 +70,31 @@ class Audalign:
             runs noise reduce on audio
         """
 
-        self.set_freq_threshold(freq_threshold)
-
         self.file_names = []
         self.fingerprinted_files = []
-        self.multiprocessing = multiprocessing
-        self.num_processors = num_processors
         self.total_fingerprints = 0
 
         if len(args) > 0:
             self.load_fingerprinted_files(args[0])
 
-        self.hash_style = hash_style
-
-        self.accuracy = accuracy
+        self.set_num_processors(num_processors)
+        self.set_multiprocessing(multiprocessing)
+        self.set_freq_threshold(freq_threshold)
+        self.set_hash_style(hash_style)
         self.set_accuracy(accuracy)
+
+    def set_hash_style(self, hash_style: str):
+        """Sets the hash style. Must be one of ["base", "panako", "panako_mod", "base_three"]
+
+        Args:
+            hash_style (str): Method to use for hashing of fingerprints
+        """
+        if hash_style not in ["base", "panako", "panako_mod", "base_three"]:
+            print(
+                'Hash style must be one of ["base", "panako", "panako_mod", "base_three"]'
+            )
+            return
+        self.hash_style = hash_style
 
     def set_accuracy(self, accuracy):
         """
@@ -101,6 +111,9 @@ class Audalign:
             accuracy : int
                 which accuracy level: 1-4
         """
+        if accuracy < 1 or accuracy > 4:
+            print("Accuracy must be between 1 and 4")
+            return
         self.accuracy = accuracy
         self._set_accuracy(accuracy)
 
