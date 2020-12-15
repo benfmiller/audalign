@@ -235,7 +235,7 @@ def visrecognize_directory(
     if fingerprint.threshold > 0:
         target_arr2d = target_arr2d[0 : -fingerprint.threshold]
     transposed_target_arr2d = np.transpose(target_arr2d)
-    transposed_target_arr2d = np.clip(np.transpose(transposed_target_arr2d), 0, 255)
+    transposed_target_arr2d = np.clip(transposed_target_arr2d, 0, 255)
 
     target_index_list = find_index_arr(
         transposed_target_arr2d, volume_threshold, img_width

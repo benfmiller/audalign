@@ -18,3 +18,25 @@ def test_recognize():
 
     result2 = ada.recognize("audio_files/TestAudio/pink_noise.wav", filter_matches=3)
     assert not result2
+
+
+def test_visrecognize():
+    ada = ad.Audalign()
+    results = ada.visrecognize(
+        test_file,
+        test_file,
+        img_width=0.5,
+        volume_threshold=215,
+    )
+    assert results
+
+
+def test_visrecognize_directory():
+    ada = ad.Audalign()
+    results = ada.visrecognize_directory(
+        test_file,
+        "audio_files/processed_audio",
+        img_width=0.5,
+        volume_threshold=215,
+    )
+    assert results
