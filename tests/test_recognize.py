@@ -47,9 +47,29 @@ class TestRecognize:
 class TestAlign:
     def test_align(self):
         ada = ad.Audalign()
-        result = ada.align("audio_files/shifts", "test_alignment")
+        result = ada.align("test_alignment/test_shifts", "test_alignment")
+        assert result
+        result = ada.align(
+            "test_alignment/test_shifts", "test_alignment", write_extension=".wav"
+        )
         assert result
 
-    # def test_target_align_fingerprint(self):
-    #     ada = ad.Audalign()
-    #     result = ada.target_align("")
+    def test_target_align_fingerprint(self):
+        ada = ad.Audalign()
+        result = ada.target_align(
+            "test_alignment/test_shifts/Eigen-song-base.wav",
+            "test_alignment/test_shifts",
+            destination_path="test_alignment",
+        )
+        assert result
+
+    def test_target_align_vis(self):
+        ada = ad.Audalign()
+        result = ada.target_align(
+            "test_alignment/test_shifts/Eigen-song-base.wav",
+            "test_alignment/test_shifts",
+            destination_path="test_alignment",
+            use_fingerprints=False,
+            img_width=0.5,
+        )
+        assert result
