@@ -56,6 +56,11 @@ class TestInit:
         ada.set_num_processors(80)
         assert ada.num_processors == 80
 
+    def test_freq_threshold(self):
+        ada = ad.Audalign(freq_threshold=0)
+        ada.set_freq_threshold(200)
+        assert ad.fingerprint.threshold == 200
+
     def test_write_and_load(self):
         ada = ad.Audalign("all_audio_panako.json")
         assert len(ada.file_names) > 0
@@ -118,7 +123,7 @@ class TestFingerprinting:
         assert len(ada_multi.fingerprinted_files) > 0
 
     def test_fingerprint_directory_single(self):
-        ada_single = ad.Audalign()
+        ada_single = ad.Audalign(multiprocessing=False)
         ada_single.fingerprint_directory("audio_files/processed_audio")
         assert ada_single.total_fingerprints > 0
         assert len(ada_single.fingerprinted_files) > 0
