@@ -90,13 +90,34 @@ class TestFingerprinting:
         ada.fingerprint_file(self.test_file, set_file_name="Sup")
         assert ada.file_names[0] == "Sup"
 
+    def test_fingerprint_file_hash_styles(self):
+        ada = ad.Audalign(hash_style="base")
+        ada.fingerprint_file(self.test_file)
+        assert ada.total_fingerprints > 0
+        ada.clear_fingerprints()
+
+        ada.set_hash_style("panako")
+        ada.fingerprint_file(self.test_file)
+        assert ada.total_fingerprints > 0
+        ada.clear_fingerprints()
+
+        ada.set_hash_style("panako_mod")
+        ada.fingerprint_file(self.test_file)
+        assert ada.total_fingerprints > 0
+        ada.clear_fingerprints()
+
+        ada.set_hash_style("base_three")
+        ada.fingerprint_file(self.test_file)
+        assert ada.total_fingerprints > 0
+
     @pytest.mark.smoke
-    def test_fingerprint_directory(self):
+    def test_fingerprint_directory_multiprocessing(self):
         ada_multi = ad.Audalign()
         ada_multi.fingerprint_directory("audio_files/processed_audio")
         assert ada_multi.total_fingerprints > 0
         assert len(ada_multi.fingerprinted_files) > 0
 
+    def test_fingerprint_directory_single(self):
         ada_single = ad.Audalign()
         ada_single.fingerprint_directory("audio_files/processed_audio")
         assert ada_single.total_fingerprints > 0

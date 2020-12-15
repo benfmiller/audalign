@@ -4,10 +4,10 @@ import pytest
 test_file = "audio_files/TestAudio/test.wav"
 
 
+@pytest.mark.smoke
 def test_recognize():
 
-    ada = ad.Audalign()
-    ada.fingerprint_file(test_file)
+    ada = ad.Audalign("all_audio_panako.json")
     assert ada.total_fingerprints > 0
 
     ada.fingerprinted_files[0][0] = "different"
