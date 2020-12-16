@@ -83,7 +83,7 @@ class Audalign:
         self.set_hash_style(hash_style)
         self.set_accuracy(accuracy)
 
-    def set_hash_style(self, hash_style: str):
+    def set_hash_style(self, hash_style: str) -> None:
         """Sets the hash style. Must be one of ["base", "panako", "panako_mod", "base_three"]
 
         Args:
@@ -96,7 +96,7 @@ class Audalign:
             return
         self.hash_style = hash_style
 
-    def set_accuracy(self, accuracy):
+    def set_accuracy(self, accuracy: int) -> None:
         """
         Sets the accuracy level of audalign object
 
@@ -118,7 +118,7 @@ class Audalign:
         self._set_accuracy(accuracy)
 
     @staticmethod
-    def _set_accuracy(accuracy):
+    def _set_accuracy(accuracy: int) -> None:
         if accuracy == 1:
             fingerprint.default_fan_value = 15
             fingerprint.default_amp_min = 80
@@ -144,7 +144,7 @@ class Audalign:
             fingerprint.max_hash_time_delta = 2000
             fingerprint.peak_sort = True
 
-    def get_accuracy(self):
+    def get_accuracy(self) -> int:
         """Current Accuracy from 1-4
 
         Returns:
@@ -152,7 +152,7 @@ class Audalign:
         """
         return self.accuracy
 
-    def set_freq_threshold(self, threshold):
+    def set_freq_threshold(self, threshold: int) -> None:
         """Sets minimum frequency threshold for fingerprint
 
         Args:
@@ -160,7 +160,7 @@ class Audalign:
         """
         fingerprint.threshold = threshold
 
-    def set_multiprocessing(self, true_or_false: bool):
+    def set_multiprocessing(self, true_or_false: bool) -> None:
         """Sets to true for on or false for off
 
         Args:
@@ -168,7 +168,7 @@ class Audalign:
         """
         self.multiprocessing = true_or_false
 
-    def set_num_processors(self, num_processors: int):
+    def set_num_processors(self, num_processors: int) -> None:
         """Set to none to use all processors by default if multiprocessing is true
 
         Args:
@@ -180,15 +180,10 @@ class Audalign:
         """
         Serializes fingerprinted files to json or pickle file
 
-        Parameters
-        ----------
-        filename
-            must be either json or pickle extension
-
-        Returns
-        -------
-        None
+        Args:
+            filename (str): file to load saved fingerprints from
         """
+
         data = [self.fingerprinted_files, self.total_fingerprints, self.file_names]
         if filename.split(".")[-1] == "pickle":
             with open(filename, "wb") as f:
@@ -229,7 +224,7 @@ class Audalign:
         except FileNotFoundError:
             print(f'"{filename}" not found')
 
-    def filter_duplicates(self):
+    def filter_duplicates(self) -> None:
         """
         Removes copies of fingerprinted files with the same name
         """
@@ -274,7 +269,7 @@ class Audalign:
                     self.file_names.append(processed_file[0])
                     self.total_fingerprints += len(processed_file[1])
 
-    def _fingerprint_directory(self, path, plot=False, extensions=["*"]):
+    def _fingerprint_directory(self, path: str, plot=False, extensions=["*"]):
         """
         Worker function for fingerprint_directory
 
@@ -349,7 +344,9 @@ class Audalign:
                 result.append([file_name, hashes])
         return result
 
-    def fingerprint_file(self, file_path, set_file_name=None, plot=False):
+    def fingerprint_file(
+        self, file_path: str, set_file_name: str = None, plot: bool = False
+    ) -> None:
         """
         Fingerprints given file and adds to fingerprinted files
 
@@ -377,7 +374,9 @@ class Audalign:
             self.file_names.append(file_name)
             self.total_fingerprints += len(hashes)
 
-    def _fingerprint_file(self, file_path, set_file_name=None, plot=False):
+    def _fingerprint_file(
+        self, file_path: str, set_file_name: str = None, plot: bool = False
+    ):
         """
         Worker function for fingerprint_file
 
@@ -406,7 +405,9 @@ class Audalign:
         file_name = set_file_name or file_name
         return [file_name, hashes]
 
-    def recognize(self, file_path, filter_matches=1, *args, **kwargs):
+    def recognize(
+        self, file_path: str, filter_matches: int = 1, *args, **kwargs
+    ) -> None:
         """
         Recognizes given file against already fingerprinted files
 
@@ -442,9 +443,9 @@ class Audalign:
         self,
         target_file_path: str,
         against_file_path: str,
-        img_width=1.0,
-        volume_threshold=215.0,
-        plot=False,
+        img_width: float = 1.0,
+        volume_threshold: float = 215.0,
+        plot: bool = False,
     ) -> dict:
         """Recognize target file against against file visually.
         Uses image processing similarity techniques to identify areas with similar spectrums.
@@ -481,9 +482,9 @@ class Audalign:
         self,
         target_file_path: str,
         against_directory: str,
-        img_width=1.0,
-        volume_threshold=215,
-        plot=False,
+        img_width: float = 1.0,
+        volume_threshold: float = 215.0,
+        plot: bool = False,
     ) -> dict:
         """Recognize target file against against directory visually.
         Uses image processing similarity techniques to identify areas with similar spectrums.
@@ -516,7 +517,7 @@ class Audalign:
             plot=plot,
         )
 
-    def write_processed_file(self, file_path, destination_file):
+    def write_processed_file(self, file_path: str, destination_file: str) -> None:
         """
         writes given file to the destination file after processing for fingerprinting
 
@@ -533,7 +534,7 @@ class Audalign:
         """
         filehandler.read(file_path, wrdestination=destination_file)
 
-    def plot(self, file_path):
+    def plot(self, file_path: str) -> None:
         """
         Plots the file_path's peak chart
 
@@ -548,7 +549,7 @@ class Audalign:
         """
         self._fingerprint_file(file_path, plot=True)
 
-    def clear_fingerprints(self):
+    def clear_fingerprints(self) -> None:
         """
         Resets audalign object to brand new state
 
@@ -667,10 +668,10 @@ class Audalign:
 
     def align(
         self,
-        directory_path,
-        destination_path=None,
-        write_extension=None,
-        filter_matches=1,
+        directory_path: str,
+        destination_path: str = None,
+        write_extension: str = None,
+        filter_matches: int = 1,
     ):
         """
         Finds matches and relative offsets for all files in directory_path, aligns them, and writes them to destination_path
@@ -748,7 +749,10 @@ class Audalign:
 
     @staticmethod
     def _write_shifted_files(
-        files_shifts, destination_path, names_and_paths, write_extension
+        files_shifts: dict,
+        destination_path: str,
+        names_and_paths: dict,
+        write_extension: str,
     ):
         """
         Writes files to destination_path with specified shift
@@ -767,7 +771,9 @@ class Audalign:
         )
 
     @staticmethod
-    def write_shifted_file(file_path, destination_path, offset_seconds):
+    def write_shifted_file(
+        file_path: str, destination_path: str, offset_seconds: float
+    ):
         """
         Writes file to destination_path with specified shift in seconds
 
@@ -783,7 +789,7 @@ class Audalign:
         filehandler.shift_write_file(file_path, destination_path, offset_seconds)
 
     @staticmethod
-    def convert_audio_file(file_path, destination_path):
+    def convert_audio_file(file_path: str, destination_path: str):
         """
         Convert audio file to type specified in destination path
 
@@ -798,13 +804,13 @@ class Audalign:
 
     @staticmethod
     def remove_noise_file(
-        filepath,
-        noise_start,
-        noise_end,
-        destination,
-        alt_noise_filepath=None,
-        use_tensorflow=False,
-        verbose=False,
+        filepath: str,
+        noise_start: float,
+        noise_end: float,
+        destination: str,
+        alt_noise_filepath: str = None,
+        use_tensorflow: bool = False,
+        verbose: bool = False,
     ):
         """Remove noise from audio file by specifying start and end seconds of representative sound sections. Writes file to destination
 
@@ -829,13 +835,13 @@ class Audalign:
 
     def remove_noise_directory(
         self,
-        directory,
-        noise_filepath,
-        noise_start,
-        noise_end,
-        destination_directory,
-        use_tensorflow=False,
-        verbose=False,
+        directory: str,
+        noise_filepath: str,
+        noise_start: float,
+        noise_end: float,
+        destination_directory: str,
+        use_tensorflow: bool = False,
+        verbose: bool = False,
     ):
         """Remove noise from audio files in directory by specifying start and end seconds of representative sound sections. Writes file to destination directory
         Uses multiprocessing if self.multiprocessing is true
