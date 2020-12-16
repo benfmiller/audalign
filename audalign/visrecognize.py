@@ -11,6 +11,9 @@ import numpy as np
 import multiprocessing
 from functools import partial
 
+lower_clip = 5
+upper_clip = 255
+
 
 def get_frame_width(seconds_width: float):
     seconds_width = max(
@@ -85,7 +88,7 @@ def _visrecognize(
 
     # plot_two_images(transposed_target_arr2d, transposed_against_arr2d)
 
-    transposed_against_arr2d = np.clip(transposed_against_arr2d, 0, 255)
+    transposed_against_arr2d = np.clip(transposed_against_arr2d, lower_clip, upper_clip)
 
     th, _ = transposed_target_arr2d.shape
     ah, _ = transposed_against_arr2d.shape
@@ -172,7 +175,7 @@ def visrecognize(
     if fingerprint.threshold > 0:
         target_arr2d = target_arr2d[0 : -fingerprint.threshold]
     transposed_target_arr2d = np.transpose(target_arr2d)
-    transposed_target_arr2d = np.clip(transposed_target_arr2d, 0, 255)
+    transposed_target_arr2d = np.clip(transposed_target_arr2d, lower_clip, upper_clip)
 
     target_index_list = find_index_arr(
         transposed_target_arr2d, volume_threshold, img_width
@@ -235,7 +238,7 @@ def visrecognize_directory(
     if fingerprint.threshold > 0:
         target_arr2d = target_arr2d[0 : -fingerprint.threshold]
     transposed_target_arr2d = np.transpose(target_arr2d)
-    transposed_target_arr2d = np.clip(transposed_target_arr2d, 0, 255)
+    transposed_target_arr2d = np.clip(transposed_target_arr2d, lower_clip, upper_clip)
 
     target_index_list = find_index_arr(
         transposed_target_arr2d, volume_threshold, img_width
