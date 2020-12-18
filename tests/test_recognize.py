@@ -45,6 +45,7 @@ class TestRecognize:
 
 
 class TestAlign:
+    @pytest.mark.smoke
     def test_align(self):
         ada = ad.Audalign()
         result = ada.align("test_alignment/test_shifts", "test_alignment")
