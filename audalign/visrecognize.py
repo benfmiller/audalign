@@ -15,140 +15,6 @@ lower_clip = 5
 upper_clip = 255
 
 
-def get_frame_width(seconds_width: float):
-    seconds_width = max(
-        int(
-            seconds_width
-            // (
-                fingerprint.DEFAULT_WINDOW_SIZE
-                / fingerprint.DEFAULT_FS
-                * fingerprint.DEFAULT_OVERLAP_RATIO
-            )
-        ),
-        1,
-    )
-    return seconds_width
-
-
-def find_index_arr(arr2d, threshold, img_width):
-    index_list = []
-    for i in range(0, len(arr2d) - img_width):
-        if np.amax(arr2d[i : i + img_width]) >= threshold:
-            index_list += [i]
-    return index_list
-
-
-def pair_index_tuples(target_list, against_list):
-    index_pairs = []
-    for i in target_list:
-        for j in against_list:
-            index_pairs += [(i, j)]
-    return index_pairs
-
-
-def calculate_comp_values(
-    index_tuple, img_width=0, target_arr2d=[[]], against_arr2d=[[]]
-):
-    # print(np.amax(target_arr2d[index_tuple[0] : index_tuple[0] + img_width]))
-    # array.mean() very small range of values, usually between 0.4 and 2
-    # Plus, finding the max only uses regions with large peaks, which could reduce
-    # noisy secions being included.
-    try:
-        m = mean_squared_error(
-            target_arr2d[index_tuple[0] : index_tuple[0] + img_width],
-            against_arr2d[index_tuple[1] : index_tuple[1] + img_width],
-        )
-        s = ssim(
-            target_arr2d[index_tuple[0] : index_tuple[0] + img_width],
-            against_arr2d[index_tuple[1] : index_tuple[1] + img_width],
-        )
-        return (index_tuple[1], index_tuple[0], (m, s))
-    except ZeroDivisionError as e:
-        m = 10000000
-        print(f"zero division error for index {index_tuple} and img width{img_width}")
-        s = 10000000
-        return (index_tuple[1], index_tuple[0], (m, s))
-
-
-def _visrecognize(
-    transposed_target_arr2d,
-    target_file_path: str,
-    target_index_list: list,
-    against_file_path: str,
-    img_width=1.0,
-    volume_threshold=215.0,
-    use_multiprocessing=True,
-    num_processes=None,
-):
-    against_samples, _ = read(against_file_path)
-    against_arr2d = fingerprint.fingerprint(against_samples, retspec=True)
-    if fingerprint.threshold > 0:
-        against_arr2d = against_arr2d[0 : -fingerprint.threshold]
-    transposed_against_arr2d = np.transpose(against_arr2d)
-
-    # plot_two_images(transposed_target_arr2d, transposed_against_arr2d)
-
-    transposed_against_arr2d = np.clip(transposed_against_arr2d, lower_clip, upper_clip)
-
-    th, _ = transposed_target_arr2d.shape
-    ah, _ = transposed_against_arr2d.shape
-
-    # plot_two_images(transposed_target_arr2d, transposed_against_arr2d)
-
-    # print(f"Target height: {th}, target width:")
-    # print(f"against height: {ah}")
-    # print(f"length of target: {len(transposed_target_arr2d)}")
-    print(
-        f"Comparing {os.path.basename(target_file_path)} against {os.path.basename(against_file_path)}... "
-    )
-
-    # create index list
-    against_index_list = find_index_arr(
-        transposed_against_arr2d, volume_threshold, img_width
-    )
-
-    index_list = pair_index_tuples(target_index_list, against_index_list)
-
-    # offsets = [x[0] - x[1] for x in index_list]
-    # print()
-    # print(offsets.count(215))
-
-    # print()
-    # print(len(index_list))
-
-    _calculate_comp_values = partial(
-        calculate_comp_values,
-        img_width=img_width,
-        target_arr2d=transposed_target_arr2d,
-        against_arr2d=transposed_against_arr2d,
-    )
-
-    # calculate all mse and ssim values
-    if use_multiprocessing == True:
-
-        try:
-            nprocesses = num_processes or multiprocessing.cpu_count()
-        except NotImplementedError:
-            nprocesses = 1
-        else:
-            nprocesses = 1 if nprocesses <= 0 else nprocesses
-
-        with multiprocessing.Pool(nprocesses) as pool:
-            results_list = pool.map(_calculate_comp_values, tqdm.tqdm(index_list))
-            pool.close()
-            pool.join()
-    else:
-        results_list = []
-        for i in tqdm.tqdm(index_list):
-            results_list += [_calculate_comp_values(i)]
-    # print(f"done")
-
-    print("Calculating results... ", end="")
-    file_match = process_results(results_list, os.path.basename(against_file_path))
-    print("done")
-    return file_match, against_arr2d
-
-
 def visrecognize(
     target_file_path: str,
     against_file_path: str,
@@ -283,6 +149,139 @@ def visrecognize_directory(
         return result
 
     return None
+
+
+def _visrecognize(
+    transposed_target_arr2d,
+    target_file_path: str,
+    target_index_list: list,
+    against_file_path: str,
+    img_width=1.0,
+    volume_threshold=215.0,
+    use_multiprocessing=True,
+    num_processes=None,
+):
+    against_samples, _ = read(against_file_path)
+    against_arr2d = fingerprint.fingerprint(against_samples, retspec=True)
+    if fingerprint.threshold > 0:
+        against_arr2d = against_arr2d[0 : -fingerprint.threshold]
+    transposed_against_arr2d = np.transpose(against_arr2d)
+
+    # plot_two_images(transposed_target_arr2d, transposed_against_arr2d)
+
+    transposed_against_arr2d = np.clip(transposed_against_arr2d, lower_clip, upper_clip)
+
+    th, _ = transposed_target_arr2d.shape
+    ah, _ = transposed_against_arr2d.shape
+
+    # plot_two_images(transposed_target_arr2d, transposed_against_arr2d)
+
+    # print(f"Target height: {th}, target width:")
+    # print(f"against height: {ah}")
+    # print(f"length of target: {len(transposed_target_arr2d)}")
+    print(
+        f"Comparing {os.path.basename(target_file_path)} against {os.path.basename(against_file_path)}... "
+    )
+
+    # create index list
+    against_index_list = find_index_arr(
+        transposed_against_arr2d, volume_threshold, img_width
+    )
+
+    index_list = pair_index_tuples(target_index_list, against_index_list)
+
+    # offsets = [x[0] - x[1] for x in index_list]
+    # print()
+    # print(offsets.count(215))
+
+    # print()
+    # print(len(index_list))
+
+    _calculate_comp_values = partial(
+        calculate_comp_values,
+        img_width=img_width,
+        target_arr2d=transposed_target_arr2d,
+        against_arr2d=transposed_against_arr2d,
+    )
+
+    # calculate all mse and ssim values
+    if use_multiprocessing == True:
+
+        try:
+            nprocesses = num_processes or multiprocessing.cpu_count()
+        except NotImplementedError:
+            nprocesses = 1
+        else:
+            nprocesses = 1 if nprocesses <= 0 else nprocesses
+
+        with multiprocessing.Pool(nprocesses) as pool:
+            results_list = pool.map(_calculate_comp_values, tqdm.tqdm(index_list))
+            pool.close()
+            pool.join()
+    else:
+        results_list = []
+        for i in tqdm.tqdm(index_list):
+            results_list += [_calculate_comp_values(i)]
+    # print(f"done")
+
+    print("Calculating results... ", end="")
+    file_match = process_results(results_list, os.path.basename(against_file_path))
+    print("done")
+    return file_match, against_arr2d
+
+
+def get_frame_width(seconds_width: float):
+    return max(
+        int(
+            seconds_width
+            // (
+                fingerprint.DEFAULT_WINDOW_SIZE
+                / fingerprint.DEFAULT_FS
+                * fingerprint.DEFAULT_OVERLAP_RATIO
+            )
+        ),
+        1,
+    )
+
+
+def find_index_arr(arr2d, threshold, img_width):
+    index_list = []
+    for i in range(0, len(arr2d) - img_width):
+        if np.amax(arr2d[i : i + img_width]) >= threshold:
+            index_list += [i]
+    return index_list
+
+
+def pair_index_tuples(target_list, against_list):
+    index_pairs = []
+    for i in target_list:
+        for j in against_list:
+            index_pairs += [(i, j)]
+    return index_pairs
+
+
+def calculate_comp_values(
+    index_tuple, img_width=0, target_arr2d=[[]], against_arr2d=[[]]
+):
+    # print(np.amax(target_arr2d[index_tuple[0] : index_tuple[0] + img_width]))
+    # array.mean() very small range of values, usually between 0.4 and 2
+    # Plus, finding the max only uses regions with large peaks, which could reduce
+    # noisy secions being included.
+    try:
+        m = mean_squared_error(
+            target_arr2d[index_tuple[0] : index_tuple[0] + img_width],
+            against_arr2d[index_tuple[1] : index_tuple[1] + img_width],
+        )
+        s = ssim(
+            target_arr2d[index_tuple[0] : index_tuple[0] + img_width],
+            against_arr2d[index_tuple[1] : index_tuple[1] + img_width],
+        )
+        return (index_tuple[1], index_tuple[0], (m, s))
+    except ZeroDivisionError as e:
+        m = 10000000
+        print(f"zero division error for index {index_tuple} and img width{img_width}")
+        s = 10000000
+        return (index_tuple[1], index_tuple[0], (m, s))
 
 
 def process_results(results_list, filename):
