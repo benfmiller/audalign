@@ -445,9 +445,9 @@ class Audalign:
         against_file_path: str,
         img_width: float = 1.0,
         volume_threshold: float = 215.0,
-        volume_floor: float = 50,
-        vert_scaling: float = 1,
-        horiz_scaling: float = 1,
+        volume_floor: float = 50.0,
+        vert_scaling: float = 1.0,
+        horiz_scaling: float = 1.0,
         plot: bool = False,
     ) -> dict:
         """Recognize target file against against file visually.
@@ -460,7 +460,9 @@ class Audalign:
             against_file_path (str): Recognize against.
             img_width (float): width of spectrogram image for recognition.
             volume_threshold (float): doesn't find stats for sections with max volume below threshold.
-            volume_floor (float):
+            volume_floor (float): ignores volume levels below floow.
+            vert_scaling (float): scales vertically to speed up calculations. Smaller numbers have smaller images.
+            horiz_scaling (float): scales horizontally to speed up calculations. Smaller numbers have smaller images. Affects alignment granularity.
             plot (bool): plot the spectrogram of each audio file.
 
         Returns
@@ -477,6 +479,9 @@ class Audalign:
             against_file_path,
             img_width=img_width,
             volume_threshold=volume_threshold,
+            volume_floor=volume_floor,
+            vert_scaling=vert_scaling,
+            horiz_scaling=horiz_scaling,
             use_multiprocessing=self.multiprocessing,
             num_processes=self.num_processors,
             plot=plot,
@@ -488,6 +493,9 @@ class Audalign:
         against_directory: str,
         img_width: float = 1.0,
         volume_threshold: float = 215.0,
+        volume_floor: float = 50.0,
+        vert_scaling: float = 1.0,
+        horiz_scaling: float = 1.0,
         plot: bool = False,
     ) -> dict:
         """Recognize target file against against directory visually.
@@ -496,11 +504,14 @@ class Audalign:
         Uses audalign freq_threshold as well
 
         Args:
-            target_file_path (str): File to recognize
-            against_directory (str): Recognize against all files in directory
-            img_width (float): width of spectrogram image for recognition
-            volume_threshold (int): doesn't find stats for sections with max volume below threshold
-            plot (bool): plot the spectrogram of each audio file
+            target_file_path (str): File to recognize.
+            against_directory (str): Recognize against all files in directory.
+            img_width (float): width of spectrogram image for recognition.
+            volume_threshold (int): doesn't find stats for sections with max volume below threshold.
+            volume_floor (float): ignores volume levels below floow.
+            vert_scaling (float): scales vertically to speed up calculations. Smaller numbers have smaller images.
+            horiz_scaling (float): scales horizontally to speed up calculations. Smaller numbers have smaller images. Affects alignment granularity.
+            plot (bool): plot the spectrogram of each audio file.
 
         Returns
         -------
@@ -516,6 +527,9 @@ class Audalign:
             against_directory,
             img_width=img_width,
             volume_threshold=volume_threshold,
+            volume_floor=volume_floor,
+            vert_scaling=vert_scaling,
+            horiz_scaling=horiz_scaling,
             use_multiprocessing=self.multiprocessing,
             num_processes=self.num_processors,
             plot=plot,
