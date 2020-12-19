@@ -14,6 +14,8 @@ from functools import partial
 lower_clip = 5
 upper_clip = 255
 
+# ------------------------------------------------------------------------------------------
+
 
 def visrecognize(
     target_file_path: str,
@@ -39,31 +41,39 @@ def visrecognize(
 
     img_width = get_frame_width(img_width)
 
-    target_samples, _ = read(target_file_path)
-    target_arr2d = fingerprint.fingerprint(target_samples, retspec=True)
-    if fingerprint.threshold > 0:
-        target_arr2d = target_arr2d[0 : -fingerprint.threshold]
-    transposed_target_arr2d = np.transpose(target_arr2d)
-    transposed_target_arr2d = np.clip(transposed_target_arr2d, lower_clip, upper_clip)
+    target_arr2d, transposed_target_arr2d = get_arrays(
+        target_file_path,
+        volume_floor=volume_floor,
+        vert_scaling=vert_scaling,
+        horiz_scaling=horiz_scaling,
+    )
 
     target_index_list = find_index_arr(
         transposed_target_arr2d, volume_threshold, img_width
     )
 
-    file_match, against_arr2d = _visrecognize(
+    against_arr2d, transposed_against_arr2d = get_arrays(
+        against_file_path,
+        volume_floor=volume_floor,
+        vert_scaling=vert_scaling,
+        horiz_scaling=horiz_scaling,
+    )
+    results_list = _visrecognize(
         transposed_target_arr2d=transposed_target_arr2d,
         target_file_path=target_file_path,
         target_index_list=target_index_list,
         against_file_path=against_file_path,
+        transposed_against_arr2d=transposed_against_arr2d,
         img_width=img_width,
         volume_threshold=volume_threshold,
-        volume_floor=volume_floor,
-        vert_scaling=vert_scaling,
-        horiz_scaling=horiz_scaling,
         use_multiprocessing=use_multiprocessing,
         num_processes=num_processes,
     )
-
+    file_match = process_results(
+        results_list,
+        os.path.basename(against_file_path),
+        horiz_scaling=horiz_scaling,
+    )
     t = time.time() - t
 
     if plot:
@@ -82,6 +92,9 @@ def visrecognize(
         return result
 
     return None
+
+
+# ------------------------------------------------------------------------------------------
 
 
 def visrecognize_directory(
@@ -108,12 +121,12 @@ def visrecognize_directory(
 
     img_width = get_frame_width(img_width)
 
-    target_samples, _ = read(target_file_path)
-    target_arr2d = fingerprint.fingerprint(target_samples, retspec=True)
-    if fingerprint.threshold > 0:
-        target_arr2d = target_arr2d[0 : -fingerprint.threshold]
-    transposed_target_arr2d = np.transpose(target_arr2d)
-    transposed_target_arr2d = np.clip(transposed_target_arr2d, lower_clip, upper_clip)
+    target_arr2d, transposed_target_arr2d = get_arrays(
+        target_file_path,
+        volume_floor=volume_floor,
+        vert_scaling=vert_scaling,
+        horiz_scaling=horiz_scaling,
+    )
 
     target_index_list = find_index_arr(
         transposed_target_arr2d, volume_threshold, img_width
@@ -127,18 +140,27 @@ def visrecognize_directory(
         if os.path.basename(file_path) == os.path.basename(target_file_path):
             continue
         try:
-            single_file_match, against_arr2d = _visrecognize(
+            against_arr2d, transposed_against_arr2d = get_arrays(
+                file_path,
+                volume_floor=volume_floor,
+                vert_scaling=vert_scaling,
+                horiz_scaling=horiz_scaling,
+            )
+            results_list = _visrecognize(
                 transposed_target_arr2d=transposed_target_arr2d,
                 target_file_path=target_file_path,
                 target_index_list=target_index_list,
                 against_file_path=file_path,
+                transposed_against_arr2d=transposed_against_arr2d,
                 img_width=img_width,
                 volume_threshold=volume_threshold,
-                volume_floor=volume_floor,
-                vert_scaling=vert_scaling,
-                horiz_scaling=horiz_scaling,
                 use_multiprocessing=use_multiprocessing,
                 num_processes=num_processes,
+            )
+            single_file_match = process_results(
+                results_list,
+                os.path.basename(file_path),
+                horiz_scaling=horiz_scaling,
             )
             if plot:
                 plot_two_images(
@@ -163,28 +185,20 @@ def visrecognize_directory(
     return None
 
 
+# ------------------------------------------------------------------------------------------
+
+
 def _visrecognize(
     transposed_target_arr2d,
     target_file_path: str,
     target_index_list: list,
     against_file_path: str,
+    transposed_against_arr2d,
     img_width=1.0,
     volume_threshold=215.0,
-    volume_floor: float = 50.0,
-    vert_scaling: float = 1.0,
-    horiz_scaling: float = 1.0,
     use_multiprocessing=True,
     num_processes=None,
 ):
-    against_samples, _ = read(against_file_path)
-    against_arr2d = fingerprint.fingerprint(against_samples, retspec=True)
-    if fingerprint.threshold > 0:
-        against_arr2d = against_arr2d[0 : -fingerprint.threshold]
-    transposed_against_arr2d = np.transpose(against_arr2d)
-
-    # plot_two_images(transposed_target_arr2d, transposed_against_arr2d)
-
-    transposed_against_arr2d = np.clip(transposed_against_arr2d, lower_clip, upper_clip)
 
     th, _ = transposed_target_arr2d.shape
     ah, _ = transposed_against_arr2d.shape
@@ -237,12 +251,28 @@ def _visrecognize(
         results_list = []
         for i in tqdm.tqdm(index_list):
             results_list += [_calculate_comp_values(i)]
-    # print(f"done")
+    return results_list
 
-    print("Calculating results... ", end="")
-    file_match = process_results(results_list, os.path.basename(against_file_path))
-    print("done")
-    return file_match, against_arr2d
+
+# ------------------------------------------------------------------------------------------
+
+
+def get_arrays(
+    file_path: str,
+    volume_floor: float = 50.0,
+    vert_scaling: float = 1.0,
+    horiz_scaling: float = 1.0,
+):
+    samples, _ = read(file_path)
+    arr2d = fingerprint.fingerprint(samples, retspec=True)
+    if fingerprint.threshold > 0:
+        arr2d = arr2d[0 : -fingerprint.threshold]
+    transposed_arr2d = np.transpose(arr2d)
+    transposed_arr2d = np.clip(transposed_arr2d, lower_clip, upper_clip)
+    return arr2d, transposed_arr2d
+
+
+# ------------------------------------------------------------------------------------------
 
 
 def get_frame_width(seconds_width: float):
@@ -259,6 +289,9 @@ def get_frame_width(seconds_width: float):
     )
 
 
+# ------------------------------------------------------------------------------------------
+
+
 def find_index_arr(arr2d, threshold, img_width):
     index_list = []
     for i in range(0, len(arr2d) - img_width):
@@ -273,6 +306,9 @@ def pair_index_tuples(target_list, against_list):
         for j in against_list:
             index_pairs += [(i, j)]
     return index_pairs
+
+
+# ------------------------------------------------------------------------------------------
 
 
 def calculate_comp_values(
@@ -299,7 +335,11 @@ def calculate_comp_values(
         return (index_tuple[1], index_tuple[0], (m, s))
 
 
-def process_results(results_list, filename):
+# ------------------------------------------------------------------------------------------
+
+
+def process_results(results_list, filename, horiz_scaling: float = 1.0):
+    print("Calculating results... ", end="")
     i = 0  # remove bad results or results below threshold
     while i < len(results_list):
         if results_list[i][2][0] == 10000000 or results_list[i][2][1] == 10000000:
@@ -354,16 +394,21 @@ def process_results(results_list, filename):
             float(i)
             / fingerprint.DEFAULT_FS
             * fingerprint.DEFAULT_WINDOW_SIZE
-            * fingerprint.DEFAULT_OVERLAP_RATIO,
+            * fingerprint.DEFAULT_OVERLAP_RATIO
+            / horiz_scaling,
             5,
         )
         offset_seconds.append(nseconds)
 
     match[filename]["offset_seconds"] = offset_seconds
+    print("done")
 
     if len(match[filename]["offset_seconds"]) > 0:
         return match
     return None
+
+
+# ------------------------------------------------------------------------------------------
 
 
 def plot_two_images(
