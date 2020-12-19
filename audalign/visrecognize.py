@@ -22,7 +22,7 @@ def visrecognize(
     against_file_path: str,
     img_width=1.0,
     volume_threshold=215.0,
-    volume_floor: float = 50.0,
+    volume_floor: float = 10.0,
     vert_scaling: float = 1.0,
     horiz_scaling: float = 1.0,
     use_multiprocessing=True,
@@ -36,6 +36,8 @@ def visrecognize(
     #
     # add option to specify which value to sort by?
     # PSNR
+
+    # volume_threshold -= volume_floor
 
     t = time.time()
 
@@ -102,7 +104,7 @@ def visrecognize_directory(
     against_directory: str,
     img_width=1.0,
     volume_threshold=215.0,
-    volume_floor: float = 50.0,
+    volume_floor: float = 10.0,
     vert_scaling: float = 1.0,
     horiz_scaling: float = 1.0,
     use_multiprocessing=True,
@@ -116,6 +118,8 @@ def visrecognize_directory(
     #
     # add option to specify which value to sort by?
     # PSNR
+
+    # volume_threshold -= volume_floor
 
     t = time.time()
 
@@ -259,7 +263,7 @@ def _visrecognize(
 
 def get_arrays(
     file_path: str,
-    volume_floor: float = 50.0,
+    volume_floor: float = 10.0,
     vert_scaling: float = 1.0,
     horiz_scaling: float = 1.0,
 ):
@@ -267,8 +271,10 @@ def get_arrays(
     arr2d = fingerprint.fingerprint(samples, retspec=True)
     if fingerprint.threshold > 0:
         arr2d = arr2d[0 : -fingerprint.threshold]
+    arr2d = np.clip(arr2d, volume_floor, upper_clip)
+    # arr2d -= volume_floor
     transposed_arr2d = np.transpose(arr2d)
-    transposed_arr2d = np.clip(transposed_arr2d, lower_clip, upper_clip)
+    # transposed_arr2d -= volume_floor
     return arr2d, transposed_arr2d
 
 
