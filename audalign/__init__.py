@@ -593,7 +593,10 @@ class Audalign:
         alternate_strength_stat: str = None,
         filter_matches: int = 1,
         volume_threshold: float = 216,
-        img_width: float = 1,
+        volume_floor: float = 10.0,
+        vert_scaling: float = 1.0,
+        horiz_scaling: float = 1.0,
+        img_width: float = 1.0,
     ):
         """matches and relative offsets for all files in directory_path using only target file,
         aligns them, and writes them to destination_path if given. Uses fingerprinting by defualt,
@@ -608,6 +611,9 @@ class Audalign:
             alternate_strength_stat (str, optional): confidence for fingerprints, ssim for visual, mse or count also work for visual. Defaults to None.
             filter_matches (int, optional): filter matches level for fingerprinting. Defaults to 1.
             volume_threshold (float, optional): volume threshold for visual recognition. Defaults to 216.
+            volume_floor (float): ignores volume levels below floow.
+            vert_scaling (float): scales vertically to speed up calculations. Smaller numbers have smaller images.
+            horiz_scaling (float): scales horizontally to speed up calculations. Smaller numbers have smaller images. Affects alignment granularity.
             img_width (float, optional): width of image comparison for visual recognition
 
         Returns:
@@ -637,6 +643,9 @@ class Audalign:
                     target_file_path=target_file,
                     against_directory=directory_path,
                     volume_threshold=volume_threshold,
+                    volume_floor=volume_floor,
+                    vert_scaling=vert_scaling,
+                    horiz_scaling=horiz_scaling,
                     img_width=img_width,
                 )
 
