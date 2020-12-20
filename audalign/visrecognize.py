@@ -1,3 +1,4 @@
+from numpy.core.defchararray import array
 import audalign.fingerprint as fingerprint
 from audalign.filehandler import read, find_files
 from pydub.exceptions import CouldntDecodeError
@@ -10,6 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import multiprocessing
 from functools import partial
+from PIL import Image
 
 lower_clip = 5
 upper_clip = 255
@@ -272,6 +274,17 @@ def get_arrays(
     if fingerprint.threshold > 0:
         arr2d = arr2d[0 : -fingerprint.threshold]
     arr2d = np.clip(arr2d, volume_floor, upper_clip)
+    if vert_scaling != 1.0 or horiz_scaling != 1.0:
+        array_image = Image.fromarray(np.uint8(arr2d))
+        array_image = array_image.resize(
+            (
+                int(array_image.size[0] * horiz_scaling),
+                int(array_image.size[1] * vert_scaling),
+            ),
+            Image.NEAREST,
+        )
+        arr2d = np.array(array_image)
+
     # arr2d -= volume_floor
     transposed_arr2d = np.transpose(arr2d)
     # transposed_arr2d -= volume_floor
