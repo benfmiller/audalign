@@ -445,6 +445,10 @@ class Audalign:
         against_file_path: str,
         img_width: float = 1.0,
         volume_threshold: float = 215.0,
+        volume_floor: float = 10.0,
+        vert_scaling: float = 1.0,
+        horiz_scaling: float = 1.0,
+        calc_mse: bool = False,
         plot: bool = False,
     ) -> dict:
         """Recognize target file against against file visually.
@@ -453,11 +457,15 @@ class Audalign:
         Uses audalign freq_threshold as well
 
         Args:
-            target_file_path (str): File to recognize
-            against_file_path (str): Recognize against
-            img_width (float): width of spectrogram image for recognition
-            volume_threshold (float): doesn't find stats for sections with average volume below threshold
-            plot (bool): plot the spectrogram of each audio file
+            target_file_path (str): File to recognize.
+            against_file_path (str): Recognize against.
+            img_width (float): width of spectrogram image for recognition.
+            volume_threshold (float): doesn't find stats for sections with max volume below threshold.
+            volume_floor (float): ignores volume levels below floow.
+            vert_scaling (float): scales vertically to speed up calculations. Smaller numbers have smaller images.
+            horiz_scaling (float): scales horizontally to speed up calculations. Smaller numbers have smaller images. Affects alignment granularity.
+            calc_mse (bool): also calculates mse for each shift if true. If false, uses default mse 20000000
+            plot (bool): plot the spectrogram of each audio file.
 
         Returns
         -------
@@ -473,6 +481,10 @@ class Audalign:
             against_file_path,
             img_width=img_width,
             volume_threshold=volume_threshold,
+            volume_floor=volume_floor,
+            vert_scaling=vert_scaling,
+            horiz_scaling=horiz_scaling,
+            calc_mse=calc_mse,
             use_multiprocessing=self.multiprocessing,
             num_processes=self.num_processors,
             plot=plot,
@@ -484,6 +496,10 @@ class Audalign:
         against_directory: str,
         img_width: float = 1.0,
         volume_threshold: float = 215.0,
+        volume_floor: float = 10.0,
+        vert_scaling: float = 1.0,
+        horiz_scaling: float = 1.0,
+        calc_mse: bool = False,
         plot: bool = False,
     ) -> dict:
         """Recognize target file against against directory visually.
@@ -492,11 +508,15 @@ class Audalign:
         Uses audalign freq_threshold as well
 
         Args:
-            target_file_path (str): File to recognize
-            against_directory (str): Recognize against all files in directory
-            img_width (float): width of spectrogram image for recognition
-            volume_threshold (int): doesn't find stats for sections with average volume below threshold
-            plot (bool): plot the spectrogram of each audio file
+            target_file_path (str): File to recognize.
+            against_directory (str): Recognize against all files in directory.
+            img_width (float): width of spectrogram image for recognition.
+            volume_threshold (int): doesn't find stats for sections with max volume below threshold.
+            volume_floor (float): ignores volume levels below floow.
+            vert_scaling (float): scales vertically to speed up calculations. Smaller numbers have smaller images.
+            horiz_scaling (float): scales horizontally to speed up calculations. Smaller numbers have smaller images. Affects alignment granularity.
+            calc_mse (bool): also calculates mse for each shift if true. If false, uses default mse 20000000
+            plot (bool): plot the spectrogram of each audio file.
 
         Returns
         -------
@@ -512,6 +532,10 @@ class Audalign:
             against_directory,
             img_width=img_width,
             volume_threshold=volume_threshold,
+            volume_floor=volume_floor,
+            vert_scaling=vert_scaling,
+            horiz_scaling=horiz_scaling,
+            calc_mse=calc_mse,
             use_multiprocessing=self.multiprocessing,
             num_processes=self.num_processors,
             plot=plot,
@@ -575,7 +599,11 @@ class Audalign:
         alternate_strength_stat: str = None,
         filter_matches: int = 1,
         volume_threshold: float = 216,
-        img_width: float = 1,
+        volume_floor: float = 10.0,
+        vert_scaling: float = 1.0,
+        horiz_scaling: float = 1.0,
+        img_width: float = 1.0,
+        calc_mse: bool = False,
     ):
         """matches and relative offsets for all files in directory_path using only target file,
         aligns them, and writes them to destination_path if given. Uses fingerprinting by defualt,
@@ -590,10 +618,14 @@ class Audalign:
             alternate_strength_stat (str, optional): confidence for fingerprints, ssim for visual, mse or count also work for visual. Defaults to None.
             filter_matches (int, optional): filter matches level for fingerprinting. Defaults to 1.
             volume_threshold (float, optional): volume threshold for visual recognition. Defaults to 216.
+            volume_floor (float): ignores volume levels below floow.
+            vert_scaling (float): scales vertically to speed up calculations. Smaller numbers have smaller images.
+            horiz_scaling (float): scales horizontally to speed up calculations. Smaller numbers have smaller images. Affects alignment granularity.
             img_width (float, optional): width of image comparison for visual recognition
+            calc_mse (bool): also calculates mse for each shift if true. If false, uses default mse 20000000
 
         Returns:
-            [type]: [description]
+            dict: dict of file name with shift as value along with match info
         """
         self.file_names, temp_file_names = [], self.file_names
         self.fingerprinted_files, temp_fingerprinted_files = (
@@ -603,6 +635,8 @@ class Audalign:
         self.total_fingerprints, temp_total_fingerprints = 0, self.total_fingerprints
 
         try:
+            if alternate_strength_stat == "mse":
+                calc_mse = True
 
             target_name = os.path.basename(target_file)
             total_alignment = {}
@@ -610,6 +644,10 @@ class Audalign:
 
             if use_fingerprints:
 
+                all_against_files = filehandler.find_files(directory_path)
+                all_against_files = [os.path.basename(x[0]) for x in all_against_files]
+                if os.path.basename(target_file) in all_against_files:
+                    self.fingerprint_file(target_file)
                 self.fingerprint_directory(directory_path)
 
                 alignment = self.recognize(target_file, filter_matches=filter_matches)
@@ -619,7 +657,11 @@ class Audalign:
                     target_file_path=target_file,
                     against_directory=directory_path,
                     volume_threshold=volume_threshold,
+                    volume_floor=volume_floor,
+                    vert_scaling=vert_scaling,
+                    horiz_scaling=horiz_scaling,
                     img_width=img_width,
+                    calc_mse=calc_mse,
                 )
 
             file_names_and_paths[target_name] = target_file

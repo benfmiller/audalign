@@ -1,3 +1,4 @@
+from numpy.core.defchararray import array
 import audalign.fingerprint as fingerprint
 from audalign.filehandler import read, find_files
 from pydub.exceptions import CouldntDecodeError
@@ -10,64 +11,191 @@ import matplotlib.pyplot as plt
 import numpy as np
 import multiprocessing
 from functools import partial
+from PIL import Image
 
 lower_clip = 5
 upper_clip = 255
 
-
-def get_frame_width(seconds_width: float):
-    seconds_width = max(
-        int(
-            seconds_width
-            // (
-                fingerprint.DEFAULT_WINDOW_SIZE
-                / fingerprint.DEFAULT_FS
-                * fingerprint.DEFAULT_OVERLAP_RATIO
-            )
-        ),
-        1,
-    )
-    return seconds_width
+# ------------------------------------------------------------------------------------------
 
 
-def find_index_arr(arr2d, threshold, img_width):
-    index_list = []
-    for i in range(0, len(arr2d) - img_width):
-        if np.amax(arr2d[i : i + img_width]) >= threshold:
-            index_list += [i]
-    return index_list
-
-
-def pair_index_tuples(target_list, against_list):
-    index_pairs = []
-    for i in target_list:
-        for j in against_list:
-            index_pairs += [(i, j)]
-    return index_pairs
-
-
-def calculate_comp_values(
-    index_tuple, img_width=0, target_arr2d=[[]], against_arr2d=[[]]
+def visrecognize(
+    target_file_path: str,
+    against_file_path: str,
+    img_width=1.0,
+    volume_threshold=215.0,
+    volume_floor: float = 10.0,
+    vert_scaling: float = 1.0,
+    horiz_scaling: float = 1.0,
+    calc_mse=False,
+    use_multiprocessing=True,
+    num_processes=None,
+    plot=False,
 ):
-    # print(np.amax(target_arr2d[index_tuple[0] : index_tuple[0] + img_width]))
-    # array.mean() very small range of values, usually between 0.4 and 2
-    # Plus, finding the max only uses regions with large peaks, which could reduce
-    # noisy secions being included.
-    try:
-        m = mean_squared_error(
-            target_arr2d[index_tuple[0] : index_tuple[0] + img_width],
-            against_arr2d[index_tuple[1] : index_tuple[1] + img_width],
+    # With frequency of 44100
+    # Each frame is 0.0929 seconds with an overlap ratio of .5,
+    # so moving over one frame moves 0.046 seconds
+    # 1 second of frames is 21.55 frames.
+    #
+    # add option to specify which value to sort by?
+    # PSNR
+
+    # volume_threshold -= volume_floor
+
+    t = time.time()
+
+    img_width = get_frame_width(img_width)
+
+    target_arr2d, transposed_target_arr2d = get_arrays(
+        target_file_path,
+        volume_floor=volume_floor,
+        vert_scaling=vert_scaling,
+        horiz_scaling=horiz_scaling,
+    )
+
+    target_index_list = find_index_arr(
+        transposed_target_arr2d, volume_threshold, img_width
+    )
+
+    against_arr2d, transposed_against_arr2d = get_arrays(
+        against_file_path,
+        volume_floor=volume_floor,
+        vert_scaling=vert_scaling,
+        horiz_scaling=horiz_scaling,
+    )
+    results_list = _visrecognize(
+        transposed_target_arr2d=transposed_target_arr2d,
+        target_file_path=target_file_path,
+        target_index_list=target_index_list,
+        against_file_path=against_file_path,
+        transposed_against_arr2d=transposed_against_arr2d,
+        img_width=img_width,
+        volume_threshold=volume_threshold,
+        calc_mse=calc_mse,
+        use_multiprocessing=use_multiprocessing,
+        num_processes=num_processes,
+    )
+    file_match = process_results(
+        results_list,
+        os.path.basename(against_file_path),
+        horiz_scaling=horiz_scaling,
+    )
+    t = time.time() - t
+
+    if plot:
+        plot_two_images(
+            target_arr2d,
+            against_arr2d,
+            imgA_title=os.path.basename(target_file_path),
+            imgB_title=os.path.basename(against_file_path),
         )
-        s = ssim(
-            target_arr2d[index_tuple[0] : index_tuple[0] + img_width],
-            against_arr2d[index_tuple[1] : index_tuple[1] + img_width],
-        )
-        return (index_tuple[1], index_tuple[0], (m, s))
-    except ZeroDivisionError as e:
-        m = 10000000
-        print(f"zero division error for index {index_tuple} and img width{img_width}")
-        s = 10000000
-        return (index_tuple[1], index_tuple[0], (m, s))
+
+    result = {}
+
+    if file_match:
+        result["match_time"] = t
+        result["match_info"] = file_match
+        return result
+
+    return None
+
+
+# ------------------------------------------------------------------------------------------
+
+
+def visrecognize_directory(
+    target_file_path: str,
+    against_directory: str,
+    img_width=1.0,
+    volume_threshold=215.0,
+    volume_floor: float = 10.0,
+    vert_scaling: float = 1.0,
+    horiz_scaling: float = 1.0,
+    calc_mse=False,
+    use_multiprocessing=True,
+    num_processes=None,
+    plot=False,
+):
+    # With frequency of 44100
+    # Each frame is 0.0929 seconds with an overlap ratio of .5,
+    # so moving over one frame moves 0.046 seconds
+    # 1 second of frames is 21.55 frames.
+    #
+    # add option to specify which value to sort by?
+    # PSNR
+
+    # volume_threshold -= volume_floor
+
+    t = time.time()
+
+    img_width = get_frame_width(img_width)
+
+    target_arr2d, transposed_target_arr2d = get_arrays(
+        target_file_path,
+        volume_floor=volume_floor,
+        vert_scaling=vert_scaling,
+        horiz_scaling=horiz_scaling,
+    )
+
+    target_index_list = find_index_arr(
+        transposed_target_arr2d, volume_threshold, img_width
+    )
+
+    against_files = find_files(against_directory)
+    file_match = {}
+
+    for file_path, _ in against_files:
+
+        if os.path.basename(file_path) == os.path.basename(target_file_path):
+            continue
+        try:
+            against_arr2d, transposed_against_arr2d = get_arrays(
+                file_path,
+                volume_floor=volume_floor,
+                vert_scaling=vert_scaling,
+                horiz_scaling=horiz_scaling,
+            )
+            results_list = _visrecognize(
+                transposed_target_arr2d=transposed_target_arr2d,
+                target_file_path=target_file_path,
+                target_index_list=target_index_list,
+                against_file_path=file_path,
+                transposed_against_arr2d=transposed_against_arr2d,
+                img_width=img_width,
+                volume_threshold=volume_threshold,
+                calc_mse=calc_mse,
+                use_multiprocessing=use_multiprocessing,
+                num_processes=num_processes,
+            )
+            single_file_match = process_results(
+                results_list,
+                os.path.basename(file_path),
+                horiz_scaling=horiz_scaling,
+            )
+            if plot:
+                plot_two_images(
+                    target_arr2d,
+                    against_arr2d,
+                    imgA_title=os.path.basename(target_file_path),
+                    imgB_title=os.path.basename(file_path),
+                )
+            if single_file_match:
+                file_match = {**file_match, **single_file_match}
+        except CouldntDecodeError:
+            print(f'File "{file_path}" could not be decoded')
+
+    t = time.time() - t
+
+    result = {}
+    if file_match:
+        result["match_time"] = t
+        result["match_info"] = file_match
+        return result
+
+    return None
+
+
+# ------------------------------------------------------------------------------------------
 
 
 def _visrecognize(
@@ -75,20 +203,13 @@ def _visrecognize(
     target_file_path: str,
     target_index_list: list,
     against_file_path: str,
+    transposed_against_arr2d,
     img_width=1.0,
     volume_threshold=215.0,
+    calc_mse=False,
     use_multiprocessing=True,
     num_processes=None,
 ):
-    against_samples, _ = read(against_file_path)
-    against_arr2d = fingerprint.fingerprint(against_samples, retspec=True)
-    if fingerprint.threshold > 0:
-        against_arr2d = against_arr2d[0 : -fingerprint.threshold]
-    transposed_against_arr2d = np.transpose(against_arr2d)
-
-    # plot_two_images(transposed_target_arr2d, transposed_against_arr2d)
-
-    transposed_against_arr2d = np.clip(transposed_against_arr2d, lower_clip, upper_clip)
 
     th, _ = transposed_target_arr2d.shape
     ah, _ = transposed_against_arr2d.shape
@@ -121,6 +242,7 @@ def _visrecognize(
         img_width=img_width,
         target_arr2d=transposed_target_arr2d,
         against_arr2d=transposed_against_arr2d,
+        calc_mse=calc_mse,
     )
 
     # calculate all mse and ssim values
@@ -141,151 +263,111 @@ def _visrecognize(
         results_list = []
         for i in tqdm.tqdm(index_list):
             results_list += [_calculate_comp_values(i)]
-    # print(f"done")
-
-    print("Calculating results... ", end="")
-    file_match = process_results(results_list, os.path.basename(against_file_path))
-    print("done")
-    return file_match, against_arr2d
+    return results_list
 
 
-def visrecognize(
-    target_file_path: str,
-    against_file_path: str,
-    img_width=1.0,
-    volume_threshold=215.0,
-    use_multiprocessing=True,
-    num_processes=None,
-    plot=False,
+# ------------------------------------------------------------------------------------------
+
+
+def get_arrays(
+    file_path: str,
+    volume_floor: float = 10.0,
+    vert_scaling: float = 1.0,
+    horiz_scaling: float = 1.0,
 ):
-    # With frequency of 44100
-    # Each frame is 0.0929 seconds with an overlap ratio of .5,
-    # so moving over one frame moves 0.046 seconds
-    # 1 second of frames is 21.55 frames.
-    #
-    # add option to specify which value to sort by?
-    # PSNR
-
-    t = time.time()
-
-    img_width = get_frame_width(img_width)
-
-    target_samples, _ = read(target_file_path)
-    target_arr2d = fingerprint.fingerprint(target_samples, retspec=True)
+    samples, _ = read(file_path)
+    arr2d = fingerprint.fingerprint(samples, retspec=True)
     if fingerprint.threshold > 0:
-        target_arr2d = target_arr2d[0 : -fingerprint.threshold]
-    transposed_target_arr2d = np.transpose(target_arr2d)
-    transposed_target_arr2d = np.clip(transposed_target_arr2d, lower_clip, upper_clip)
-
-    target_index_list = find_index_arr(
-        transposed_target_arr2d, volume_threshold, img_width
-    )
-
-    file_match, against_arr2d = _visrecognize(
-        transposed_target_arr2d=transposed_target_arr2d,
-        target_file_path=target_file_path,
-        target_index_list=target_index_list,
-        against_file_path=against_file_path,
-        img_width=img_width,
-        volume_threshold=volume_threshold,
-        use_multiprocessing=use_multiprocessing,
-        num_processes=num_processes,
-    )
-
-    t = time.time() - t
-
-    if plot:
-        plot_two_images(
-            target_arr2d,
-            against_arr2d,
-            imgA_title=os.path.basename(target_file_path),
-            imgB_title=os.path.basename(against_file_path),
+        arr2d = arr2d[0 : -fingerprint.threshold]
+    arr2d = np.clip(arr2d, volume_floor, upper_clip)
+    if vert_scaling != 1.0 or horiz_scaling != 1.0:
+        array_image = Image.fromarray(np.uint8(arr2d))
+        array_image = array_image.resize(
+            (
+                int(array_image.size[0] * horiz_scaling),
+                int(array_image.size[1] * vert_scaling),
+            ),
+            Image.NEAREST,
         )
+        arr2d = np.array(array_image)
 
-    result = {}
-
-    if file_match:
-        result["match_time"] = t
-        result["match_info"] = file_match
-        return result
-
-    return None
+    # arr2d -= volume_floor
+    transposed_arr2d = np.transpose(arr2d)
+    # transposed_arr2d -= volume_floor
+    return arr2d, transposed_arr2d
 
 
-def visrecognize_directory(
-    target_file_path: str,
-    against_directory: str,
-    img_width=1.0,
-    volume_threshold=215.0,
-    use_multiprocessing=True,
-    num_processes=None,
-    plot=False,
-):
-    # With frequency of 44100
-    # Each frame is 0.0929 seconds with an overlap ratio of .5,
-    # so moving over one frame moves 0.046 seconds
-    # 1 second of frames is 21.55 frames.
-    #
-    # add option to specify which value to sort by?
-    # PSNR
+# ------------------------------------------------------------------------------------------
 
-    t = time.time()
 
-    img_width = get_frame_width(img_width)
-
-    target_samples, _ = read(target_file_path)
-    target_arr2d = fingerprint.fingerprint(target_samples, retspec=True)
-    if fingerprint.threshold > 0:
-        target_arr2d = target_arr2d[0 : -fingerprint.threshold]
-    transposed_target_arr2d = np.transpose(target_arr2d)
-    transposed_target_arr2d = np.clip(transposed_target_arr2d, lower_clip, upper_clip)
-
-    target_index_list = find_index_arr(
-        transposed_target_arr2d, volume_threshold, img_width
+def get_frame_width(seconds_width: float):
+    return max(
+        int(
+            seconds_width
+            // (
+                fingerprint.DEFAULT_WINDOW_SIZE
+                / fingerprint.DEFAULT_FS
+                * fingerprint.DEFAULT_OVERLAP_RATIO
+            )
+        ),
+        1,
     )
 
-    against_files = find_files(against_directory)
-    file_match = {}
 
-    for file_path, _ in against_files:
+# ------------------------------------------------------------------------------------------
 
-        if os.path.basename(file_path) == os.path.basename(target_file_path):
-            continue
-        try:
-            single_file_match, against_arr2d = _visrecognize(
-                transposed_target_arr2d=transposed_target_arr2d,
-                target_file_path=target_file_path,
-                target_index_list=target_index_list,
-                against_file_path=file_path,
-                img_width=img_width,
-                volume_threshold=volume_threshold,
-                use_multiprocessing=use_multiprocessing,
-                num_processes=num_processes,
+
+def find_index_arr(arr2d, threshold, img_width):
+    index_list = []
+    for i in range(0, len(arr2d) - img_width):
+        if np.amax(arr2d[i : i + img_width]) >= threshold:
+            index_list += [i]
+    return index_list
+
+
+def pair_index_tuples(target_list, against_list):
+    index_pairs = []
+    for i in target_list:
+        for j in against_list:
+            index_pairs += [(i, j)]
+    return index_pairs
+
+
+# ------------------------------------------------------------------------------------------
+
+
+def calculate_comp_values(
+    index_tuple, img_width=0, target_arr2d=[[]], against_arr2d=[[]], calc_mse=False
+):
+    # print(np.amax(target_arr2d[index_tuple[0] : index_tuple[0] + img_width]))
+    # array.mean() very small range of values, usually between 0.4 and 2
+    # Plus, finding the max only uses regions with large peaks, which could reduce
+    # noisy secions being included.
+    try:
+        if calc_mse:
+            m = mean_squared_error(
+                target_arr2d[index_tuple[0] : index_tuple[0] + img_width],
+                against_arr2d[index_tuple[1] : index_tuple[1] + img_width],
             )
-            if plot:
-                plot_two_images(
-                    target_arr2d,
-                    against_arr2d,
-                    imgA_title=os.path.basename(target_file_path),
-                    imgB_title=os.path.basename(file_path),
-                )
-            if single_file_match:
-                file_match = {**file_match, **single_file_match}
-        except CouldntDecodeError:
-            print(f'File "{file_path}" could not be decoded')
-
-    t = time.time() - t
-
-    result = {}
-    if file_match:
-        result["match_time"] = t
-        result["match_info"] = file_match
-        return result
-
-    return None
+        else:
+            m = 20000000
+        s = ssim(
+            target_arr2d[index_tuple[0] : index_tuple[0] + img_width],
+            against_arr2d[index_tuple[1] : index_tuple[1] + img_width],
+        )
+        return (index_tuple[1], index_tuple[0], (m, s))
+    except ZeroDivisionError as e:
+        m = 10000000
+        print(f"zero division error for index {index_tuple} and img width{img_width}")
+        s = 10000000
+        return (index_tuple[1], index_tuple[0], (m, s))
 
 
-def process_results(results_list, filename):
+# ------------------------------------------------------------------------------------------
+
+
+def process_results(results_list, filename, horiz_scaling: float = 1.0):
+    print("Calculating results... ", end="")
     i = 0  # remove bad results or results below threshold
     while i < len(results_list):
         if results_list[i][2][0] == 10000000 or results_list[i][2][1] == 10000000:
@@ -340,16 +422,21 @@ def process_results(results_list, filename):
             float(i)
             / fingerprint.DEFAULT_FS
             * fingerprint.DEFAULT_WINDOW_SIZE
-            * fingerprint.DEFAULT_OVERLAP_RATIO,
+            * fingerprint.DEFAULT_OVERLAP_RATIO
+            / horiz_scaling,
             5,
         )
         offset_seconds.append(nseconds)
 
     match[filename]["offset_seconds"] = offset_seconds
+    print("done")
 
     if len(match[filename]["offset_seconds"]) > 0:
         return match
     return None
+
+
+# ------------------------------------------------------------------------------------------
 
 
 def plot_two_images(
