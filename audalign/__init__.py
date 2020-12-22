@@ -448,6 +448,7 @@ class Audalign:
         volume_floor: float = 10.0,
         vert_scaling: float = 1.0,
         horiz_scaling: float = 1.0,
+        calc_mse: bool = False,
         plot: bool = False,
     ) -> dict:
         """Recognize target file against against file visually.
@@ -463,6 +464,7 @@ class Audalign:
             volume_floor (float): ignores volume levels below floow.
             vert_scaling (float): scales vertically to speed up calculations. Smaller numbers have smaller images.
             horiz_scaling (float): scales horizontally to speed up calculations. Smaller numbers have smaller images. Affects alignment granularity.
+            calc_mse (bool): also calculates mse for each shift if true. If false, uses default mse 20000000
             plot (bool): plot the spectrogram of each audio file.
 
         Returns
@@ -482,6 +484,7 @@ class Audalign:
             volume_floor=volume_floor,
             vert_scaling=vert_scaling,
             horiz_scaling=horiz_scaling,
+            calc_mse=calc_mse,
             use_multiprocessing=self.multiprocessing,
             num_processes=self.num_processors,
             plot=plot,
@@ -496,6 +499,7 @@ class Audalign:
         volume_floor: float = 10.0,
         vert_scaling: float = 1.0,
         horiz_scaling: float = 1.0,
+        calc_mse: bool = False,
         plot: bool = False,
     ) -> dict:
         """Recognize target file against against directory visually.
@@ -511,6 +515,7 @@ class Audalign:
             volume_floor (float): ignores volume levels below floow.
             vert_scaling (float): scales vertically to speed up calculations. Smaller numbers have smaller images.
             horiz_scaling (float): scales horizontally to speed up calculations. Smaller numbers have smaller images. Affects alignment granularity.
+            calc_mse (bool): also calculates mse for each shift if true. If false, uses default mse 20000000
             plot (bool): plot the spectrogram of each audio file.
 
         Returns
@@ -530,6 +535,7 @@ class Audalign:
             volume_floor=volume_floor,
             vert_scaling=vert_scaling,
             horiz_scaling=horiz_scaling,
+            calc_mse=calc_mse,
             use_multiprocessing=self.multiprocessing,
             num_processes=self.num_processors,
             plot=plot,
@@ -597,6 +603,7 @@ class Audalign:
         vert_scaling: float = 1.0,
         horiz_scaling: float = 1.0,
         img_width: float = 1.0,
+        calc_mse: bool = False,
     ):
         """matches and relative offsets for all files in directory_path using only target file,
         aligns them, and writes them to destination_path if given. Uses fingerprinting by defualt,
@@ -615,9 +622,10 @@ class Audalign:
             vert_scaling (float): scales vertically to speed up calculations. Smaller numbers have smaller images.
             horiz_scaling (float): scales horizontally to speed up calculations. Smaller numbers have smaller images. Affects alignment granularity.
             img_width (float, optional): width of image comparison for visual recognition
+            calc_mse (bool): also calculates mse for each shift if true. If false, uses default mse 20000000
 
         Returns:
-            [type]: [description]
+            dict: dict of file name with shift as value along with match info
         """
         self.file_names, temp_file_names = [], self.file_names
         self.fingerprinted_files, temp_fingerprinted_files = (
@@ -627,6 +635,8 @@ class Audalign:
         self.total_fingerprints, temp_total_fingerprints = 0, self.total_fingerprints
 
         try:
+            if alternate_strength_stat == "mse":
+                calc_mse = True
 
             target_name = os.path.basename(target_file)
             total_alignment = {}
@@ -651,6 +661,7 @@ class Audalign:
                     vert_scaling=vert_scaling,
                     horiz_scaling=horiz_scaling,
                     img_width=img_width,
+                    calc_mse=calc_mse,
                 )
 
             file_names_and_paths[target_name] = target_file
