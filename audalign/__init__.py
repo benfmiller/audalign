@@ -634,6 +634,10 @@ class Audalign:
 
             if use_fingerprints:
 
+                all_against_files = filehandler.find_files(directory_path)
+                all_against_files = [os.path.basename(x[0]) for x in all_against_files]
+                if os.path.basename(target_file) in all_against_files:
+                    self.fingerprint_file(target_file)
                 self.fingerprint_directory(directory_path)
 
                 alignment = self.recognize(target_file, filter_matches=filter_matches)
