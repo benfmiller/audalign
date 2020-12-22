@@ -33,6 +33,21 @@ class TestRecognize:
         )
         assert results
 
+    def test_visrecognize_options(self):
+        ada = ad.Audalign()
+        results = ada.visrecognize(
+            test_file,
+            test_file,
+            img_width=0.5,
+            volume_threshold=216,
+            volume_floor=100,
+            vert_scaling=0.8,
+            horiz_scaling=0.8,
+            calc_mse=False,
+        )
+        assert results
+        assert results["match_info"]["test.wav"]["mse"][0] == 20000000.0
+
     def test_visrecognize_directory(self):
         ada = ad.Audalign()
         results = ada.visrecognize_directory(
