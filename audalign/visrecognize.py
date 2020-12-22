@@ -27,6 +27,7 @@ def visrecognize(
     volume_floor: float = 10.0,
     vert_scaling: float = 1.0,
     horiz_scaling: float = 1.0,
+    calc_mse=False,
     use_multiprocessing=True,
     num_processes=None,
     plot=False,
@@ -70,6 +71,7 @@ def visrecognize(
         transposed_against_arr2d=transposed_against_arr2d,
         img_width=img_width,
         volume_threshold=volume_threshold,
+        calc_mse=calc_mse,
         use_multiprocessing=use_multiprocessing,
         num_processes=num_processes,
     )
@@ -109,6 +111,7 @@ def visrecognize_directory(
     volume_floor: float = 10.0,
     vert_scaling: float = 1.0,
     horiz_scaling: float = 1.0,
+    calc_mse=False,
     use_multiprocessing=True,
     num_processes=None,
     plot=False,
@@ -160,6 +163,7 @@ def visrecognize_directory(
                 transposed_against_arr2d=transposed_against_arr2d,
                 img_width=img_width,
                 volume_threshold=volume_threshold,
+                calc_mse=calc_mse,
                 use_multiprocessing=use_multiprocessing,
                 num_processes=num_processes,
             )
@@ -202,6 +206,7 @@ def _visrecognize(
     transposed_against_arr2d,
     img_width=1.0,
     volume_threshold=215.0,
+    calc_mse=False,
     use_multiprocessing=True,
     num_processes=None,
 ):
@@ -237,6 +242,7 @@ def _visrecognize(
         img_width=img_width,
         target_arr2d=transposed_target_arr2d,
         against_arr2d=transposed_against_arr2d,
+        calc_mse=calc_mse,
     )
 
     # calculate all mse and ssim values
@@ -331,17 +337,20 @@ def pair_index_tuples(target_list, against_list):
 
 
 def calculate_comp_values(
-    index_tuple, img_width=0, target_arr2d=[[]], against_arr2d=[[]]
+    index_tuple, img_width=0, target_arr2d=[[]], against_arr2d=[[]], calc_mse=False
 ):
     # print(np.amax(target_arr2d[index_tuple[0] : index_tuple[0] + img_width]))
     # array.mean() very small range of values, usually between 0.4 and 2
     # Plus, finding the max only uses regions with large peaks, which could reduce
     # noisy secions being included.
     try:
-        m = mean_squared_error(
-            target_arr2d[index_tuple[0] : index_tuple[0] + img_width],
-            against_arr2d[index_tuple[1] : index_tuple[1] + img_width],
-        )
+        if calc_mse:
+            m = mean_squared_error(
+                target_arr2d[index_tuple[0] : index_tuple[0] + img_width],
+                against_arr2d[index_tuple[1] : index_tuple[1] + img_width],
+            )
+        else:
+            m = 20000000
         s = ssim(
             target_arr2d[index_tuple[0] : index_tuple[0] + img_width],
             against_arr2d[index_tuple[1] : index_tuple[1] + img_width],
