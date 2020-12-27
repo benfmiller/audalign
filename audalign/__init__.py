@@ -645,8 +645,14 @@ class Audalign:
             if use_fingerprints:
 
                 all_against_files = filehandler.find_files(directory_path)
-                all_against_files = [os.path.basename(x[0]) for x in all_against_files]
-                if os.path.basename(target_file) in all_against_files:
+                all_against_files_full = [x[0] for x in all_against_files]
+                all_against_files_base = [
+                    os.path.basename(x) for x in all_against_files_full
+                ]
+                if (
+                    os.path.basename(target_file) in all_against_files_base
+                    and target_file not in all_against_files_full
+                ):
                     self.fingerprint_file(target_file)
                 self.fingerprint_directory(directory_path)
 
