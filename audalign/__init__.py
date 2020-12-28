@@ -673,6 +673,10 @@ class Audalign:
             file_names_and_paths[target_name] = target_file
             total_alignment[target_name] = alignment
 
+            if not alignment:
+                print("No results")
+                return
+
             for file_path, _ in filehandler.find_files(directory_path):
                 if (
                     os.path.basename(file_path)
