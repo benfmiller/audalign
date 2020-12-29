@@ -15,7 +15,7 @@ def parse_requirements(requirements):
 
 
 PACKAGE_NAME = "audalign"
-PACKAGE_VERSION = "0.1.1"
+PACKAGE_VERSION = "0.1.2"
 SUMMARY = "Audalign: Audio Alignment in Python"
 DESCRIPTION = "This package offers fingerprinting, Recognizing, and aligning tools. It also has an interface for noiseremove to increase contrast and get better matches with alignment."
 

@@ -258,6 +258,14 @@ def shift_write_files(files_shifts, destination_path, names_and_paths, write_ext
 
         audsegs += [audiofile]
 
+    # adds silence to end of tracks to make them equally long for total
+    longest_seconds = max(audseg.duration_seconds for audseg in audsegs)
+    for i in range(len(audsegs)):
+        audsegs[i] = audsegs[i] + AudioSegment.silent(
+            (longest_seconds - audsegs[i].duration_seconds) * 1000,
+            frame_rate=DEFAULT_FS,
+        )
+
     # lower volume so the sum is the same volume
     total_files = audsegs[0] - (3 * math.log(len(files_shifts), 2))
 
