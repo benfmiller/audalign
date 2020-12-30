@@ -1,3 +1,4 @@
+import math
 from numpy.core.defchararray import array
 import audalign.fingerprint as fingerprint
 from audalign.filehandler import read, find_files
@@ -395,8 +396,14 @@ def process_results(results_list, filename, horiz_scaling: float = 1.0):
     for t_difference, match_data in offset_dict.items():
         match_offsets.append((match_data, t_difference))
     match_offsets = sorted(
-        match_offsets, reverse=True, key=lambda x: x[0][1]
+        match_offsets,
+        reverse=True,
+        key=lambda x: (np.log2(x[0][2] + 1) * (np.log(x[0][1] + 1) / np.log(1.5))),
     )  # sort by ssim must be reversed for ssim
+    # match_offsets, reverse=True, key=lambda x: (x[0][2], x[0][1])
+    # match_offsets, reverse=True, key=lambda x: x[0][2] sorts by num matches
+    # match_offsets, reverse=True, key=lambda x: (x[0][2], x[0][1]) sorts once by ssim, then finally by num matches
+    # math.log
 
     offset_count = []
     offset_diff = []
