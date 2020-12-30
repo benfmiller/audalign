@@ -696,15 +696,18 @@ class Audalign:
                 return
 
             if destination_path:
-                # Make target directory
-                if not os.path.exists(destination_path):
-                    os.makedirs(destination_path)
-                self._write_shifted_files(
-                    files_shifts,
-                    destination_path,
-                    file_names_and_paths,
-                    write_extension,
-                )
+                try:
+                    # Make target directory
+                    if not os.path.exists(destination_path):
+                        os.makedirs(destination_path)
+                    self._write_shifted_files(
+                        files_shifts,
+                        destination_path,
+                        file_names_and_paths,
+                        write_extension,
+                    )
+                except PermissionError:
+                    print("Permission Denied for write align")
 
             print(
                 f"{len(files_shifts)} out of {len(file_names_and_paths)} found and aligned"
@@ -780,12 +783,15 @@ class Audalign:
             )
 
             if destination_path:
-                self._write_shifted_files(
-                    files_shifts,
-                    destination_path,
-                    file_names_and_paths,
-                    write_extension,
-                )
+                try:
+                    self._write_shifted_files(
+                        files_shifts,
+                        destination_path,
+                        file_names_and_paths,
+                        write_extension,
+                    )
+                except PermissionError:
+                    print("Permission Denied for write align")
 
             print(
                 f"{len(files_shifts)} out of {len(file_names_and_paths)} found and aligned"
