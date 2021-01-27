@@ -867,8 +867,10 @@ class Audalign:
         noise_end: float,
         destination: str,
         alt_noise_filepath: str = None,
+        prop_decrease: float = 1,
         use_tensorflow: bool = False,
         verbose: bool = False,
+        **kwargs,
     ):
         """Remove noise from audio file by specifying start and end seconds of representative sound sections. Writes file to destination
 
@@ -878,8 +880,10 @@ class Audalign:
             noise_end (float): position in seconds of end of noise section
             destination (str): filepath of destination to write to
             alt_noise_filepath (str): path of different file for noise sample
+            prop_decrease (float): between 0 and 1. Proportion to decrease noise
             use_tensorflow (bool, optional): Uses tensorflow to increase speed if available. Defaults to False.
             verbose (bool, optional): Shows several plots of noise removal process. Defaults to False.
+            kwargs : kwargs for noise reduce. Look at noisereduce kwargs
         """
         filehandler.noise_remove(
             filepath,
@@ -887,8 +891,10 @@ class Audalign:
             noise_end,
             destination,
             alt_noise_filepath=alt_noise_filepath,
+            prop_decrease=prop_decrease,
             use_tensorflow=use_tensorflow,
             verbose=verbose,
+            **kwargs,
         )
 
     def remove_noise_directory(
@@ -898,8 +904,10 @@ class Audalign:
         noise_start: float,
         noise_end: float,
         destination_directory: str,
+        prop_decrease: float = 1,
         use_tensorflow: bool = False,
         verbose: bool = False,
+        **kwargs,
     ):
         """Remove noise from audio files in directory by specifying start and end seconds of representative sound sections. Writes file to destination directory
         Uses multiprocessing if self.multiprocessing is true
@@ -910,8 +918,10 @@ class Audalign:
             noise_start (float): positition in seconds of start of noise section
             noise_end (float): position in seconds of end of noise section
             destination_directory (str): filepath of destination directory to write to
+            prop_decrease (float): between 0 and 1. Proportion to decrease noise
             use_tensorflow (bool, optional): Uses tensorflow to increase speed if available. Defaults to False.
             verbose (bool, optional): Shows several plots of noise removal process. Defaults to False.
+            kwargs : kwargs for noise reduce. Look at noisereduce kwargs
         """
         filehandler.noise_remove_directory(
             directory,
@@ -919,10 +929,12 @@ class Audalign:
             noise_start,
             noise_end,
             destination_directory,
+            prop_decrease=prop_decrease,
             use_tensorflow=use_tensorflow,
             verbose=verbose,
             use_multiprocessing=self.multiprocessing,
             num_processes=self.num_processors,
+            **kwargs,
         )
 
 
