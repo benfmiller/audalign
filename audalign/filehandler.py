@@ -105,8 +105,10 @@ def noise_remove(
     noise_end,
     destination,
     alt_noise_filepath=None,
+    prop_decrease=1,
     use_tensorflow=False,
     verbose=False,
+    **kwargs,
 ):
 
     audiofile = create_audiosegment(filepath)
@@ -122,7 +124,12 @@ def noise_remove(
         ]
 
     reduced_noise_data = noisereduce.reduce_noise(
-        new_data, noisy_part, use_tensorflow=use_tensorflow, verbose=verbose
+        new_data,
+        noisy_part,
+        prop_decrease=prop_decrease,
+        use_tensorflow=use_tensorflow,
+        verbose=verbose,
+        **kwargs,
     )
 
     reduced_noise_data = _int16ify_data(reduced_noise_data)
@@ -137,10 +144,12 @@ def noise_remove_directory(
     noise_start,
     noise_end,
     destination_directory,
+    prop_decrease=1,
     use_tensorflow=False,
     verbose=False,
     use_multiprocessing=False,
     num_processes=None,
+    **kwargs,
 ):
     noise_data = _floatify_data(create_audiosegment(noise_filepath))[
         (noise_start * DEFAULT_FS) : (noise_end * DEFAULT_FS)
@@ -153,8 +162,10 @@ def noise_remove_directory(
         _remove_noise,
         noise_section=noise_data,
         destination_directory=destination_directory,
+        prop_decrease=prop_decrease,
         use_tensorflow=use_tensorflow,
         verbose=verbose,
+        **kwargs,
     )
 
     if use_multiprocessing == True:
@@ -181,8 +192,10 @@ def _remove_noise(
     file_path,
     noise_section=[],
     destination_directory="",
+    prop_decrease=1,
     use_tensorflow=False,
     verbose=False,
+    **kwargs,
 ):
 
     try:
@@ -191,7 +204,12 @@ def _remove_noise(
         new_data = _floatify_data(audiofile)
 
         reduced_noise_data = noisereduce.reduce_noise(
-            new_data, noise_section, use_tensorflow=use_tensorflow, verbose=verbose
+            new_data,
+            noise_section,
+            prop_decrease=prop_decrease,
+            use_tensorflow=use_tensorflow,
+            verbose=verbose,
+            **kwargs,
         )
 
         reduced_noise_data = _int16ify_data(reduced_noise_data)
