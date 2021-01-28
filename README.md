@@ -19,7 +19,16 @@ Waveform alignment techniques are not implemented, though they could be in the f
 
 ## Installation
 
-Audalign is not currently listed in PyPI but can be pip installed if the package is downloaded by
+Install from PyPI:
+
+Don't forget to install ffmpeg/avlib (Below in the Readme)!
+
+```bash
+pip install audalign
+```
+
+OR
+
 
 ```bash
 git clone https://github.com/benfmiller/audalign.git
@@ -34,8 +43,6 @@ Download and extract audalign then
 pip install audalign
 ```
 in the directory
-
-Don't forget to install ffmpeg/avlib (Below in the Readme)!
 
 ## Aligning
 

@@ -1,4 +1,8 @@
 from setuptools import setup, find_packages
+import pathlib
+
+HERE = pathlib.Path(__file__).parent
+README = (HERE / "README.md").read_text()
 
 
 def parse_requirements(requirements):
@@ -15,26 +19,26 @@ def parse_requirements(requirements):
 
 
 PACKAGE_NAME = "audalign"
-PACKAGE_VERSION = "0.1.2"
+PACKAGE_VERSION = "0.1.3"
 SUMMARY = "Audalign: Audio Alignment in Python"
-DESCRIPTION = "This package offers fingerprinting, Recognizing, and aligning tools. It also has an interface for noiseremove to increase contrast and get better matches with alignment."
 
 REQUIREMENTS = parse_requirements("requirements.txt")
 
 setup(
     name=PACKAGE_NAME,
     version=PACKAGE_VERSION,
-    packages=find_packages(),
+    packages=["audalign"],
     license="MIT",
     description=SUMMARY,
-    long_description=DESCRIPTION,
+    long_description=README,
+    long_description_content_type="text/markdown",
     author="Ben Miller",
-    author_email="ben.f.miller24@gmail.com",
+    author_email="ben.miller.ben.miller24@gmail.com",
     maintainer="Ben Miller",
     maintainer_email="ben.f.miller24@gmail.com",
     url="http://github.com/benfmiller/audalign",
     include_package_data=True,
     platforms=["Unix", "Windows"],
     install_requires=REQUIREMENTS,
-    keywords="python, audio, fingerprinting, music, numpy, landmark",
+    keywords="python, audio, align, alignment, fingerprinting, music",
 )
