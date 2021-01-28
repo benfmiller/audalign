@@ -132,8 +132,8 @@ def fingerprint(
 def get_2D_peaks(arr2D, plot=False):
     #  http://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.iterate_structure.html#scipy.ndimage.iterate_structure
     struct = generate_binary_structure(
-        2, 2
-    )  # was 1, but this works just as well and faster
+        2, 1
+    )  # was 1, but this works just as well and faster apparently, test 2!
     neighborhood = iterate_structure(struct, peak_neighborhood_size)
 
     # find local maxima using our filter shape
