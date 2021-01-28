@@ -163,7 +163,7 @@ brew install ffmpeg --with-libvorbis --with-sdl2 --with-theora
 brew install libav --with-libvorbis --with-sdl --with-theora
 ```
 
-Linux (using aptitude):
+Linux (using apt):
 
 ```bash
 # ffmpeg
