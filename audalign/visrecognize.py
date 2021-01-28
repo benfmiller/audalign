@@ -368,6 +368,18 @@ def calculate_comp_values(
 
 
 def process_results(results_list, filename, horiz_scaling: float = 1.0):
+    """processes results from recognition and returns a pretty json
+    If you want to mess with the weighting of num matches vs score, this is the place to do it.
+    Current weighting seems to work the best, though.
+
+    Args:
+        results_list ([type]): [description]
+        filename ([type]): [description]
+        horiz_scaling (float, optional): [description]. Defaults to 1.0.
+
+    Returns:
+        [type]: [description]
+    """
     print("Calculating results... ", end="")
     i = 0  # remove bad results or results below threshold
     while i < len(results_list):
