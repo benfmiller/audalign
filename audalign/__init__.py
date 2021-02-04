@@ -19,6 +19,8 @@ class Audalign:
     MATCH_TIME = "match_time"
     OFFSET_SAMPLES = "offset_samples"
     OFFSET_SECS = "offset_seconds"
+    LOCALITY = "locality"
+    LOCALITY_SECS = "locality_seconds"
 
     def __init__(
         self,
