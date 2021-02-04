@@ -38,7 +38,10 @@ def recognize(audalign_object, file_path, filter_matches, locality):
 
     t = time.time()
     matches = find_matches(audalign_object, file_path)
-    rough_match = align_matches(matches, locality)
+    if locality:
+        rough_match = locality_align_matches(matches, locality)
+    else:
+        rough_match = align_matches(matches)
 
     filter_set = False
 
@@ -109,7 +112,7 @@ def find_matches(audalign_object, file_path):
     return matches
 
 
-def align_matches(matches, locality):
+def align_matches(matches: list):
     """
     takes matches from find_matches and converts it to a dictionary of counts per offset and file name
 
@@ -125,33 +128,118 @@ def align_matches(matches, locality):
     """
 
     print("Aligning matches")
+    sample_difference_counter = {}
+    for file_name, sample_difference, _, _ in matches:
+        if file_name not in sample_difference_counter:
+            sample_difference_counter[file_name] = {}
+        if sample_difference not in sample_difference_counter[file_name]:
+            sample_difference_counter[file_name][sample_difference] = [0, None]
+        sample_difference_counter[file_name][sample_difference][0] += 1
 
-    if locality:
-        sample_difference_counter = {}
-        matches = sorted(matches, key=lambda x: x[2])
+    return sample_difference_counter
 
-        for file_name, sample_difference, _, _ in matches:
-            # sort by file_name first, locality is only within file names
-            # Add suffix to file_name for dict. Take it off in process_results
-            # sort by t_offset first. shifting window, sort corressponding
-            # a_offset. Find all levels of confidence Report top three.
-            if file_name not in sample_difference_counter:
-                sample_difference_counter[file_name] = {}
-            if sample_difference not in sample_difference_counter[file_name]:
-                sample_difference_counter[file_name][sample_difference] = 0
-            sample_difference_counter[file_name][sample_difference] += 1
 
-        return (sample_difference_counter, None)
-    else:
-        sample_difference_counter = {}
-        for file_name, sample_difference, t_offset, a_offset in matches:
-            if file_name not in sample_difference_counter:
-                sample_difference_counter[file_name] = {}
-            if sample_difference not in sample_difference_counter[file_name]:
-                sample_difference_counter[file_name][sample_difference] = 0
-            sample_difference_counter[file_name][sample_difference] += 1
+def locality_align_matches(matches: list, locality: int):
 
-        return (sample_difference_counter, None)
+    print("Aligning matches")
+    sample_difference_counter = {}
+    file_dict = {}
+
+    # converting matches into file_dict of matches
+    for file_name, sample_difference, t_offset, a_offset in matches:
+        if file_dict.get(file_name) is None:
+            file_dict[file_dict] = []
+        file_dict[file_name].append((sample_difference, t_offset, a_offset))
+
+    # shifting windows for each filename match
+    for name in file_dict.keys():
+        temp_file_dict = {}
+        start_window = 0
+        end_window = 0
+
+        # sorts by t_offset
+        file_dict[name] = sorted(file_dict[name], key=lambda x: x[1])
+        # moves end while there's room and locality is
+        while end_window <= len(file_dict[name]):
+            while (
+                file_dict[name][end_window - 1][1] - file_dict[name][start_window][1]
+                <= locality
+            ):
+                if end_window == len(file_dict[name]):
+                    break
+                end_window += 1
+
+            # returns dict of filenames_toff_aoff (name, confidence, (toff, aoff))
+            toff_dict = find_loc_matches(
+                file_dict[name][start_window:end_window], locality
+            )
+
+            temp_file_dict = {**temp_file_dict, **toff_dict}
+
+            # breaks out of while if at end of file and within locality
+            if (
+                end_window == len(file_dict[name])
+                and file_dict[name][end_window - 1][1]
+                - file_dict[name][start_window][1]
+                <= locality
+            ):
+                break
+            start_window += 1
+
+        # filter to top 25
+        temp_file_list = [(k, v) for k, v in temp_file_dict.items()]
+        temp_file_list = sorted(
+            temp_file_list, key=lambda x: x[1][1]
+        )  # sort by confidence
+        # TODO
+
+    # return {filename: offset: (confidence, loc_tup)}
+
+    return sample_difference_counter
+
+
+def find_loc_matches(matches_list: list, locality: int):
+    """receives from align matches locality,
+        matcheslist = [(sample_difference, t_offset, a_offset)]
+
+    Args:
+        matches_list (list): [(sample_difference, t_offset, a_offset)]
+        locality (int): [description]
+
+    Returns:
+        [type]: [description]
+    """
+    a_matches = sorted(matches_list, key=lambda x: x[2])
+    temp_file_dict = {}
+    start_window = 0
+    end_window = 0
+
+    while end_window <= len(a_matches):
+        while a_matches[end_window - 1][1] - a_matches[start_window][1] <= locality:
+            if end_window == len(a_matches):
+                break
+            end_window += 1
+
+        loc_tup = (
+            (matches_list[0][1] - matches_list[-1][1]) // 2,
+            (a_matches[start_window][2] - a_matches[end_window - 1][2]) // 2,
+        )
+        temp_file_dict[loc_tup] = {}
+        for sample_difference, t_offset, a_offset in a_matches[start_window:end_window]:
+            if sample_difference not in temp_file_dict[loc_tup]:
+                temp_file_dict[loc_tup][sample_difference] = 0
+            temp_file_dict[loc_tup][sample_difference] += 1
+        # gives us temp_file_dict--- {(toff, aoff): {samp_diff : confidence}}
+
+        # breaks out of while if at end of file and within locality
+        if (
+            end_window == len(a_matches)
+            and a_matches[end_window - 1][1] - a_matches[start_window][1] <= locality
+        ):
+            break
+        start_window += 1
+
+    return temp_file_dict
 
 
 def process_results(
@@ -177,7 +265,8 @@ def process_results(
         dict of file_names with match info as values
     """
 
-    results = results[0]
+    # results = results[0]
+    # handle tup in align matches
     complete_match_info = {}
 
     for file_name in results.keys():
