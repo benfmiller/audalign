@@ -406,13 +406,14 @@ class Audalign:
         return [file_name, hashes]
 
     def recognize(
-        self, file_path: str, filter_matches: int = 1, *args, **kwargs
+        self, file_path: str, filter_matches: int = 1, locality=None, *args, **kwargs
     ) -> None:
         """
         Recognizes given file against already fingerprinted files
 
         Offset describes duration that the recognized file aligns after the target file
         Does not recognize against files with same name and extention
+        Locality option used to only return match results within certain second range
 
         Parameters
         ----------
@@ -420,6 +421,8 @@ class Audalign:
             file path of target file to recognize
         filter_matches : int
             filters all matches lower than given argument, 1 is recommended
+        locality : float
+            filters matches to only count within locality. In seconds
 
         Returns
         -------
@@ -430,11 +433,7 @@ class Audalign:
 
             None : if no match
         """
-        # Locality option used to only return match results within certain second range
 
-        # locality : int
-        #     filters results by locality in seconds
-        locality = None
         return recognize.recognize(
             self, file_path, filter_matches, locality, *args, **kwargs
         )
