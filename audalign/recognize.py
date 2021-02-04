@@ -23,6 +23,18 @@ def recognize(audalign_object, file_path, filter_matches, locality):
 
         None : if no match
     """
+    if locality is not None:  # convert from seconds to samples
+        locality = max(
+            int(
+                locality
+                // (
+                    fingerprint.DEFAULT_WINDOW_SIZE
+                    / fingerprint.DEFAULT_FS
+                    * fingerprint.DEFAULT_OVERLAP_RATIO
+                )
+            ),
+            1,
+        )
 
     t = time.time()
     matches = find_matches(audalign_object, file_path)
@@ -116,7 +128,13 @@ def align_matches(matches, locality):
 
     if locality:
         sample_difference_counter = {}
+        matches = sorted(matches, key=lambda x: x[2])
+
         for file_name, sample_difference, _, _ in matches:
+            # sort by file_name first, locality is only within file names
+            # Add suffix to file_name for dict. Take it off in process_results
+            # sort by t_offset first. shifting window, sort corressponding
+            # a_offset. Find all levels of confidence Report top three.
             if file_name not in sample_difference_counter:
                 sample_difference_counter[file_name] = {}
             if sample_difference not in sample_difference_counter[file_name]:
