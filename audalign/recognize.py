@@ -169,12 +169,19 @@ def locality_align_matches(matches: list, locality: int):
                     break
                 end_window += 1
 
-            # returns dict of filenames_toff_aoff (name, confidence, (toff, aoff))
+            # {(toff, aoff): {samp_diff : confidence}}
             toff_dict = find_loc_matches(
                 file_dict[name][start_window:end_window], locality
             )
 
-            temp_file_dict = {**temp_file_dict, **toff_dict}
+            for tup, samp_dict in toff_dict.items():
+                for samp_diff, confidence in samp_dict.items():
+                    if temp_file_dict.get(samp_diff) is None:
+                        temp_file_dict[samp_diff] = [0, []]
+                    if temp_file_dict[samp_diff][0] < confidence:
+                        temp_file_dict[samp_diff][0] = confidence
+                        temp_file_dict[samp_diff][1] = []
+                    temp_file_dict[samp_diff][1] += [tup]
 
             # breaks out of while if at end of file and within locality
             if (
@@ -186,15 +193,21 @@ def locality_align_matches(matches: list, locality: int):
                 break
             start_window += 1
 
-        # filter to top 25
-        temp_file_list = [(k, v) for k, v in temp_file_dict.items()]
-        temp_file_list = sorted(
-            temp_file_list, key=lambda x: x[1][1]
-        )  # sort by confidence
-        # TODO
+        # # filter to top 30
+        if len(temp_file_dict.keys()) > 30:
+            temp_file_list = [
+                (samp_diff, conf_loc) for samp_diff, conf_loc in temp_file_dict.items()
+            ]
+            temp_file_list = sorted(
+                temp_file_list, key=lambda x: x[1][0]
+            )  # sort by confidence
+            temp_file_dict = {}
+            for i in range(30):
+                temp_file_dict[temp_file_list[0]] = temp_file_list[1]
 
-    # return {filename: offset: (confidence, loc_tup)}
+        sample_difference_counter[name] = temp_file_dict
 
+    # return {filename: {offset: [confidence, [loc_tups]]}}
     return sample_difference_counter
 
 
@@ -207,7 +220,7 @@ def find_loc_matches(matches_list: list, locality: int):
         locality (int): [description]
 
     Returns:
-        [type]: [description]
+        [dict]: {(toff, aoff): {samp_diff : confidence}}
     """
     a_matches = sorted(matches_list, key=lambda x: x[2])
     temp_file_dict = {}
@@ -266,7 +279,7 @@ def process_results(
     """
 
     # results = results[0]
-    # handle tup in align matches
+    # TODO handle tup in align matches
     complete_match_info = {}
 
     for file_name in results.keys():
