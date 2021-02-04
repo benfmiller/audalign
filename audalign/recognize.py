@@ -49,7 +49,7 @@ def recognize(audalign_object, file_path, filter_matches, locality):
         filter_set = True
 
     file_match = None
-    if len(rough_match[0]) > 0:
+    if len(rough_match) > 0:
         file_match = process_results(
             audalign_object, rough_match, locality, filter_matches, filter_set
         )
@@ -174,6 +174,7 @@ def locality_align_matches(matches: list, locality: int):
                 file_dict[name][start_window:end_window], locality
             )
 
+            # combines and turns into {offset: [confidence, [loc_tups]]}
             for tup, samp_dict in toff_dict.items():
                 for samp_diff, confidence in samp_dict.items():
                     if temp_file_dict.get(samp_diff) is None:
@@ -286,23 +287,37 @@ def process_results(
         match_offsets = []
         offset_count = []
         offset_diff = []
-        for sample_difference, num_of_matches in results[file_name].items():
-            match_offsets.append((num_of_matches, sample_difference))
-        match_offsets = sorted(match_offsets, reverse=True, key=lambda x: x[0])
-        if match_offsets[0][0] <= filter_matches:
+        offset_loc = []
+        for sample_difference, num_of_matches_loc in results[file_name].items():
+            match_offsets.append((num_of_matches_loc, sample_difference))
+        match_offsets = sorted(match_offsets, reverse=True, key=lambda x: x[0][0])
+        if match_offsets[0][0][0] <= filter_matches:
             continue
         for i in match_offsets:
-            if i[0] <= filter_matches:
+            if i[0][0] <= filter_matches:
                 continue
-            offset_count.append(i[0])
+            offset_count.append(i[0][0])
+            offset_loc.append(i[0][1])
             offset_diff.append(i[1])
 
         complete_match_info[file_name] = {}
         complete_match_info[file_name][audalign_object.CONFIDENCE] = offset_count
         complete_match_info[file_name][audalign_object.OFFSET_SAMPLES] = offset_diff
+        complete_match_info[file_name][audalign_object.LOCALITY] = offset_loc
+        if locality:
+            complete_match_info[file_name][
+                audalign_object.LOCALITY + "_setting"
+            ] = round(
+                float(locality)
+                / fingerprint.DEFAULT_FS
+                * fingerprint.DEFAULT_WINDOW_SIZE
+                * fingerprint.DEFAULT_OVERLAP_RATIO,
+                5,
+            )
+        else:
+            complete_match_info[file_name][audalign_object.LOCALITY + "_setting"] = None
 
         # calculate seconds
-
         complete_match_info[file_name][audalign_object.OFFSET_SECS] = []
         for i in offset_diff:
             nseconds = round(
@@ -313,6 +328,31 @@ def process_results(
                 5,
             )
             complete_match_info[file_name][audalign_object.OFFSET_SECS].append(nseconds)
+
+        # Calculate locality tuples seconds
+        complete_match_info[file_name][audalign_object.LOCALITY_SECS] = []
+        for instance in range(len(offset_loc)):
+            if locality:
+                for location in range(len(offset_loc[instance])):
+                    offset_loc[instance][location] = (
+                        round(
+                            float(offset_loc[instance][location][0])
+                            / fingerprint.DEFAULT_FS
+                            * fingerprint.DEFAULT_WINDOW_SIZE
+                            * fingerprint.DEFAULT_OVERLAP_RATIO,
+                            5,
+                        ),
+                        round(
+                            float(offset_loc[instance][location][1])
+                            / fingerprint.DEFAULT_FS
+                            * fingerprint.DEFAULT_WINDOW_SIZE
+                            * fingerprint.DEFAULT_OVERLAP_RATIO,
+                            5,
+                        ),
+                    )
+            complete_match_info[file_name][audalign_object.LOCALITY_SECS].append(
+                offset_loc[instance]
+            )
 
     if len(complete_match_info) == 0 and filter_set == False:
         return process_results(
