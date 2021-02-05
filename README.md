@@ -101,7 +101,8 @@ All formats that ffmpeg or libav support are supported here.
 Alignments are accomplished with recognizing
 
 ```python
-print(ada.recognize("matching_file.mp3"))
+# Only returns matches with total fingerprint matches greater than 50 within 5 second windows
+print(ada.recognize("matching_file.mp3", filter_matches=50, locality=5))
 
 # For Visual
 print(ada.visrecognize(
