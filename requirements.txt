@@ -21,8 +21,8 @@ matplotlib==3.3.3
 mypy-extensions==0.4.3
 networkx==2.5
 noisereduce==1.1.0
-numba==0.51.2
 numpy==1.18.4
+numba==0.51.2
 packaging==20.8
 pathlib==1.0.1
 pathspec==0.8.1
