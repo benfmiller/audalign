@@ -2,8 +2,8 @@ import audalign as ad
 import pytest
 import os
 
-test_file = "test_audio/testers/test.wav"
-test_file2 = "test_audio/testers/pink_noise.wav"
+test_file = "test_audio/testers/test.mp3"
+test_file2 = "test_audio/testers/pink_noise.mp3"
 
 
 class TestRecognize:
@@ -53,7 +53,7 @@ class TestRecognize:
             calc_mse=False,
         )
         assert results
-        assert results["match_info"]["test.wav"]["mse"][0] == 20000000.0
+        assert results["match_info"]["test.mp3"]["mse"][0] == 20000000.0
 
     def test_visrecognize_directory(self):
         results = self.ada.visrecognize_directory(
@@ -82,7 +82,7 @@ class TestAlign:
 
     def test_target_align_fingerprint(self):
         result = self.ada.target_align(
-            "test_audio/test_shifts/Eigen-song-base.wav",
+            "test_audio/test_shifts/Eigen-song-base.mp3",
             "test_audio/test_shifts",
             destination_path="test_alignment",
         )
@@ -90,7 +90,7 @@ class TestAlign:
 
     def test_target_align_vis(self):
         result = self.ada.target_align(
-            "test_audio/test_shifts/Eigen-song-base.wav",
+            "test_audio/test_shifts/Eigen-song-base.mp3",
             "test_audio/test_shifts",
             destination_path="test_alignment",
             use_fingerprints=False,

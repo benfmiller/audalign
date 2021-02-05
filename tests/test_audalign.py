@@ -9,7 +9,7 @@ def test_always_true():
 
 class TestObject:
 
-    test_file = "test_audio/test.wav"
+    test_file = "test_audio/test.mp3"
 
     @pytest.mark.smoke
     def test_initialization(self):
@@ -79,7 +79,7 @@ class TestObject:
 
 
 class TestRemoveNoise:
-    test_file = "test_audio/testers/test.wav"
+    test_file = "test_audio/testers/test.mp3"
     if not os.path.isdir("test_alignment"):
         os.mkdir("test_alignment")
 
@@ -87,7 +87,7 @@ class TestRemoveNoise:
         ada = ad.Audalign()
         ada.remove_noise_directory(
             "test_audio/testers",
-            "test_audio/testers/pink_noise.wav",
+            "test_audio/testers/pink_noise.mp3",
             10,
             30,
             "test_alignment",
@@ -98,27 +98,27 @@ class TestRemoveNoise:
             self.test_file,
             10,
             20,
-            "test_alignment/test.wav",
+            "test_alignment/test.mp3",
         )
 
         ad.Audalign.remove_noise_file(
             self.test_file,
             1,
             3,
-            "test_alignment/test.wav",
-            alt_noise_filepath="test_audio/testers/pink_noise.wav",
+            "test_alignment/test.mp3",
+            alt_noise_filepath="test_audio/testers/pink_noise.mp3",
         )
 
 
 class TestFingerprinting:
-    test_file = "test_audio/testers/test.wav"
+    test_file = "test_audio/testers/test.mp3"
 
     def test_fingerprint_file(self):
         ada = ad.Audalign()
         ada.fingerprint_file(self.test_file)
         ada.fingerprint_file(self.test_file, set_file_name="Sup", plot=False)
         assert ada.total_fingerprints > 0
-        assert ada.file_names[0] == "test.wav"
+        assert ada.file_names[0] == "test.mp3"
         assert len(ada.fingerprinted_files) == 1
 
         ada.clear_fingerprints()
