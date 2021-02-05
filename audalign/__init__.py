@@ -599,6 +599,7 @@ class Audalign:
         use_fingerprints: bool = True,
         alternate_strength_stat: str = None,
         filter_matches: int = 1,
+        locality: float = None,
         volume_threshold: float = 216,
         volume_floor: float = 10.0,
         vert_scaling: float = 1.0,
@@ -618,6 +619,7 @@ class Audalign:
             use_fingerprints (bool, optional): Fingerprints if True, visual recognition if False. Defaults to True.
             alternate_strength_stat (str, optional): confidence for fingerprints, ssim for visual, mse or count also work for visual. Defaults to None.
             filter_matches (int, optional): filter matches level for fingerprinting. Defaults to 1.
+            locality (float, optional): In seconds for fingerprints, only matches files within given window sizes
             volume_threshold (float, optional): volume threshold for visual recognition. Defaults to 216.
             volume_floor (float): ignores volume levels below floow.
             vert_scaling (float): scales vertically to speed up calculations. Smaller numbers have smaller images.
@@ -657,7 +659,9 @@ class Audalign:
                     self.fingerprint_file(target_file)
                 self.fingerprint_directory(directory_path)
 
-                alignment = self.recognize(target_file, filter_matches=filter_matches)
+                alignment = self.recognize(
+                    target_file, filter_matches=filter_matches, locality=locality
+                )
 
             else:
                 alignment = self.visrecognize_directory(
@@ -728,6 +732,7 @@ class Audalign:
         destination_path: str = None,
         write_extension: str = None,
         filter_matches: int = 1,
+        locality: float = None,
     ):
         """
         Finds matches and relative offsets for all files in directory_path, aligns them, and writes them to destination_path
@@ -742,6 +747,9 @@ class Audalign:
 
         write_extension : str
             if given, writes all alignments with given extension (ex. ".wav" or "wav")
+
+        locality : float
+            Only recognizes against fingerprints in given width. In seconds
 
         Returns
         -------
@@ -772,7 +780,9 @@ class Audalign:
             for file_path, _ in filehandler.find_files(directory_path):
                 name = os.path.basename(file_path)
                 if name in self.file_names:
-                    alignment = self.recognize(file_path, filter_matches=filter_matches)
+                    alignment = self.recognize(
+                        file_path, filter_matches=filter_matches, locality=locality
+                    )
                     file_names_and_paths[name] = file_path
                     total_alignment[name] = alignment
 
