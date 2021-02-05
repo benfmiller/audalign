@@ -8,11 +8,12 @@ test_file2 = "test_audio/testers/pink_noise.mp3"
 
 class TestRecognize:
 
-    ada = ad.Audalign("all_audio_panako.json")
+    ada = ad.Audalign("all_audio_panako2.json")
 
     @pytest.mark.smoke
     def test_recognize(self):
         assert self.ada.total_fingerprints > 0
+        self.ada.set_accuracy(4)
 
         # from before loading all audio panako
         # ada.fingerprinted_files[0][0] = "different"
@@ -21,14 +22,14 @@ class TestRecognize:
         result = self.ada.recognize(test_file)
         assert len(result) > 1
 
-        result2 = self.ada.recognize(test_file2, filter_matches=3)
+        result2 = self.ada.recognize(test_file, filter_matches=20000)
         assert not result2
 
     @pytest.mark.smoke
     def test_recognize_locality(self):
         assert self.ada.total_fingerprints > 0
 
-        result = self.ada.recognize(test_file, locality=5)
+        result = self.ada.recognize(test_file, locality=10)
         assert len(result) > 1
 
     @pytest.mark.smoke
@@ -95,5 +96,6 @@ class TestAlign:
             destination_path="test_alignment",
             use_fingerprints=False,
             img_width=0.5,
+            volume_threshold=215,
         )
         assert result
