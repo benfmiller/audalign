@@ -148,26 +148,27 @@ def locality_align_matches(matches: list, locality: int):
     # converting matches into file_dict of matches
     for file_name, sample_difference, t_offset, a_offset in matches:
         if file_dict.get(file_name) is None:
-            file_dict[file_dict] = []
+            file_dict[file_name] = []
         file_dict[file_name].append((sample_difference, t_offset, a_offset))
 
     # shifting windows for each filename match
     for name in file_dict.keys():
         temp_file_dict = {}
         start_window = 0
-        end_window = 0
+        end_window = 1
+        last_end = 1
 
         # sorts by t_offset
         file_dict[name] = sorted(file_dict[name], key=lambda x: x[1])
+
+        while file_dict[name][end_window - 1][1] - file_dict[name][start_window][
+            1
+        ] <= locality and end_window < len(file_dict[name]):
+            end_window += 1
+            last_end = end_window
+
         # moves end while there's room and locality is
-        while end_window <= len(file_dict[name]):
-            while (
-                file_dict[name][end_window - 1][1] - file_dict[name][start_window][1]
-                <= locality
-            ):
-                if end_window == len(file_dict[name]):
-                    break
-                end_window += 1
+        while True:  # end_window <= len(file_dict[name]):
 
             # {(toff, aoff): {samp_diff : confidence}}
             toff_dict = find_loc_matches(
@@ -185,14 +186,20 @@ def locality_align_matches(matches: list, locality: int):
                     temp_file_dict[samp_diff][1] += [tup]
 
             # breaks out of while if at end of file and within locality
-            if (
-                end_window == len(file_dict[name])
-                and file_dict[name][end_window - 1][1]
-                - file_dict[name][start_window][1]
-                <= locality
-            ):
+            if end_window == len(file_dict[name]):
                 break
-            start_window += 1
+
+            while True:
+                start_window += 1
+                while file_dict[name][end_window - 1][1] - file_dict[name][
+                    start_window
+                ][1] <= locality and end_window != len(file_dict[name]):
+                    end_window += 1
+                if end_window >= len(file_dict[name]):
+                    break
+                if end_window > last_end:
+                    last_end = end_window
+                    break
 
         # # filter to top 30
         if len(temp_file_dict.keys()) > 30:
@@ -204,7 +211,7 @@ def locality_align_matches(matches: list, locality: int):
             )  # sort by confidence
             temp_file_dict = {}
             for i in range(30):
-                temp_file_dict[temp_file_list[0]] = temp_file_list[1]
+                temp_file_dict[temp_file_list[i][0]] = temp_file_list[i][1]
 
         sample_difference_counter[name] = temp_file_dict
 
@@ -223,16 +230,21 @@ def find_loc_matches(matches_list: list, locality: int):
     Returns:
         [dict]: {(toff, aoff): {samp_diff : confidence}}
     """
+    # matches_list = list(set(matches_list))
+
     a_matches = sorted(matches_list, key=lambda x: x[2])
     temp_file_dict = {}
     start_window = 0
-    end_window = 0
+    end_window = 1
+    last_end = 1
 
-    while end_window <= len(a_matches):
-        while a_matches[end_window - 1][1] - a_matches[start_window][1] <= locality:
-            if end_window == len(a_matches):
-                break
-            end_window += 1
+    while a_matches[end_window - 1][2] - a_matches[start_window][
+        2
+    ] <= locality and end_window < len(a_matches):
+        end_window += 1
+        last_end = end_window
+
+    while True:  # end_window <= len(a_matches):
 
         loc_tup = (
             (matches_list[0][1] - matches_list[-1][1]) // 2,
@@ -240,18 +252,27 @@ def find_loc_matches(matches_list: list, locality: int):
         )
         temp_file_dict[loc_tup] = {}
         for sample_difference, t_offset, a_offset in a_matches[start_window:end_window]:
-            if sample_difference not in temp_file_dict[loc_tup]:
+            if sample_difference not in temp_file_dict[loc_tup].keys():
                 temp_file_dict[loc_tup][sample_difference] = 0
             temp_file_dict[loc_tup][sample_difference] += 1
         # gives us temp_file_dict--- {(toff, aoff): {samp_diff : confidence}}
 
         # breaks out of while if at end of file and within locality
-        if (
-            end_window == len(a_matches)
-            and a_matches[end_window - 1][1] - a_matches[start_window][1] <= locality
-        ):
+
+        if end_window == len(a_matches):
             break
-        start_window += 1
+
+        while True:
+            start_window += 1
+            while a_matches[end_window - 1][2] - a_matches[start_window][
+                2
+            ] <= locality and end_window != len(a_matches):
+                end_window += 1
+            if end_window >= len(a_matches):
+                break
+            if end_window > last_end:
+                last_end = end_window
+                break
 
     return temp_file_dict
 
@@ -305,17 +326,19 @@ def process_results(
         complete_match_info[file_name][audalign_object.OFFSET_SAMPLES] = offset_diff
         complete_match_info[file_name][audalign_object.LOCALITY] = offset_loc
         if locality:
-            complete_match_info[file_name][
-                audalign_object.LOCALITY + "_setting"
-            ] = round(
-                float(locality)
-                / fingerprint.DEFAULT_FS
-                * fingerprint.DEFAULT_WINDOW_SIZE
-                * fingerprint.DEFAULT_OVERLAP_RATIO,
-                5,
-            )
+            complete_match_info[file_name][audalign_object.LOCALITY + "_setting"] = [
+                round(
+                    float(locality)
+                    / fingerprint.DEFAULT_FS
+                    * fingerprint.DEFAULT_WINDOW_SIZE
+                    * fingerprint.DEFAULT_OVERLAP_RATIO,
+                    5,
+                )
+            ]
         else:
-            complete_match_info[file_name][audalign_object.LOCALITY + "_setting"] = None
+            complete_match_info[file_name][audalign_object.LOCALITY + "_setting"] = [
+                None
+            ]
 
         # calculate seconds
         complete_match_info[file_name][audalign_object.OFFSET_SECS] = []
