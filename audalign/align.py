@@ -26,8 +26,8 @@ def find_most_matches(total_alignment, strength_stat: str = "confidence"):
     # find file with most matches
     for name, match in total_alignment.items():
         if match:
-            if (n := len(match["match_info"])) > most_matches:
-                most_matches = n
+            if (len(match["match_info"])) > most_matches:
+                most_matches = len(match["match_info"])
                 most_matches_file["most_matches"] = name
                 most_matches_file["tied"] = [name]
             elif (len(match["match_info"])) == most_matches:
