@@ -1,7 +1,9 @@
 import audalign as ad
 import pytest
+import os
 
-test_file = "audio_files/TestAudio/test.wav"
+test_file = "test_audio/testers/test.wav"
+test_file2 = "test_audio/testers/pink_noise.wav"
 
 
 class TestRecognize:
@@ -19,9 +21,7 @@ class TestRecognize:
         result = self.ada.recognize(test_file)
         assert len(result) > 1
 
-        result2 = self.ada.recognize(
-            "audio_files/TestAudio/pink_noise.wav", filter_matches=3
-        )
+        result2 = self.ada.recognize(test_file2, filter_matches=3)
         assert not result2
 
     @pytest.mark.smoke
@@ -58,7 +58,7 @@ class TestRecognize:
     def test_visrecognize_directory(self):
         results = self.ada.visrecognize_directory(
             test_file,
-            "audio_files/processed_audio",
+            "test_audio/testers/",
             img_width=0.5,
             volume_threshold=215,
         )
@@ -68,28 +68,30 @@ class TestRecognize:
 class TestAlign:
 
     ada = ad.Audalign()
+    if not os.path.isdir("test_alignment"):
+        os.mkdir("test_alignment")
 
     @pytest.mark.smoke
     def test_align(self):
-        result = self.ada.align("test_alignment/test_shifts", "test_alignment")
+        result = self.ada.align("test_audio/test_shifts", "test_alignment")
         assert result
         result = self.ada.align(
-            "test_alignment/test_shifts", "test_alignment", write_extension=".wav"
+            "test_audio/test_shifts", "test_alignment", write_extension=".wav"
         )
         assert result
 
     def test_target_align_fingerprint(self):
         result = self.ada.target_align(
-            "test_alignment/test_shifts/Eigen-song-base.wav",
-            "test_alignment/test_shifts",
+            "test_audio/test_shifts/Eigen-song-base.wav",
+            "test_audio/test_shifts",
             destination_path="test_alignment",
         )
         assert result
 
     def test_target_align_vis(self):
         result = self.ada.target_align(
-            "test_alignment/test_shifts/Eigen-song-base.wav",
-            "test_alignment/test_shifts",
+            "test_audio/test_shifts/Eigen-song-base.wav",
+            "test_audio/test_shifts",
             destination_path="test_alignment",
             use_fingerprints=False,
             img_width=0.5,
