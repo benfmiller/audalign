@@ -14,6 +14,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - uses: FedericoCarboni/setup-ffmpeg@v1-beta
+      id: setup-ffmpeg
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
