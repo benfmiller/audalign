@@ -5,27 +5,35 @@ test_file = "audio_files/TestAudio/test.wav"
 
 
 class TestRecognize:
+
+    ada = ad.Audalign("all_audio_panako.json")
+
     @pytest.mark.smoke
     def test_recognize(self):
+        assert self.ada.total_fingerprints > 0
 
-        ada = ad.Audalign("all_audio_panako.json")
-        assert ada.total_fingerprints > 0
+        # from before loading all audio panako
+        # ada.fingerprinted_files[0][0] = "different"
+        # ada.file_names[0] = "different"
 
-        ada.fingerprinted_files[0][0] = "different"
-        ada.file_names[0] = "different"
-
-        result = ada.recognize(test_file)
+        result = self.ada.recognize(test_file)
         assert len(result) > 1
 
-        result2 = ada.recognize(
+        result2 = self.ada.recognize(
             "audio_files/TestAudio/pink_noise.wav", filter_matches=3
         )
         assert not result2
 
     @pytest.mark.smoke
+    def test_recognize_locality(self):
+        assert self.ada.total_fingerprints > 0
+
+        result = self.ada.recognize(test_file, locality=5)
+        assert len(result) > 1
+
+    @pytest.mark.smoke
     def test_visrecognize(self):
-        ada = ad.Audalign()
-        results = ada.visrecognize(
+        results = self.ada.visrecognize(
             test_file,
             test_file,
             img_width=0.5,
@@ -34,8 +42,7 @@ class TestRecognize:
         assert results
 
     def test_visrecognize_options(self):
-        ada = ad.Audalign()
-        results = ada.visrecognize(
+        results = self.ada.visrecognize(
             test_file,
             test_file,
             img_width=0.5,
@@ -49,8 +56,7 @@ class TestRecognize:
         assert results["match_info"]["test.wav"]["mse"][0] == 20000000.0
 
     def test_visrecognize_directory(self):
-        ada = ad.Audalign()
-        results = ada.visrecognize_directory(
+        results = self.ada.visrecognize_directory(
             test_file,
             "audio_files/processed_audio",
             img_width=0.5,
@@ -60,19 +66,20 @@ class TestRecognize:
 
 
 class TestAlign:
+
+    ada = ad.Audalign()
+
     @pytest.mark.smoke
     def test_align(self):
-        ada = ad.Audalign()
-        result = ada.align("test_alignment/test_shifts", "test_alignment")
+        result = self.ada.align("test_alignment/test_shifts", "test_alignment")
         assert result
-        result = ada.align(
+        result = self.ada.align(
             "test_alignment/test_shifts", "test_alignment", write_extension=".wav"
         )
         assert result
 
     def test_target_align_fingerprint(self):
-        ada = ad.Audalign()
-        result = ada.target_align(
+        result = self.ada.target_align(
             "test_alignment/test_shifts/Eigen-song-base.wav",
             "test_alignment/test_shifts",
             destination_path="test_alignment",
@@ -80,8 +87,7 @@ class TestAlign:
         assert result
 
     def test_target_align_vis(self):
-        ada = ad.Audalign()
-        result = ada.target_align(
+        result = self.ada.target_align(
             "test_alignment/test_shifts/Eigen-song-base.wav",
             "test_alignment/test_shifts",
             destination_path="test_alignment",
