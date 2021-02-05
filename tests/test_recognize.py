@@ -28,6 +28,7 @@ class TestRecognize:
     @pytest.mark.smoke
     def test_recognize_locality(self):
         assert self.ada.total_fingerprints > 0
+        self.ada.set_accuracy(4)
 
         result = self.ada.recognize(test_file, locality=10)
         assert len(result) > 1

@@ -300,8 +300,6 @@ def process_results(
         dict of file_names with match info as values
     """
 
-    # results = results[0]
-    # TODO handle tup in align matches
     complete_match_info = {}
 
     for file_name in results.keys():
@@ -380,7 +378,7 @@ def process_results(
     if len(complete_match_info) == 0 and filter_set == False:
         return process_results(
             audalign_object,
-            (results, None),
+            results,
             locality,
             filter_matches=filter_matches - 1,
         )
