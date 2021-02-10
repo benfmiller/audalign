@@ -7,17 +7,13 @@ def recognize(audalign_object, file_path, filter_matches, locality):
     """
     Recognizes given file against already fingerprinted files
 
-    Parameters
-    ----------
-    file_path : str
-        file path of target file
-    filter_matches : int
-        only returns information on match counts greater than filter_matches
+    Args
+        file_path (str): file path of target file
+        filter_matches (int): only returns information on match counts greater than filter_matches
 
     Returns
     -------
-    match_result : dict
-        dictionary containing match time and match info
+        match_result (dict): dictionary containing match time and match info
 
         or
 
@@ -70,17 +66,13 @@ def find_matches(audalign_object, file_path):
     fingerprints target file, then finds every occurence of exact same hashes in already
     fingerprinted files
 
-    Parameters
-    ----------
-    samples : array of decoded file
-        array of decoded file from filehandler.read
-    file_name : str
-        base name of target file
+    Args
+        samples (array of decoded file): array of decoded file from filehandler.read
+        file_name (str): base name of target file
 
     Returns
     -------
-    Matches: list[str, int, int, int]
-        list of all matches, file_name match, corresponding offset, target location, file_match offset
+        Matches(list[str, int, int, int]): list of all matches, file_name match, corresponding offset, target location, file_match offset
     """
     file_name = os.path.basename(file_path)
 
@@ -116,15 +108,12 @@ def align_matches(matches: list):
     """
     takes matches from find_matches and converts it to a dictionary of counts per offset and file name
 
-    Parameters
-    ----------
-    matches : list[str, int]
-        list of matches from find_matches
+    Args
+        matches (list[str, int]): list of matches from find_matches
 
     Returns
     -------
-    sample_difference_counter : dict{str{int}}
-        of the form dict{file_name{number of matching offsets}}
+        sample_difference_counter (dict{str{int}}): of the form dict{file_name{number of matching offsets}}
     """
 
     print("Aligning matches")
@@ -283,21 +272,14 @@ def process_results(
     """
     Takes matches from align_matches, filters and orders them, returns dictionary of match info
 
-    Parameters
-    ----------
-    results : dict{str{int}}
-        of the form dict{file_name{number of matching offsets}}
-
-    filter_matches : int
-        cutout all matches equal to or less than in frequency, goes down if no matches found above filter
-
-    filter_set : bool
-        if the filter is manually set, doesn't lower filter if no results
+    Args
+        results (dict{str{int}}): of the form dict{file_name{number of matching offsets}}
+        filter_matches (int): cutout all matches equal to or less than in frequency, goes down if no matches found above filter
+        filter_set (bool): if the filter is manually set, doesn't lower filter if no results
 
     Returns
     -------
-    match_info : dict{dict{}}
-        dict of file_names with match info as values
+        match_info (dict{dict{}}): dict of file_names with match info as values
     """
 
     complete_match_info = {}
