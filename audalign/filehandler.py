@@ -33,7 +33,7 @@ def find_files(path, extensions=["*"]):
                 yield (p, extension)
 
 
-def create_audiosegment(filepath: str, start_end: tuple(float, float) = None):
+def create_audiosegment(filepath: str, start_end: tuple = None):
     # TODO start end
     audiofile = AudioSegment.from_file(filepath)
     audiofile = audiofile.set_frame_rate(DEFAULT_FS)
@@ -43,8 +43,7 @@ def create_audiosegment(filepath: str, start_end: tuple(float, float) = None):
     return audiofile
 
 
-def read(filename: str, wrdestination=None, start_end: tuple(float, float) = None):
-    # TODO start end
+def read(filename: str, wrdestination=None, start_end: tuple = None):
     """
     Reads any file supported by pydub (ffmpeg) and returns a numpy array and the bit depth
 
@@ -58,7 +57,7 @@ def read(filename: str, wrdestination=None, start_end: tuple(float, float) = Non
         frame_rate (int): returns the bit depth
     """
 
-    audiofile = create_audiosegment(filename)
+    audiofile = create_audiosegment(filename, start_end=start_end)
     data = np.frombuffer(audiofile._data, np.int16)
     if wrdestination:
         with open(wrdestination, "wb") as file_place:

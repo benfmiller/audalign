@@ -1,5 +1,3 @@
-import math
-from numpy.core.defchararray import array
 import audalign.fingerprint as fingerprint
 from audalign.filehandler import read, find_files
 from pydub.exceptions import CouldntDecodeError
@@ -23,6 +21,8 @@ upper_clip = 255
 def visrecognize(
     target_file_path: str,
     against_file_path: str,
+    start_end_target: tuple = None,
+    start_end_against: tuple = None,
     img_width=1.0,
     volume_threshold=215.0,
     volume_floor: float = 10.0,
@@ -52,6 +52,7 @@ def visrecognize(
         volume_floor=volume_floor,
         vert_scaling=vert_scaling,
         horiz_scaling=horiz_scaling,
+        start_end=start_end_target,
     )
 
     target_index_list = find_index_arr(
@@ -63,6 +64,7 @@ def visrecognize(
         volume_floor=volume_floor,
         vert_scaling=vert_scaling,
         horiz_scaling=horiz_scaling,
+        start_end=start_end_against,
     )
     results_list = _visrecognize(
         transposed_target_arr2d=transposed_target_arr2d,
@@ -107,6 +109,7 @@ def visrecognize(
 def visrecognize_directory(
     target_file_path: str,
     against_directory: str,
+    start_end: tuple = None,
     img_width=1.0,
     volume_threshold=215.0,
     volume_floor: float = 10.0,
@@ -136,6 +139,7 @@ def visrecognize_directory(
         volume_floor=volume_floor,
         vert_scaling=vert_scaling,
         horiz_scaling=horiz_scaling,
+        start_end=start_end,
     )
 
     target_index_list = find_index_arr(
@@ -275,8 +279,9 @@ def get_arrays(
     volume_floor: float = 10.0,
     vert_scaling: float = 1.0,
     horiz_scaling: float = 1.0,
+    start_end: tuple = None,
 ):
-    samples, _ = read(file_path)
+    samples, _ = read(file_path, start_end=start_end)
     arr2d = fingerprint.fingerprint(samples, retspec=True)
     if fingerprint.threshold > 0:
         arr2d = arr2d[0 : -fingerprint.threshold]

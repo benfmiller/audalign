@@ -329,7 +329,7 @@ class Audalign:
     def fingerprint_file(
         self,
         file_path: str,
-        start_end: tuple(float, float) = None,
+        start_end: tuple = None,
         set_file_name: str = None,
         plot: bool = False,
     ) -> None:
@@ -362,7 +362,7 @@ class Audalign:
     def _fingerprint_file(
         self,
         file_path: str,
-        start_end: tuple(float, float) = None,
+        start_end: tuple = None,
         set_file_name: str = None,
         plot: bool = False,
     ):
@@ -396,8 +396,8 @@ class Audalign:
         self,
         file_path: str,
         filter_matches: int = 1,
-        locality=None,
-        start_end: tuple(float, float) = None,
+        locality: float = None,
+        start_end: tuple = None,
         *args,
         **kwargs,
     ) -> None:
@@ -426,9 +426,9 @@ class Audalign:
 
         return recognize.recognize(
             self,
-            file_path,
-            filter_matches,
-            locality,
+            file_path=file_path,
+            filter_matches=filter_matches,
+            locality=locality,
             start_end=start_end,
             *args,
             **kwargs,
@@ -438,8 +438,8 @@ class Audalign:
         self,
         target_file_path: str,
         against_file_path: str,
-        start_end_target: tuple(float, float) = None,
-        start_end_against: tuple(float, float) = None,
+        start_end_target: tuple = None,
+        start_end_against: tuple = None,
         img_width: float = 1.0,
         volume_threshold: float = 215.0,
         volume_floor: float = 10.0,
@@ -495,7 +495,7 @@ class Audalign:
         self,
         target_file_path: str,
         against_directory: str,
-        start_end: tuple(float, float) = None,
+        start_end: tuple = None,
         img_width: float = 1.0,
         volume_threshold: float = 215.0,
         volume_floor: float = 10.0,
@@ -549,7 +549,7 @@ class Audalign:
         self,
         file_path: str,
         destination_file: str,
-        start_end: tuple(float, float) = None,
+        start_end: tuple = None,
     ) -> None:
         """
         writes given file to the destination file after processing for fingerprinting
@@ -572,7 +572,7 @@ class Audalign:
     def plot(
         self,
         file_path: str,
-        start_end: tuple(float, float) = None,
+        start_end: tuple = None,
     ) -> None:
         """
         Plots the file_path's peak chart
@@ -607,7 +607,7 @@ class Audalign:
         target_file: str,
         directory_path: str,
         destination_path: str = None,
-        start_end: tuple(float, float) = None,
+        start_end: tuple = None,
         write_extension: str = None,
         use_fingerprints: bool = True,
         alternate_strength_stat: str = None,
@@ -865,7 +865,7 @@ class Audalign:
     def convert_audio_file(
         file_path: str,
         destination_path: str,
-        start_end: tuple(float, float) = None,
+        start_end: tuple = None,
     ):
         """
         Convert audio file to type specified in destination path
@@ -960,7 +960,7 @@ class Audalign:
 def _fingerprint_worker(
     file_path: str,
     hash_style="panako_mod",
-    start_end: tuple(float, float) = None,
+    start_end: tuple = None,
     plot=False,
     accuracy=2,
 ) -> Tuple:
