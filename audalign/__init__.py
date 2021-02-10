@@ -54,22 +54,14 @@ class Audalign:
         4 gives the highest accuracy, but can take several gigabytes of memory for a couple files.
         Accuracy settings are acheived by manipulations in fingerprinting variables.
 
-        Parameters
-        ----------
-        arg1 : str
-            Optional file path to load json or pickle file of already fingerprinted files
-        multiprocessing : bool
-            option to turn off multiprocessing
-        num_processors : int
-            number of processors or threads to use for multiprocessing. Uses all if not given
-        hash_style : str
-            which hash style to use : ['base','panako_mod','panako', 'base_three']
-        accuracy : int
-            which accuracy level 1-4
-        threshold: int
-            filters fingerprints below threshold
-        noisereduce: bool
-            runs noise reduce on audio
+        Args
+            arg1 (str): Optional file path to load json or pickle file of already fingerprinted files
+            multiprocessing (bool): option to turn off multiprocessing
+            num_processors (int): number of processors or threads to use for multiprocessing. Uses all if not given
+            hash_style (str): which hash style to use : ['base','panako_mod','panako', 'base_three']
+            accuracy (int): which accuracy level 1-4
+            threshold(int): filters fingerprints below threshold
+            noisereduce(bool): runs noise reduce on audio
         """
 
         self.file_names = []
@@ -108,10 +100,8 @@ class Audalign:
 
         Specific values for accuracy levels were chosen semi-arbitrarily from experimentation to give a few good options.
 
-        Parameters
-        ----------
-            accuracy : int
-                which accuracy level: 1-4
+        Args
+            accuracy (int): which accuracy level: 1-4
         """
         if accuracy < 1 or accuracy > 4:
             print("Accuracy must be between 1 and 4")
@@ -200,10 +190,8 @@ class Audalign:
         """
         Loads/adds saved json or pickle file into current audalign object
 
-        Parameters
-        ----------
-        filename : str
-            must be either json or pickle extension
+        Args
+            filename (str): must be either json or pickle extension
 
         Returns
         -------
@@ -245,14 +233,10 @@ class Audalign:
         """
         Fingerprints all files in given directory and all subdirectories
 
-        Parameters
-        ----------
-        path : str
-            path to directory to be fingerprinted
-        plot : boolean
-            if true, plots the peaks to be fingerprinted on a spectrogram
-        extensions : list[str]
-            specify which extensions to fingerprint
+        Args
+            path (str): path to directory to be fingerprinted
+            plot (boolean): if true, plots the peaks to be fingerprinted on a spectrogram
+            extensions (list[str]): specify which extensions to fingerprint
 
         Returns
         -------
@@ -277,14 +261,10 @@ class Audalign:
 
         Fingerprints all files in given directory and all subdirectories
 
-        Parameters
-        ----------
-        path : str
-            path to directory to be fingerprinted
-        plot : boolean
-            if true, plots the peaks to be fingerprinted on a spectrogram
-        extensions : list[str]
-            specify which extensions to fingerprint
+        Args
+            path (str): path to directory to be fingerprinted
+            plot (boolean): if true, plots the peaks to be fingerprinted on a spectrogram
+            extensions (list[str]): specify which extensions to fingerprint
 
         Returns
         -------
@@ -347,19 +327,20 @@ class Audalign:
         return result
 
     def fingerprint_file(
-        self, file_path: str, set_file_name: str = None, plot: bool = False
+        self,
+        file_path: str,
+        start_end: tuple(float, float) = None,
+        set_file_name: str = None,
+        plot: bool = False,
     ) -> None:
         """
         Fingerprints given file and adds to fingerprinted files
 
-        Parameters
-        ----------
-        file_path : str
-            path to word to be fingerprinted
-        set_file_name : str
-            option to set file name manually rather than use file name in file_path
-        plot : boolean
-            if true, plots the peaks to be fingerprinted on a spectrogram
+        Args
+            file_path (str): path to word to be fingerprinted
+            start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
+            set_file_name (str): option to set file name manually rather than use file name in file_path
+            plot (boolean): if true, plots the peaks to be fingerprinted on a spectrogram
 
         Returns
         -------
@@ -370,28 +351,31 @@ class Audalign:
             print(f"{file_name} already fingerprinted")
             return None
 
-        file_name, hashes = self._fingerprint_file(file_path, set_file_name, plot)
+        file_name, hashes = self._fingerprint_file(
+            file_path, start_end=start_end, set_file_name=set_file_name, plot=plot
+        )
         if file_name != None:
             self.fingerprinted_files.append([file_name, hashes])
             self.file_names.append(file_name)
             self.total_fingerprints += len(hashes)
 
     def _fingerprint_file(
-        self, file_path: str, set_file_name: str = None, plot: bool = False
+        self,
+        file_path: str,
+        start_end: tuple(float, float) = None,
+        set_file_name: str = None,
+        plot: bool = False,
     ):
         """
         Worker function for fingerprint_file
 
         Fingerprints given file and adds to fingerprinted files
 
-        Parameters
-        ----------
-        file_path : str
-            path to word to be fingerprinted
-        set_file_name : str
-            option to set file name manually rather than use file name in file_path
-        plot : boolean
-            if true, plots the peaks to be fingerprinted on a spectrogram
+        Args
+            file_path (str): path to word to be fingerprinted
+            start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
+            set_file_name (str): option to set file name manually rather than use file name in file_path
+            plot (boolean): if true, plots the peaks to be fingerprinted on a spectrogram
 
         Returns
         -------
@@ -401,6 +385,7 @@ class Audalign:
         file_name, hashes = _fingerprint_worker(
             file_path,
             self.hash_style,
+            start_end=start_end,
             plot=plot,
             accuracy=self.accuracy,
         )
@@ -408,7 +393,13 @@ class Audalign:
         return [file_name, hashes]
 
     def recognize(
-        self, file_path: str, filter_matches: int = 1, locality=None, *args, **kwargs
+        self,
+        file_path: str,
+        filter_matches: int = 1,
+        locality=None,
+        start_end: tuple(float, float) = None,
+        *args,
+        **kwargs,
     ) -> None:
         """
         Recognizes given file against already fingerprinted files
@@ -417,14 +408,11 @@ class Audalign:
         Does not recognize against files with same name and extention
         Locality option used to only return match results within certain second range
 
-        Parameters
-        ----------
-        file_path : str
-            file path of target file to recognize
-        filter_matches : int
-            filters all matches lower than given argument, 1 is recommended
-        locality : float
-            filters matches to only count within locality. In seconds
+        Args
+            file_path (str): file path of target file to recognize
+            filter_matches (int): filters all matches lower than given argument, 1 is recommended
+            locality (float): filters matches to only count within locality. In seconds
+            start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
 
         Returns
         -------
@@ -437,13 +425,21 @@ class Audalign:
         """
 
         return recognize.recognize(
-            self, file_path, filter_matches, locality, *args, **kwargs
+            self,
+            file_path,
+            filter_matches,
+            locality,
+            start_end=start_end,
+            *args,
+            **kwargs,
         )
 
     def visrecognize(
         self,
         target_file_path: str,
         against_file_path: str,
+        start_end_target: tuple(float, float) = None,
+        start_end_against: tuple(float, float) = None,
         img_width: float = 1.0,
         volume_threshold: float = 215.0,
         volume_floor: float = 10.0,
@@ -460,6 +456,8 @@ class Audalign:
         Args:
             target_file_path (str): File to recognize.
             against_file_path (str): Recognize against.
+            start_end_target (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
+            start_end_against (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
             img_width (float): width of spectrogram image for recognition.
             volume_threshold (float): doesn't find stats for sections with max volume below threshold.
             volume_floor (float): ignores volume levels below floow.
@@ -480,6 +478,8 @@ class Audalign:
         return visrecognize.visrecognize(
             target_file_path,
             against_file_path,
+            start_end_target=start_end_target,
+            start_end_against=start_end_against,
             img_width=img_width,
             volume_threshold=volume_threshold,
             volume_floor=volume_floor,
@@ -495,6 +495,7 @@ class Audalign:
         self,
         target_file_path: str,
         against_directory: str,
+        start_end: tuple(float, float) = None,
         img_width: float = 1.0,
         volume_threshold: float = 215.0,
         volume_floor: float = 10.0,
@@ -511,6 +512,7 @@ class Audalign:
         Args:
             target_file_path (str): File to recognize.
             against_directory (str): Recognize against all files in directory.
+            start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
             img_width (float): width of spectrogram image for recognition.
             volume_threshold (int): doesn't find stats for sections with max volume below threshold.
             volume_floor (float): ignores volume levels below floow.
@@ -531,6 +533,7 @@ class Audalign:
         return visrecognize.visrecognize_directory(
             target_file_path,
             against_directory,
+            start_end=start_end,
             img_width=img_width,
             volume_threshold=volume_threshold,
             volume_floor=volume_floor,
@@ -542,45 +545,54 @@ class Audalign:
             plot=plot,
         )
 
-    def write_processed_file(self, file_path: str, destination_file: str) -> None:
+    def write_processed_file(
+        self,
+        file_path: str,
+        destination_file: str,
+        start_end: tuple(float, float) = None,
+    ) -> None:
         """
         writes given file to the destination file after processing for fingerprinting
 
-        Parameters
-        ----------
-        file_path : str
-            file path of audio file
-        destination_file : str
-            file path and name to write file to
+        Args
+            file_path (str): file path of audio file
+            destination_file (str): file path and name to write file to
+            start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
 
         Returns
         -------
         None
         """
-        filehandler.read(file_path, wrdestination=destination_file)
+        filehandler.read(
+            filename=file_path,
+            wrdestination=destination_file,
+            start_end=start_end,
+        )
 
-    def plot(self, file_path: str) -> None:
+    def plot(
+        self,
+        file_path: str,
+        start_end: tuple(float, float) = None,
+    ) -> None:
         """
         Plots the file_path's peak chart
 
-        Parameters
-        ----------
-        file_path : str
-            file to plot
+        Args
+            file_path (str): file to plot
+            start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
 
         Returns
         -------
         None
         """
-        self._fingerprint_file(file_path, plot=True)
+        self._fingerprint_file(file_path, start_end=start_end, plot=True)
 
     def clear_fingerprints(self) -> None:
         """
         Resets audalign object to brand new state
 
-        Parameters
-        ----------
-        None
+        Args
+            None
 
         Returns
         -------
@@ -595,6 +607,7 @@ class Audalign:
         target_file: str,
         directory_path: str,
         destination_path: str = None,
+        start_end: tuple(float, float) = None,
         write_extension: str = None,
         use_fingerprints: bool = True,
         alternate_strength_stat: str = None,
@@ -615,6 +628,7 @@ class Audalign:
             target_file (str): File to find alignments against
             directory_path (str): Directory to align against
             destination_path (str, optional): Directory to write alignments to
+            start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
             write_extension (str, optional): audio file format to write to. Defaults to None.
             use_fingerprints (bool, optional): Fingerprints if True, visual recognition if False. Defaults to True.
             alternate_strength_stat (str, optional): confidence for fingerprints, ssim for visual, mse or count also work for visual. Defaults to None.
@@ -647,6 +661,9 @@ class Audalign:
 
             if use_fingerprints:
 
+                if start_end is not None:
+                    self.fingerprint_file(target_file, start_end=start_end)
+
                 all_against_files = filehandler.find_files(directory_path)
                 all_against_files_full = [x[0] for x in all_against_files]
                 all_against_files_base = [
@@ -660,13 +677,17 @@ class Audalign:
                 self.fingerprint_directory(directory_path)
 
                 alignment = self.recognize(
-                    target_file, filter_matches=filter_matches, locality=locality
+                    target_file,
+                    filter_matches=filter_matches,
+                    locality=locality,
+                    start_end=start_end,
                 )
 
             else:
                 alignment = self.visrecognize_directory(
                     target_file_path=target_file,
                     against_directory=directory_path,
+                    start_end=start_end,
                     volume_threshold=volume_threshold,
                     volume_floor=volume_floor,
                     vert_scaling=vert_scaling,
@@ -737,24 +758,15 @@ class Audalign:
         """
         Finds matches and relative offsets for all files in directory_path, aligns them, and writes them to destination_path
 
-        Parameters
-        ----------
-        directory_path : str
-            String of directory for alignment
-
-        destination_path : str
-            String of path to write alignments to
-
-        write_extension : str
-            if given, writes all alignments with given extension (ex. ".wav" or "wav")
-
-        locality : float
-            Only recognizes against fingerprints in given width. In seconds
+        Args
+            directory_path (str): String of directory for alignment
+            destination_path (str): String of path to write alignments to
+            write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
+            locality (float): Only recognizes against fingerprints in given width. In seconds
 
         Returns
         -------
-        files_shifts : dict{float}
-            dict of file name with shift as value
+            files_shifts (dict{float}): dict of file name with shift as value
         """
 
         self.file_names, temp_file_names = [], self.file_names
@@ -826,14 +838,10 @@ class Audalign:
         """
         Writes files to destination_path with specified shift
 
-        Parameters
-        ----------
-        files_shifts : dict{float}
-            dict with file path as key and shift as value
-        destination_path : str
-            folder to write file to
-        names_and_paths : dict{str}
-            dict with name as key and path as value
+        Args
+            files_shifts (dict{float}): dict with file path as key and shift as value
+            destination_path (str): folder to write file to
+            names_and_paths (dict{str}): dict with name as key and path as value
         """
         filehandler.shift_write_files(
             files_shifts, destination_path, names_and_paths, write_extension
@@ -846,30 +854,30 @@ class Audalign:
         """
         Writes file to destination_path with specified shift in seconds
 
-        Parameters
-        ----------
-        file_path : str
-            file path of file to shift
-        destination_path : str
-            where to write file to and file name
-        offset_seconds : float
-            how many seconds to shift, can't be negative
+        Args
+            file_path (str): file path of file to shift
+            destination_path (str): where to write file to and file name
+            offset_seconds (float): how many seconds to shift, can't be negative
         """
         filehandler.shift_write_file(file_path, destination_path, offset_seconds)
 
     @staticmethod
-    def convert_audio_file(file_path: str, destination_path: str):
+    def convert_audio_file(
+        file_path: str,
+        destination_path: str,
+        start_end: tuple(float, float) = None,
+    ):
         """
         Convert audio file to type specified in destination path
 
-        Parameters
-        ----------
-        file_path : str
-            file path of file to shift
-        destination_path : str
-            where to write file to and file name
+        Args
+            file_path (str): file path of file to shift
+            destination_path (str): where to write file to and file name
+            start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
         """
-        filehandler.convert_audio_file(file_path, destination_path)
+        filehandler.read(
+            filename=file_path, wrdestination=destination_path, start_end=start_end
+        )
 
     @staticmethod
     def remove_noise_file(
@@ -952,25 +960,23 @@ class Audalign:
 def _fingerprint_worker(
     file_path: str,
     hash_style="panako_mod",
+    start_end: tuple(float, float) = None,
     plot=False,
     accuracy=2,
 ) -> Tuple:
     """
     Runs the file through the fingerprinter and returns file_name and hashes
 
-    Parameters
-    ----------
-    file_path : str
-        file_path to be fingerprinted
-    plot : bool
-        displays the plot of the peaks if true
-    amp_min : int
-        minimum amplitude to be considered a peak
+    Args
+        file_path (str): file_path to be fingerprinted
+        hash_style (str): which hash style to use : ['base','panako_mod','panako', 'base_three']
+        start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
+        plot (bool): displays the plot of the peaks if true
+        accuracy (int): which accuracy level 1-4
 
     Returns
     -------
-    file_name : str, hashes : dict{str: [int]}
-        file_name and hash dictionary
+        file_name (str, hashes : dict{str: [int]}): file_name and hash dictionary
     """
 
     Audalign._set_accuracy(accuracy)
@@ -978,7 +984,7 @@ def _fingerprint_worker(
     file_name = os.path.basename(file_path)
 
     try:
-        channel, _ = filehandler.read(file_path)
+        channel, _ = filehandler.read(file_path, start_end=start_end)
     except FileNotFoundError:
         print(f'"{file_path}" not found')
         return None, None
