@@ -5,15 +5,12 @@ def find_most_matches(total_alignment, strength_stat: str = "confidence"):
     """
     Finds the file that matches with the most files and has the most matches, returns its matches and shifts
 
-    Parameters
-    ----------
-    total_alignment : dict{dict{}}
-        dict of recognize results
+    Args
+        total_alignment (dict{dict{}}): dict of recognize results
 
     Returns
     -------
-    files_shifts : dict{float}
-        dict with file names as keys and shift amounts as values
+        files_shifts (dict{float}): dict with file names as keys and shift amounts as values
     """
 
     most_matches = 0
@@ -64,17 +61,13 @@ def find_matches_not_in_file_shifts(total_alignment, files_shifts):
     """
     Checks to find files that match with files that match with most matched file and update files_shifts
 
-    Parameters
-    ----------
-    total_alignment : dict{dict{}}
-        dict of recognize results
-    files_shifts : dict{float}
-        dict with file names as keys and shift amounts as values
+    Args
+        total_alignment (dict{dict{}}): dict of recognize results
+        files_shifts (dict{float}): dict with file names as keys and shift amounts as values
 
     Returns
     -------
-    files_shifts : dict{float}
-        dict with file names as keys and shift amounts as values (min of zero now)
+        files_shifts (dict{float}): dict with file names as keys and shift amounts as values (min of zero now)
     """
 
     nmatch_wt_most = {}

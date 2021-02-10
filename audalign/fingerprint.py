@@ -85,18 +85,14 @@ def fingerprint(
     FFT the channel, log transform output, find local maxima, then return
     locally sensitive hashes.
 
-    Parameters
-    ----------
-    channel_samples : array[int]
-        audio file data
-    fs : int
-        Sample Rate
+    Args
+        channel_samples (array[int]): audio file data
+        fs (int): Sample Rate
 
 
     Returns
     -------
-    hashes : dict{str: [int]}
-        hashes of the form dict{hash: location}
+        hashes (dict{str: [int]}): hashes of the form dict{hash: location}
     """
     # FFT the signal and extract frequency components
     arr2D = mlab.specgram(

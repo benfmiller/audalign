@@ -17,19 +17,13 @@ def find_files(path, extensions=["*"]):
     """
     Yields all files with given extension in path and all subdirectories
 
-    Parameters
-    ----------
-    path : str
-        path to folder
-    extensions : list[str]
-        list of all extensions to include
+    Args
+        path (str): path to folder
+        extensions (list[str]): list of all extensions to include
 
     Yields
-    ------
-    p : str
-        file path
-    extension : str
-        extension of file
+        p (str): file path
+        extension (str): extension of file
     """
 
     for dirpath, dirnames, files in os.walk(path):
@@ -52,19 +46,14 @@ def read(filename: str, wrdestination=None):
     """
     Reads any file supported by pydub (ffmpeg) and returns a numpy array and the bit depth
 
-    Parameters
-    ----------
-    filename : str
-        path to audio file
-    wrdestination : str
-        writes the audio file after processing
+    Args
+        filename (str): path to audio file
+        wrdestination (str): writes the audio file after processing
 
     Returns
     -------
-    channel : array[int]
-        array of audio data
-    frame_rate : int
-        returns the bit depth
+        channel (array[int]): array of audio data
+        frame_rate (int): returns the bit depth
     """
 
     audiofile = create_audiosegment(filename)
