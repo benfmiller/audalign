@@ -3,7 +3,13 @@ import time
 import os
 
 
-def recognize(audalign_object, file_path, filter_matches, locality):
+def recognize(
+    audalign_object,
+    file_path: str,
+    filter_matches: int,
+    locality: float,
+    start_end: tuple,
+):
     """
     Recognizes given file against already fingerprinted files
 
@@ -33,7 +39,7 @@ def recognize(audalign_object, file_path, filter_matches, locality):
         )
 
     t = time.time()
-    matches = find_matches(audalign_object, file_path)
+    matches = find_matches(audalign_object, file_path, start_end=start_end)
     if locality:
         rough_match = locality_align_matches(matches, locality)
     else:
@@ -61,7 +67,7 @@ def recognize(audalign_object, file_path, filter_matches, locality):
     return None
 
 
-def find_matches(audalign_object, file_path):
+def find_matches(audalign_object, file_path, start_end):
     """
     fingerprints target file, then finds every occurence of exact same hashes in already
     fingerprinted files
@@ -79,7 +85,7 @@ def find_matches(audalign_object, file_path):
     target_mapper = {}
 
     if file_name not in audalign_object.file_names:
-        fingerprints = audalign_object._fingerprint_file(file_path)
+        fingerprints = audalign_object._fingerprint_file(file_path, start_end=start_end)
         target_mapper = fingerprints[1]
     else:
         for audio_file in audalign_object.fingerprinted_files:
