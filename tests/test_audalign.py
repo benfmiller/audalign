@@ -159,3 +159,41 @@ class TestFingerprinting:
         ada_single.fingerprint_directory("test_audio/testers")
         assert ada_single.total_fingerprints > 0
         assert len(ada_single.fingerprinted_files) > 0
+
+
+class TestStartEnd:
+    test_file = "test_audio/testers/test.mp3"
+    if not os.path.isdir("test_audio/convert"):
+        os.mkdir("test_audio/convert")
+
+    ada = ad.Audalign()
+
+    def test_start(self):
+        self.ada.convert_audio_file(
+            self.test_file, "test_audio/convert/test_temp.mp3", start_end=(0, 0)
+        )
+        self.ada.convert_audio_file(
+            self.test_file, "test_audio/convert/test_temp.mp3", start_end=(10, 0)
+        )
+        self.ada.convert_audio_file(
+            self.test_file, "test_audio/convert/test_temp.mp3", start_end=(1000, 0)
+        )
+
+    def test_end(self):
+        self.ada.convert_audio_file(
+            self.test_file, "test_audio/convert/test_temp.mp3", start_end=(0, 10)
+        )
+        self.ada.convert_audio_file(
+            self.test_file, "test_audio/convert/test_temp.mp3", start_end=(0, -10)
+        )
+        self.ada.convert_audio_file(
+            self.test_file, "test_audio/convert/test_temp.mp3", start_end=(0, 1000)
+        )
+
+    def test_both(self):
+        self.ada.convert_audio_file(
+            self.test_file, "test_audio/convert/test_temp.mp3", start_end=(5, 10)
+        )
+        self.ada.convert_audio_file(
+            self.test_file, "test_audio/convert/test_temp.mp3", start_end=(5, -10)
+        )
