@@ -40,6 +40,41 @@ def create_audiosegment(filepath: str, start_end: tuple = None):
     audiofile = audiofile.set_sample_width(2)
     audiofile = audiofile.set_channels(1)
     audiofile = audiofile.normalize()
+    if start_end is not None:
+
+        # Does the preprocessing and bounds checking
+        start_end = list(start_end)
+        start_end = [start_end[0] * 1000, start_end[1] * 1000]
+        if start_end[1] > 0 and start_end[1] < start_end[0]:
+            raise ValueError  # if end is greater than 0, end must be greater than start
+        if start_end[0] < 0:
+            raise ValueError  # Start must be >= 0
+        if start_end[0] > len(audiofile):
+            start_end[0] = len(audiofile)
+        if start_end[1] > len(audiofile):
+            start_end[1] = len(audiofile)
+        if start_end[1] * -1 > len(audiofile):
+            start_end[1] = len(audiofile) * -1
+
+        # Does the silencing for start
+        start_silence = AudioSegment.silent(
+            duration=(start_end[0]), frame_rate=DEFAULT_FS
+        )
+        audiofile = start_silence + audiofile[start_end[0] :]
+
+        # Does the silencing for end
+        if start_end[1] > 0:
+            end_silence = AudioSegment.silent(
+                duration=len(audiofile) - (start_end[1]), frame_rate=DEFAULT_FS
+            )
+            audiofile = audiofile[: start_end[1]] + end_silence
+        elif start_end[1] < 0:
+            end_silence = AudioSegment.silent(
+                duration=(start_end[1]) * -1, frame_rate=DEFAULT_FS
+            )
+            start_end[1] += len(audiofile)
+            audiofile = audiofile[: start_end[1]] + end_silence
+
     return audiofile
 
 
