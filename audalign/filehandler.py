@@ -34,7 +34,6 @@ def find_files(path, extensions=["*"]):
 
 
 def create_audiosegment(filepath: str, start_end: tuple = None):
-    # TODO start end
     audiofile = AudioSegment.from_file(filepath)
     audiofile = audiofile.set_frame_rate(DEFAULT_FS)
     audiofile = audiofile.set_sample_width(2)
@@ -242,7 +241,7 @@ def _remove_noise(
 
         file_name = os.path.basename(file_path)
         destination_name = os.path.join(destination_directory, file_name)
-        if os.path.splitext(destination_name)[1] in cant_write_ext:
+        if os.path.splitext(destination_name)[1].lower() in cant_write_ext:
             destination_name = os.path.splitext(destination_name)[0] + ".wav"
 
         print(f'Noise reduced for "{file_path}" writing to "{destination_name}"')
