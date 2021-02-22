@@ -129,7 +129,10 @@ def get_2D_peaks(arr2D, plot=False):
     #  http://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.iterate_structure.html#scipy.ndimage.iterate_structure
     struct = generate_binary_structure(
         2, 1
-    )  # was 1, but this works just as well and faster apparently, test 2! Test!
+    )  # 2 is faster here for connectivity, mainly saves time in maximum filter function.
+    # 2 results in slightly less fingerprints (4/5?), which specifically could help with false detections in noise.
+    # It would also lessen fingerprints at edges of sound events.
+    # I think it's more important to keep those edges of sound events than worry about noise here or speed
     neighborhood = iterate_structure(struct, peak_neighborhood_size)
 
     # find local maxima using our filter shape
@@ -139,7 +142,6 @@ def get_2D_peaks(arr2D, plot=False):
         background, structure=neighborhood, border_value=1
     )
 
-    # look at dejavu for speed increase
     # Boolean mask of arr2D with True at peaks (Fixed deprecated boolean operator by changing '-' to '^')
     detected_peaks = local_max ^ eroded_background
 
