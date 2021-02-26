@@ -202,7 +202,7 @@ def locality_align_matches(matches: list, locality: int):
                 (samp_diff, conf_loc) for samp_diff, conf_loc in temp_file_dict.items()
             ]
             temp_file_list = sorted(
-                temp_file_list, key=lambda x: x[1][0]
+                temp_file_list, key=lambda x: x[1][0], reverse=True
             )  # sort by confidence
             temp_file_dict = {}
             for i in range(30):
@@ -242,8 +242,8 @@ def find_loc_matches(matches_list: list, locality: int):
     while True:  # end_window <= len(a_matches):
 
         loc_tup = (
-            (matches_list[0][1] - matches_list[-1][1]) // 2,
-            (a_matches[start_window][2] - a_matches[end_window - 1][2]) // 2,
+            (matches_list[-1][1] - matches_list[0][1]) // 2,
+            (a_matches[end_window - 1][2] - a_matches[start_window][2]) // 2,
         )
         temp_file_dict[loc_tup] = {}
         for sample_difference, t_offset, a_offset in a_matches[start_window:end_window]:
@@ -339,28 +339,32 @@ def process_results(
             complete_match_info[file_name][audalign_object.OFFSET_SECS].append(nseconds)
 
         # Calculate locality tuples seconds
+        new_offset_loc = []
         complete_match_info[file_name][audalign_object.LOCALITY_SECS] = []
         for instance in range(len(offset_loc)):
             if locality:
+                new_offset_loc += [[]]
                 for location in range(len(offset_loc[instance])):
-                    offset_loc[instance][location] = (
-                        round(
-                            float(offset_loc[instance][location][0])
-                            / fingerprint.DEFAULT_FS
-                            * fingerprint.DEFAULT_WINDOW_SIZE
-                            * fingerprint.DEFAULT_OVERLAP_RATIO,
-                            5,
-                        ),
-                        round(
-                            float(offset_loc[instance][location][1])
-                            / fingerprint.DEFAULT_FS
-                            * fingerprint.DEFAULT_WINDOW_SIZE
-                            * fingerprint.DEFAULT_OVERLAP_RATIO,
-                            5,
-                        ),
-                    )
+                    new_offset_loc[instance] += [
+                        (
+                            round(
+                                float(offset_loc[instance][location][0])
+                                / fingerprint.DEFAULT_FS
+                                * fingerprint.DEFAULT_WINDOW_SIZE
+                                * fingerprint.DEFAULT_OVERLAP_RATIO,
+                                5,
+                            ),
+                            round(
+                                float(offset_loc[instance][location][1])
+                                / fingerprint.DEFAULT_FS
+                                * fingerprint.DEFAULT_WINDOW_SIZE
+                                * fingerprint.DEFAULT_OVERLAP_RATIO,
+                                5,
+                            ),
+                        )
+                    ]
             complete_match_info[file_name][audalign_object.LOCALITY_SECS].append(
-                offset_loc[instance]
+                new_offset_loc[instance]
             )
 
     if len(complete_match_info) == 0 and filter_set == False:
