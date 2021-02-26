@@ -17,19 +17,13 @@ def find_files(path, extensions=["*"]):
     """
     Yields all files with given extension in path and all subdirectories
 
-    Parameters
-    ----------
-    path : str
-        path to folder
-    extensions : list[str]
-        list of all extensions to include
+    Args
+        path (str): path to folder
+        extensions (list[str]): list of all extensions to include
 
     Yields
-    ------
-    p : str
-        file path
-    extension : str
-        extension of file
+        p (str): file path
+        extension (str): extension of file
     """
 
     for dirpath, dirnames, files in os.walk(path):
@@ -39,39 +33,69 @@ def find_files(path, extensions=["*"]):
                 yield (p, extension)
 
 
-def create_audiosegment(filepath: str):
+def create_audiosegment(filepath: str, start_end: tuple = None):
     audiofile = AudioSegment.from_file(filepath)
     audiofile = audiofile.set_frame_rate(DEFAULT_FS)
     audiofile = audiofile.set_sample_width(2)
     audiofile = audiofile.set_channels(1)
     audiofile = audiofile.normalize()
+    if start_end is not None:
+
+        # Does the preprocessing and bounds checking
+        start_end = list(start_end)
+        start_end = [start_end[0] * 1000, start_end[1] * 1000]
+        if start_end[1] > 0 and start_end[1] < start_end[0]:
+            raise ValueError  # if end is greater than 0, end must be greater than start
+        if start_end[0] < 0:
+            raise ValueError  # Start must be >= 0
+        if start_end[0] > len(audiofile):
+            start_end[0] = len(audiofile)
+        if start_end[1] > len(audiofile):
+            start_end[1] = len(audiofile)
+        if start_end[1] * -1 > len(audiofile):
+            start_end[1] = len(audiofile) * -1
+
+        # Does the silencing for start
+        start_silence = AudioSegment.silent(
+            duration=(start_end[0]), frame_rate=DEFAULT_FS
+        )
+        audiofile = start_silence + audiofile[start_end[0] :]
+
+        # Does the silencing for end
+        if start_end[1] > 0:
+            end_silence = AudioSegment.silent(
+                duration=len(audiofile) - (start_end[1]), frame_rate=DEFAULT_FS
+            )
+            audiofile = audiofile[: start_end[1]] + end_silence
+        elif start_end[1] < 0:
+            end_silence = AudioSegment.silent(
+                duration=(start_end[1]) * -1, frame_rate=DEFAULT_FS
+            )
+            start_end[1] += len(audiofile)
+            audiofile = audiofile[: start_end[1]] + end_silence
+
     return audiofile
 
 
-def read(filename: str, wrdestination=None):
+def read(filename: str, wrdestination=None, start_end: tuple = None):
     """
     Reads any file supported by pydub (ffmpeg) and returns a numpy array and the bit depth
 
-    Parameters
-    ----------
-    filename : str
-        path to audio file
-    wrdestination : str
-        writes the audio file after processing
+    Args
+        filename (str): path to audio file
+        wrdestination (str): writes the audio file after processing
 
     Returns
     -------
-    channel : array[int]
-        array of audio data
-    frame_rate : int
-        returns the bit depth
+        channel (array[int]): array of audio data
+        frame_rate (int): returns the bit depth
     """
 
-    audiofile = create_audiosegment(filename)
+    audiofile = create_audiosegment(filename, start_end=start_end)
     data = np.frombuffer(audiofile._data, np.int16)
     if wrdestination:
         with open(wrdestination, "wb") as file_place:
-            audiofile.export(file_place, format=os.path.splitext(file_place)[1][1:])
+            audiofile.export(file_place, format=os.path.splitext(wrdestination)[1][1:])
     return data, audiofile.frame_rate
 
 
@@ -217,7 +241,7 @@ def _remove_noise(
 
         file_name = os.path.basename(file_path)
         destination_name = os.path.join(destination_directory, file_name)
-        if os.path.splitext(destination_name)[1] in cant_write_ext:
+        if os.path.splitext(destination_name)[1].lower() in cant_write_ext:
             destination_name = os.path.splitext(destination_name)[0] + ".wav"
 
         print(f'Noise reduced for "{file_path}" writing to "{destination_name}"')
@@ -315,11 +339,5 @@ def shift_write_file(file_path, destination_path, offset_seconds):
     audiofile = create_audiosegment(file_path)
     audiofile = silence + audiofile
 
-    with open(destination_path, "wb") as file_place:
-        audiofile.export(file_place, format=os.path.splitext(destination_path)[1][1:])
-
-
-def convert_audio_file(file_path, destination_path):
-    audiofile = create_audiosegment(file_path)
     with open(destination_path, "wb") as file_place:
         audiofile.export(file_place, format=os.path.splitext(destination_path)[1][1:])
