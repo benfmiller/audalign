@@ -363,6 +363,8 @@ def process_results(
                             ),
                         )
                     ]
+            else:
+                new_offset_loc += [None]
             complete_match_info[file_name][audalign_object.LOCALITY_SECS].append(
                 new_offset_loc[instance]
             )
