@@ -3,21 +3,23 @@ import time
 import os
 
 
-def recognize(audalign_object, file_path, filter_matches, locality):
+def recognize(
+    audalign_object,
+    file_path: str,
+    filter_matches: int,
+    locality: float,
+    start_end: tuple,
+):
     """
     Recognizes given file against already fingerprinted files
 
-    Parameters
-    ----------
-    file_path : str
-        file path of target file
-    filter_matches : int
-        only returns information on match counts greater than filter_matches
+    Args
+        file_path (str): file path of target file
+        filter_matches (int): only returns information on match counts greater than filter_matches
 
     Returns
     -------
-    match_result : dict
-        dictionary containing match time and match info
+        match_result (dict): dictionary containing match time and match info
 
         or
 
@@ -37,7 +39,7 @@ def recognize(audalign_object, file_path, filter_matches, locality):
         )
 
     t = time.time()
-    matches = find_matches(audalign_object, file_path)
+    matches = find_matches(audalign_object, file_path, start_end=start_end)
     if locality:
         rough_match = locality_align_matches(matches, locality)
     else:
@@ -65,29 +67,25 @@ def recognize(audalign_object, file_path, filter_matches, locality):
     return None
 
 
-def find_matches(audalign_object, file_path):
+def find_matches(audalign_object, file_path, start_end):
     """
     fingerprints target file, then finds every occurence of exact same hashes in already
     fingerprinted files
 
-    Parameters
-    ----------
-    samples : array of decoded file
-        array of decoded file from filehandler.read
-    file_name : str
-        base name of target file
+    Args
+        samples (array of decoded file): array of decoded file from filehandler.read
+        file_name (str): base name of target file
 
     Returns
     -------
-    Matches: list[str, int, int, int]
-        list of all matches, file_name match, corresponding offset, target location, file_match offset
+        Matches(list[str, int, int, int]): list of all matches, file_name match, corresponding offset, target location, file_match offset
     """
     file_name = os.path.basename(file_path)
 
     target_mapper = {}
 
     if file_name not in audalign_object.file_names:
-        fingerprints = audalign_object._fingerprint_file(file_path)
+        fingerprints = audalign_object._fingerprint_file(file_path, start_end=start_end)
         target_mapper = fingerprints[1]
     else:
         for audio_file in audalign_object.fingerprinted_files:
@@ -116,15 +114,12 @@ def align_matches(matches: list):
     """
     takes matches from find_matches and converts it to a dictionary of counts per offset and file name
 
-    Parameters
-    ----------
-    matches : list[str, int]
-        list of matches from find_matches
+    Args
+        matches (list[str, int]): list of matches from find_matches
 
     Returns
     -------
-    sample_difference_counter : dict{str{int}}
-        of the form dict{file_name{number of matching offsets}}
+        sample_difference_counter (dict{str{int}}): of the form dict{file_name{number of matching offsets}}
     """
 
     print("Aligning matches")
@@ -207,7 +202,7 @@ def locality_align_matches(matches: list, locality: int):
                 (samp_diff, conf_loc) for samp_diff, conf_loc in temp_file_dict.items()
             ]
             temp_file_list = sorted(
-                temp_file_list, key=lambda x: x[1][0]
+                temp_file_list, key=lambda x: x[1][0], reverse=True
             )  # sort by confidence
             temp_file_dict = {}
             for i in range(30):
@@ -247,8 +242,8 @@ def find_loc_matches(matches_list: list, locality: int):
     while True:  # end_window <= len(a_matches):
 
         loc_tup = (
-            (matches_list[0][1] - matches_list[-1][1]) // 2,
-            (a_matches[start_window][2] - a_matches[end_window - 1][2]) // 2,
+            (matches_list[-1][1] - matches_list[0][1]) // 2,
+            (a_matches[end_window - 1][2] - a_matches[start_window][2]) // 2,
         )
         temp_file_dict[loc_tup] = {}
         for sample_difference, t_offset, a_offset in a_matches[start_window:end_window]:
@@ -283,21 +278,14 @@ def process_results(
     """
     Takes matches from align_matches, filters and orders them, returns dictionary of match info
 
-    Parameters
-    ----------
-    results : dict{str{int}}
-        of the form dict{file_name{number of matching offsets}}
-
-    filter_matches : int
-        cutout all matches equal to or less than in frequency, goes down if no matches found above filter
-
-    filter_set : bool
-        if the filter is manually set, doesn't lower filter if no results
+    Args
+        results (dict{str{int}}): of the form dict{file_name{number of matching offsets}}
+        filter_matches (int): cutout all matches equal to or less than in frequency, goes down if no matches found above filter
+        filter_set (bool): if the filter is manually set, doesn't lower filter if no results
 
     Returns
     -------
-    match_info : dict{dict{}}
-        dict of file_names with match info as values
+        match_info (dict{dict{}}): dict of file_names with match info as values
     """
 
     complete_match_info = {}
@@ -351,28 +339,34 @@ def process_results(
             complete_match_info[file_name][audalign_object.OFFSET_SECS].append(nseconds)
 
         # Calculate locality tuples seconds
+        new_offset_loc = []
         complete_match_info[file_name][audalign_object.LOCALITY_SECS] = []
         for instance in range(len(offset_loc)):
             if locality:
+                new_offset_loc += [[]]
                 for location in range(len(offset_loc[instance])):
-                    offset_loc[instance][location] = (
-                        round(
-                            float(offset_loc[instance][location][0])
-                            / fingerprint.DEFAULT_FS
-                            * fingerprint.DEFAULT_WINDOW_SIZE
-                            * fingerprint.DEFAULT_OVERLAP_RATIO,
-                            5,
-                        ),
-                        round(
-                            float(offset_loc[instance][location][1])
-                            / fingerprint.DEFAULT_FS
-                            * fingerprint.DEFAULT_WINDOW_SIZE
-                            * fingerprint.DEFAULT_OVERLAP_RATIO,
-                            5,
-                        ),
-                    )
+                    new_offset_loc[instance] += [
+                        (
+                            round(
+                                float(offset_loc[instance][location][0])
+                                / fingerprint.DEFAULT_FS
+                                * fingerprint.DEFAULT_WINDOW_SIZE
+                                * fingerprint.DEFAULT_OVERLAP_RATIO,
+                                5,
+                            ),
+                            round(
+                                float(offset_loc[instance][location][1])
+                                / fingerprint.DEFAULT_FS
+                                * fingerprint.DEFAULT_WINDOW_SIZE
+                                * fingerprint.DEFAULT_OVERLAP_RATIO,
+                                5,
+                            ),
+                        )
+                    ]
+            else:
+                new_offset_loc += [None]
             complete_match_info[file_name][audalign_object.LOCALITY_SECS].append(
-                offset_loc[instance]
+                new_offset_loc[instance]
             )
 
     if len(complete_match_info) == 0 and filter_set == False:
