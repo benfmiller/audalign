@@ -116,6 +116,7 @@ Returns dictionary match time and match info. Match info is a dictionary of each
 ## Other Functions
 
 ```python
+# wrapper for timsainb/noisereduce
 ada.remove_noise_file(
     "target/file",
     "5", # noise start in seconds
