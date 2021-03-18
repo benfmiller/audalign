@@ -1,5 +1,7 @@
 import audalign
 
+"""Alignment isn't quite accurate enough for this yet"""
+
 # def _create_audainstance()
 
 

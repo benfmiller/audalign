@@ -17,9 +17,9 @@ class Audalign:
     # Names that appear in match information
     CONFIDENCE = "confidence"
     MATCH_TIME = "match_time"
-    OFFSET_SAMPLES = "offset_samples"
+    OFFSET_SAMPLES = "offset_frames"
     OFFSET_SECS = "offset_seconds"
-    LOCALITY = "locality"
+    LOCALITY = "locality_frames"
     LOCALITY_SECS = "locality_seconds"
 
     def __init__(
