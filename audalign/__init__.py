@@ -442,6 +442,7 @@ class Audalign:
         start_end_target: tuple = None,
         start_end_against: tuple = None,
         filter_matches: int = 0,
+        sample_rate: int = fingerprint.DEFAULT_FS,
         plot: bool = False,
     ):
         correcognize.correcognize(
@@ -450,6 +451,7 @@ class Audalign:
             start_end_target=start_end_target,
             start_end_against=start_end_against,
             filter_matches=filter_matches,
+            sample_rate=sample_rate,
             plot=plot,
         )
         # TODO
@@ -517,6 +519,7 @@ class Audalign:
         against_directory: str,
         start_end: tuple = None,
         filter_matches: int = 0,
+        sample_rate: int = fingerprint.DEFAULT_FS,
         plot: bool = False,
     ):
         correcognize.correcognize_directory(
@@ -524,6 +527,7 @@ class Audalign:
             against_directory,
             start_end=start_end,
             filter_matches=filter_matches,
+            sample_rate=sample_rate,
             plot=plot,
         )
         # TODO
@@ -656,6 +660,7 @@ class Audalign:
         horiz_scaling: float = 1.0,
         img_width: float = 1.0,
         calc_mse: bool = False,
+        cor_sample_rate: int = fingerprint.DEFAULT_FS,
     ):
         """matches and relative offsets for all files in directory_path using only target file,
         aligns them, and writes them to destination_path if given. Uses fingerprinting by defualt,
@@ -677,6 +682,7 @@ class Audalign:
             horiz_scaling (float): scales horizontally to speed up calculations. Smaller numbers have smaller images. Affects alignment granularity.
             img_width (float, optional): width of image comparison for visual recognition
             calc_mse (bool): also calculates mse for each shift if true. If false, uses default mse 20000000
+            cor_sample_rate (int): optionally change the sample rate if using correlation
 
         Returns:
             dict: dict of file name with shift as value along with match info
@@ -738,6 +744,7 @@ class Audalign:
                     against_directory=directory_path,
                     start_end=start_end,
                     filter_matches=filter_matches,
+                    sample_rate=cor_sample_rate,
                 )  # TODO
             else:
                 raise NameError(
@@ -805,6 +812,7 @@ class Audalign:
         technique: str = "fingerprints",
         filter_matches: int = 1,
         locality: float = None,
+        cor_sample_rate: int = fingerprint.DEFAULT_FS,
     ):
         """
         Finds matches and relative offsets for all files in directory_path, aligns them, and writes them to destination_path
@@ -861,6 +869,7 @@ class Audalign:
                             file_path,
                             directory_path,
                             filter_matches=filter_matches,
+                            sample_rate=cor_sample_rate,
                         )
                     file_names_and_paths[name] = file_path
                     total_alignment[name] = alignment
