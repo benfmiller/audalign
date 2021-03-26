@@ -13,7 +13,10 @@ def correcognize(
     plot: bool = False,
 ):
 
-    target_array = read(target_file_path)
+    target_array, _ = read(target_file_path)
+    against_array, _ = read(against_file_path)
+
+    correlation = against_array
 
     if plot:
         plot_cor(
@@ -68,4 +71,7 @@ def plot_cor(
     plt.title(f"Correlation")
     plt.xlabel("Sample Index")
     plt.ylabel("Offset")
+
+    fig.tight_layout()
+
     plt.show()
