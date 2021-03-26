@@ -33,9 +33,9 @@ def find_files(path, extensions=["*"]):
                 yield (p, extension)
 
 
-def create_audiosegment(filepath: str, start_end: tuple = None):
+def create_audiosegment(filepath: str, start_end: tuple = None, sample_rate=DEFAULT_FS):
     audiofile = AudioSegment.from_file(filepath)
-    audiofile = audiofile.set_frame_rate(DEFAULT_FS)
+    audiofile = audiofile.set_frame_rate(sample_rate)
     audiofile = audiofile.set_sample_width(2)
     audiofile = audiofile.set_channels(1)
     audiofile = audiofile.normalize()
@@ -57,19 +57,19 @@ def create_audiosegment(filepath: str, start_end: tuple = None):
 
         # Does the silencing for start
         start_silence = AudioSegment.silent(
-            duration=(start_end[0]), frame_rate=DEFAULT_FS
+            duration=(start_end[0]), frame_rate=sample_rate
         )
         audiofile = start_silence + audiofile[start_end[0] :]
 
         # Does the silencing for end
         if start_end[1] > 0:
             end_silence = AudioSegment.silent(
-                duration=len(audiofile) - (start_end[1]), frame_rate=DEFAULT_FS
+                duration=len(audiofile) - (start_end[1]), frame_rate=sample_rate
             )
             audiofile = audiofile[: start_end[1]] + end_silence
         elif start_end[1] < 0:
             end_silence = AudioSegment.silent(
-                duration=(start_end[1]) * -1, frame_rate=DEFAULT_FS
+                duration=(start_end[1]) * -1, frame_rate=sample_rate
             )
             start_end[1] += len(audiofile)
             audiofile = audiofile[: start_end[1]] + end_silence
@@ -96,7 +96,12 @@ def get_audio_files_directory(directory_path: str) -> list:
     return aud_list
 
 
-def read(filename: str, wrdestination=None, start_end: tuple = None):
+def read(
+    filename: str,
+    wrdestination=None,
+    start_end: tuple = None,
+    sample_rate=DEFAULT_FS,
+):
     """
     Reads any file supported by pydub (ffmpeg) and returns a numpy array and the bit depth
 
@@ -110,7 +115,9 @@ def read(filename: str, wrdestination=None, start_end: tuple = None):
         frame_rate (int): returns the bit depth
     """
 
-    audiofile = create_audiosegment(filename, start_end=start_end)
+    audiofile = create_audiosegment(
+        filename, start_end=start_end, sample_rate=sample_rate
+    )
     data = np.frombuffer(audiofile._data, np.int16)
     if wrdestination:
         with open(wrdestination, "wb") as file_place:
