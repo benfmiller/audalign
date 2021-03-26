@@ -66,6 +66,22 @@ class TestRecognize:
         )
         assert results
 
+    @pytest.mark.skip(reason="Not implemented yet")
+    def test_correcognize(self):
+        results = self.ada.correcognize(
+            test_file,
+            test_file,
+        )
+        assert results
+
+    @pytest.mark.skip(reason="Not implemented yet")
+    def test_correcognize_directory(self):
+        results = self.ada.correcognize_directory(
+            test_file,
+            "test_audio/testers/",
+        )
+        assert results
+
 
 class TestAlign:
 
@@ -74,11 +90,24 @@ class TestAlign:
         os.mkdir("test_alignment")
 
     @pytest.mark.smoke
-    def test_align(self):
+    def test_align_fingerprint(self):
         result = self.ada.align("test_audio/test_shifts", "test_alignment")
         assert result
         result = self.ada.align(
             "test_audio/test_shifts", "test_alignment", write_extension=".wav"
+        )
+        assert result
+
+    @pytest.mark.skip(reason="Not implemented yet")
+    def test_align_cor(self):
+        result = self.ada.align(
+            "test_audio/test_shifts", "test_alignment", technique="correlation"
+        )
+        assert result
+        result = self.ada.align(
+            "test_audio/test_shifts",
+            "test_alignment",
+            filter_matches=0.5,  # might have to adjust this
         )
         assert result
 
@@ -100,3 +129,14 @@ class TestAlign:
             volume_threshold=215,
         )
         assert result
+
+    @pytest.mark.skip(reason="Not implemented yet")
+    def test_target_align_cor(self):
+        result = self.ada.target_align(
+            "test_audio/test_shifts/Eigen-song-base.mp3",
+            "test_audio/test_shifts",
+            destination_path="test_alignment",
+            technique="correlation",
+        )
+        assert result
+        # TODO
