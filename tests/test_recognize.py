@@ -95,7 +95,7 @@ class TestAlign:
             "test_audio/test_shifts/Eigen-song-base.mp3",
             "test_audio/test_shifts",
             destination_path="test_alignment",
-            use_fingerprints=False,
+            technique="visual",
             img_width=0.5,
             volume_threshold=215,
         )

@@ -77,6 +77,25 @@ def create_audiosegment(filepath: str, start_end: tuple = None):
     return audiofile
 
 
+def get_audio_files_directory(directory_path: str) -> list:
+    """returns a list of the file paths in directory that are audio
+
+    Args:
+        directory_path (str): string of filepath
+
+    Returns:
+        list: of all paths in file that are audio
+    """
+    aud_list = []
+    for file_path, _ in find_files(directory_path):
+        try:
+            AudioSegment.from_file(file_path)
+            aud_list += file_path
+        except CouldntDecodeError:
+            pass  # Do nothing
+    return aud_list
+
+
 def read(filename: str, wrdestination=None, start_end: tuple = None):
     """
     Reads any file supported by pydub (ffmpeg) and returns a numpy array and the bit depth
