@@ -151,7 +151,20 @@ class Audalign:
         Args:
             threshold ([int]): [threshold]
         """
-        fingerprint.threshold = threshold
+        self.freq_threshold = threshold
+        self._set_freq_threshold(freq_threshold=threshold)
+
+    @staticmethod
+    def _set_freq_threshold(freq_threshold: int) -> None:
+        fingerprint.threshold = freq_threshold
+
+    def get_freq_threshold(self):
+        """Returns the frequency threshold
+
+        Returns:
+            [int]: frequency threshold
+        """
+        return self.freq_threshold
 
     def set_multiprocessing(self, true_or_false: bool) -> None:
         """Sets to true for on or false for off
@@ -291,6 +304,7 @@ class Audalign:
             hash_style=self.hash_style,
             plot=plot,
             accuracy=self.accuracy,
+            freq_threshold=self.freq_threshold,
         )
 
         if self.multiprocessing == True:
@@ -389,6 +403,7 @@ class Audalign:
             start_end=start_end,
             plot=plot,
             accuracy=self.accuracy,
+            freq_threshold=self.freq_threshold,
         )
         file_name = set_file_name or file_name
         return [file_name, hashes]
@@ -1039,6 +1054,7 @@ def _fingerprint_worker(
     start_end: tuple = None,
     plot=False,
     accuracy=2,
+    freq_threshold=200,
 ) -> Tuple:
     """
     Runs the file through the fingerprinter and returns file_name and hashes
@@ -1049,6 +1065,7 @@ def _fingerprint_worker(
         start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
         plot (bool): displays the plot of the peaks if true
         accuracy (int): which accuracy level 1-4
+        freq_threshold (int): what the freq threshold is in specgram bins
 
     Returns
     -------
@@ -1056,6 +1073,7 @@ def _fingerprint_worker(
     """
 
     Audalign._set_accuracy(accuracy)
+    Audalign._set_freq_threshold(freq_threshold)
 
     file_name = os.path.basename(file_path)
 
