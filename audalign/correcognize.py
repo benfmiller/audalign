@@ -13,18 +13,23 @@ def correcognize(
     sample_rate: int = fingerprint.DEFAULT_FS,
     plot: bool = False,
 ):
+    assert (
+        sample_rate < 200000
+    )  # I accidentally used 441000 once... not good, big crash
 
-    target_array, _ = read(target_file_path, sample_rate=sample_rate)
-    against_array, _ = read(against_file_path, sample_rate=sample_rate)
+    target_array, _ = read(
+        target_file_path, start_end=start_end_target, sample_rate=sample_rate
+    )
+    against_array, _ = read(
+        against_file_path, start_end=start_end_against, sample_rate=sample_rate
+    )
 
-    # target_array = signal.butter(fingerprint.threshold)
-    # correlation = signal.convolve(target_array, against_array)
-    # correlation = signal.correlate(target_array, against_array)
-    correlation = target_array
-    # signal.coh
-    # plt.xcorr(target_array, against_array)
-    # plt.show()
-
+    sos = signal.butter(10, fingerprint.threshold, "hp", fs=sample_rate, output="sos")
+    # sos = signal.butter(10, 0.125, "hp", fs=sample_rate, output="sos")
+    target_array = signal.sosfilt(sos, target_array)
+    against_array = signal.sosfilt(sos, against_array)
+    correlation = signal.correlate(target_array, against_array)
+    # correlation = target_array
     if plot:
         plot_cor(
             array_a=target_array,
@@ -49,6 +54,29 @@ def correcognize_directory(
     ...
 
 
+def process_results():
+    # xin, fs = sf.read('recording1.wav')
+    # frame_len = int(fs*5*1e-3)
+    # dim_x =xin.shape
+    # M = dim_x[0] # No. of rows
+    # N= dim_x[1] # No. of col
+    # sample_lim = frame_len*100
+    # tau = [0]
+    # M_lim = 20000 # for testing as processing takes time
+    # for i in range(1,N):
+    #     c = np.correlate(xin[0:M_lim,0],xin[0:M_lim,i],"full")
+    #     maxlags = M_lim-1
+    #     c = c[M_lim -1 -maxlags: M_lim + maxlags]
+    #     Rmax_pos = np.argmax(c)
+    #     pos = Rmax_pos-M_lim+1
+    #     tau.append(pos)
+    # print(tau)
+    ...
+
+
+# ---------------------------------------------------------------------------------
+
+
 def plot_cor(
     array_a,
     array_b,
@@ -65,7 +93,6 @@ def plot_cor(
     plt.plot(array_a)
     plt.xlabel("Sample Index")
     plt.ylabel("Amplitude")
-    # plt.gca().invert_yaxis()
     if arr_a_title:
         plt.title(arr_a_title)
 
@@ -82,7 +109,6 @@ def plot_cor(
     plt.plot(array_b)
     plt.xlabel("Sample Index")
     plt.ylabel("Amplitude")
-    # plt.gca().invert_yaxis()
     if arr_b_title:
         plt.title(arr_b_title)
 
