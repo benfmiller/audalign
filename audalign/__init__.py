@@ -456,7 +456,7 @@ class Audalign:
         against_file_path: str,
         start_end_target: tuple = None,
         start_end_against: tuple = None,
-        filter_matches: int = 0,
+        filter_matches: float = 0,
         sample_rate: int = fingerprint.DEFAULT_FS,
         plot: bool = False,
     ):
@@ -533,7 +533,7 @@ class Audalign:
         target_file_path: str,
         against_directory: str,
         start_end: tuple = None,
-        filter_matches: int = 0,
+        filter_matches: float = 0,
         sample_rate: int = fingerprint.DEFAULT_FS,
         plot: bool = False,
     ):
@@ -667,7 +667,7 @@ class Audalign:
         write_extension: str = None,
         technique: str = "fingerprints",
         alternate_strength_stat: str = None,
-        filter_matches: int = 1,
+        filter_matches: float = None,
         locality: float = None,
         volume_threshold: float = 216,
         volume_floor: float = 10.0,
@@ -689,7 +689,7 @@ class Audalign:
             write_extension (str, optional): audio file format to write to. Defaults to None.
             technique (str, optional): options are "fingerprints", "visual", "correlation"
             alternate_strength_stat (str, optional): confidence for fingerprints, ssim for visual, mse or count also work for visual. Defaults to None.
-            filter_matches (int, optional): filter matches level for fingerprinting. Defaults to 1.
+            filter_matches (int, float, optional): filter matches level for fingerprinting. Defaults to 1.
             locality (float, optional): In seconds for fingerprints, only matches files within given window sizes
             volume_threshold (float, optional): volume threshold for visual recognition. Defaults to 216.
             volume_floor (float): ignores volume levels below floow.
@@ -718,6 +718,9 @@ class Audalign:
             file_names_and_paths = {}
 
             if technique == "fingerprints":
+
+                if filter_matches is None:
+                    filter_matches = 1
 
                 if start_end is not None:
                     self.fingerprint_file(target_file, start_end=start_end)
@@ -754,6 +757,8 @@ class Audalign:
                     calc_mse=calc_mse,
                 )
             elif technique == "correlation":
+                if filter_matches is None:
+                    filter_matches = 0
                 alignment = self.correcognize_directory(
                     target_file_path=target_file,
                     against_directory=directory_path,
@@ -825,7 +830,7 @@ class Audalign:
         destination_path: str = None,
         write_extension: str = None,
         technique: str = "fingerprints",
-        filter_matches: int = 1,
+        filter_matches: float = None,
         locality: float = None,
         cor_sample_rate: int = fingerprint.DEFAULT_FS,
     ):
@@ -859,8 +864,12 @@ class Audalign:
                     os.makedirs(destination_path)
 
             if technique == "fingerprints":
+                if filter_matches is None:
+                    filter_matches = 1
                 self.fingerprint_directory(directory_path)
             elif technique == "correlation":
+                if filter_matches is None:
+                    filter_matches = 0
                 self.file_names = filehandler.get_audio_files_directory(directory_path)
             else:
                 raise NameError(
