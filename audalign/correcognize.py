@@ -1,5 +1,7 @@
 import audalign.fingerprint as fingerprint
-from audalign.filehandler import read, find_files
+from audalign.filehandler import read
+import time
+import os
 import scipy.signal as signal
 import matplotlib.pyplot as plt
 
@@ -9,13 +11,15 @@ def correcognize(
     against_file_path: str,
     start_end_target: tuple = None,
     start_end_against: tuple = None,
-    filter_matches: int = 0,
+    filter_matches: float = 0,
     sample_rate: int = fingerprint.DEFAULT_FS,
     plot: bool = False,
 ):
     assert (
         sample_rate < 200000
     )  # I accidentally used 441000 once... not good, big crash
+
+    t = time.time()
 
     target_array, _ = read(
         target_file_path, start_end=start_end_target, sample_rate=sample_rate
@@ -30,6 +34,7 @@ def correcognize(
     against_array = signal.sosfilt(sos, against_array)
     correlation = signal.correlate(target_array, against_array)
     # correlation = target_array
+
     if plot:
         plot_cor(
             array_a=target_array,
@@ -39,7 +44,20 @@ def correcognize(
             arr_a_title=target_file_path,
             arr_b_title=against_file_path,
         )
-    ...
+
+    file_match = process_results(
+        [correlation], os.path.basename(against_file_path), filter_matches
+    )
+
+    t = time.time() - t
+
+    result = {}
+    if file_match:
+        result["match_time"] = t
+        result["match_info"] = file_match
+        return result
+
+    return None
 
 
 def correcognize_directory(
@@ -54,7 +72,8 @@ def correcognize_directory(
     ...
 
 
-def process_results():
+def process_results(correlations: list, file_names: str, filter_matches: float):
+
     # xin, fs = sf.read('recording1.wav')
     # frame_len = int(fs*5*1e-3)
     # dim_x =xin.shape
