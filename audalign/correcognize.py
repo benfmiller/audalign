@@ -1,5 +1,6 @@
 import audalign.fingerprint as fingerprint
 from audalign.filehandler import read
+import numpy as np
 import time
 import os
 import scipy.signal as signal
@@ -28,15 +29,17 @@ def correcognize(
         against_file_path, start_end=start_end_against, sample_rate=sample_rate
     )
 
-    sos = signal.butter(10, fingerprint.threshold, "hp", fs=sample_rate, output="sos")
+    sos = signal.butter(
+        10, fingerprint.threshold, "highpass", fs=sample_rate, output="sos"
+    )
     # sos = signal.butter(10, 0.125, "hp", fs=sample_rate, output="sos")
     target_array = signal.sosfilt(sos, target_array)
     against_array = signal.sosfilt(sos, against_array)
+
     correlation = signal.correlate(target_array, against_array)
-    # correlation = target_array
 
     if plot:
-        plot_cor(
+        plot_cor(  # add results list option for scatter of maxes???
             array_a=target_array,
             array_b=against_array,
             corr_array=correlation,
@@ -45,8 +48,12 @@ def correcognize(
             arr_b_title=against_file_path,
         )
 
+    results_list_tuple = find_maxes(correlation=correlation)
     file_match = process_results(
-        [correlation], os.path.basename(against_file_path), filter_matches
+        results_list=results_list_tuple,
+        file_name=os.path.basename(against_file_path),
+        filter_matches=filter_matches,
+        sample_rate=sample_rate,
     )
 
     t = time.time() - t
@@ -64,7 +71,7 @@ def correcognize_directory(
     target_file_path: str,
     against_directory: str,
     start_end: tuple = None,
-    filter_matches: int = 0,
+    filter_matches: float = 0,
     sample_rate: int = fingerprint.DEFAULT_FS,
     plot: bool = False,
 ):
@@ -72,7 +79,102 @@ def correcognize_directory(
     ...
 
 
-def process_results(correlations: list, file_names: str, filter_matches: float):
+def _floatify_data_normalize(correlation: list):
+    min_ = abs(min(correlation))
+    max_ = max(correlation)
+    for i in range(len(correlation)):
+        if correlation[i] < 0:
+            correlation[i] = float(correlation[i]) / max_
+        elif correlation[i] == 0:
+            correlation[i] = 0.0
+        else:
+            correlation[i] = float(correlation[i]) / min_
+    return correlation, max_, min_
+
+
+def find_maxes(correlation: list):
+    results_list = []
+    # TODO
+    return results_list
+
+
+def process_results(
+    results_list: list, file_name: str, filter_matches: float, sample_rate: int
+):
+
+    # TODO
+    print("Calculating results... ", end="")
+    i = 0  # remove bad results or results below threshold
+    while i < len(results_list):
+        if results_list[i][2][0] == 10000000 or results_list[i][2][1] == 10000000:
+            results_list.pop(i)
+            continue
+        i += 1
+
+    offset_dict = {}  # aggregate results by time difference
+    for i in results_list:
+        if i[0] - i[1] not in offset_dict:
+            offset_dict[i[0] - i[1]] = [0, 0, 0]  # mse,ssim,total
+        temp_result = offset_dict[i[0] - i[1]]
+        temp_result[0] += i[2][0]
+        temp_result[1] += i[2][1]
+        temp_result[2] += 1
+        offset_dict[i[0] - i[1]] = temp_result
+
+    for i in offset_dict.keys():  # average mse and ssim
+        temp_result = offset_dict[i]
+        temp_result[0] /= temp_result[2]
+        temp_result[1] /= temp_result[2]
+        offset_dict[i] = temp_result
+
+    match_offsets = []
+    for t_difference, match_data in offset_dict.items():
+        match_offsets.append((match_data, t_difference))
+    match_offsets = sorted(
+        match_offsets,
+        reverse=True,
+        key=lambda x: (np.log2(x[0][2] + 1) * (np.log(x[0][1] + 1) / np.log(1.5))),
+    )  # sort by ssim must be reversed for ssim
+    # match_offsets, reverse=True, key=lambda x: (x[0][2], x[0][1])
+    # match_offsets, reverse=True, key=lambda x: x[0][2] sorts by num matches
+    # match_offsets, reverse=True, key=lambda x: (x[0][2], x[0][1]) sorts once by ssim, then finally by num matches
+    # math.log
+
+    offset_count = []
+    offset_diff = []
+    offset_ssim = []
+    offset_mse = []
+    for i in match_offsets:
+        offset_count.append(i[0][2])
+        offset_diff.append(i[1])
+        offset_ssim.append(i[0][1])
+        offset_mse.append(i[0][0])
+
+    match = {}
+    match[filename] = {}
+
+    match[filename]["num_matches"] = offset_count
+    match[filename]["offset_samples"] = offset_diff
+    match[filename]["ssim"] = offset_ssim
+    match[filename]["mse"] = offset_mse
+
+    offset_seconds = []
+    for i in offset_diff:
+        nseconds = round(
+            float(i)
+            / fingerprint.DEFAULT_FS
+            * fingerprint.DEFAULT_WINDOW_SIZE
+            * fingerprint.DEFAULT_OVERLAP_RATIO,
+            5,
+        )
+        offset_seconds.append(nseconds)
+
+    match[filename]["offset_seconds"] = offset_seconds
+    print("done")
+
+    if len(match[filename]["offset_seconds"]) > 0:
+        return match
+    return None
 
     # xin, fs = sf.read('recording1.wav')
     # frame_len = int(fs*5*1e-3)
@@ -90,7 +192,6 @@ def process_results(correlations: list, file_names: str, filter_matches: float):
     #     pos = Rmax_pos-M_lim+1
     #     tau.append(pos)
     # print(tau)
-    ...
 
 
 # ---------------------------------------------------------------------------------
@@ -144,7 +245,7 @@ def plot_cor(
     plt.plot(corr_array)
     plt.title(f"Correlation")
     plt.xlabel("Sample Index")
-    plt.ylabel("Offset")
+    plt.ylabel("correlation")
 
     fig.tight_layout()
 
