@@ -1,3 +1,4 @@
+from os.path import normcase
 import audalign.fingerprint as fingerprint
 from audalign.filehandler import read
 import numpy as np
@@ -22,11 +23,11 @@ def correcognize(
 
     t = time.time()
 
-    target_array, _ = read(
-        target_file_path, start_end=start_end_target, sample_rate=sample_rate
+    target_array = _floatify_audio(
+        read(target_file_path, start_end=start_end_target, sample_rate=sample_rate)[0]
     )
-    against_array, _ = read(
-        against_file_path, start_end=start_end_against, sample_rate=sample_rate
+    against_array = _floatify_audio(
+        read(against_file_path, start_end=start_end_against, sample_rate=sample_rate)[0]
     )
 
     sos = signal.butter(
@@ -38,6 +39,8 @@ def correcognize(
 
     correlation = signal.correlate(target_array, against_array)
 
+    correlation, scaling_factor = _normalize_corr(correlation=correlation)
+
     if plot:
         plot_cor(  # add results list option for scatter of maxes???
             array_a=target_array,
@@ -48,11 +51,12 @@ def correcognize(
             arr_b_title=against_file_path,
         )
 
-    results_list_tuple = find_maxes(correlation=correlation)
+    results_list_tuple = find_maxes(
+        correlation=correlation, filter_matches=filter_matches
+    )
     file_match = process_results(
         results_list=results_list_tuple,
         file_name=os.path.basename(against_file_path),
-        filter_matches=filter_matches,
         sample_rate=sample_rate,
     )
 
@@ -79,28 +83,41 @@ def correcognize_directory(
     ...
 
 
-def _floatify_data_normalize(correlation: list):
+def _floatify_audio(data: list):
+    new_data = np.zeros(len(data))
+    for i in range(len(data)):
+        if data[i] < 0:
+            new_data[i] = float(data[i]) / 32768
+        elif data[i] == 0:
+            new_data[i] = 0.0
+        if data[i] > 0:
+            new_data[i] = float(data[i]) / 32767
+    return new_data
+
+
+def _normalize_corr(correlation: list):
     min_ = abs(min(correlation))
     max_ = max(correlation)
     for i in range(len(correlation)):
         if correlation[i] < 0:
-            correlation[i] = float(correlation[i]) / max_
+            correlation[i] = float(correlation[i]) / min_
         elif correlation[i] == 0:
             correlation[i] = 0.0
         else:
-            correlation[i] = float(correlation[i]) / min_
-    return correlation, max_, min_
+            correlation[i] = float(correlation[i]) / max_
+    return correlation, scaling_factor
 
 
-def find_maxes(correlation: list):
+def find_maxes(correlation: list, filter_matches: float):
+    peaks, properties = signal.find_peaks(correlation, height=filter_matches)
+    # peaks_tuples = zip(peaks, properties["peak_heights"])
+
     results_list = []
     # TODO
     return results_list
 
 
-def process_results(
-    results_list: list, file_name: str, filter_matches: float, sample_rate: int
-):
+def process_results(results_list: list, file_name: str, sample_rate: int):
 
     # TODO
     print("Calculating results... ", end="")
