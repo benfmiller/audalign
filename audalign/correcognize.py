@@ -23,12 +23,18 @@ def correcognize(
 
     t = time.time()
 
-    target_array = _floatify_audio(
-        read(target_file_path, start_end=start_end_target, sample_rate=sample_rate)[0]
-    )
-    against_array = _floatify_audio(
-        read(against_file_path, start_end=start_end_against, sample_rate=sample_rate)[0]
-    )
+    # target_array = _floatify_audio(
+    #     read(target_file_path, start_end=start_end_target, sample_rate=sample_rate)[0]
+    # )
+    target_array = read(
+        target_file_path, start_end=start_end_target, sample_rate=sample_rate
+    )[0]
+    # against_array = _floatify_audio(
+    #     read(against_file_path, start_end=start_end_against, sample_rate=sample_rate)[0]
+    # )
+    against_array = read(
+        against_file_path, start_end=start_end_against, sample_rate=sample_rate
+    )[0]
 
     sos = signal.butter(
         10, fingerprint.threshold, "highpass", fs=sample_rate, output="sos"
@@ -38,8 +44,8 @@ def correcognize(
     against_array = signal.sosfilt(sos, against_array)
 
     correlation = signal.correlate(target_array, against_array)
-
-    correlation, scaling_factor = _normalize_corr(correlation=correlation)
+    scaling_factor = max(correlation)
+    correlation /= np.max(np.abs(correlation), axis=0)
 
     if plot:
         plot_cor(  # add results list option for scatter of maxes???
@@ -57,6 +63,7 @@ def correcognize(
     file_match = process_results(
         results_list=results_list_tuple,
         file_name=os.path.basename(against_file_path),
+        scaling_factor=scaling_factor,
         sample_rate=sample_rate,
     )
 
@@ -80,32 +87,35 @@ def correcognize_directory(
     plot: bool = False,
 ):
     print(f"{target_file_path} : {against_directory}")
+    # TODO correcognize directory
     ...
 
 
-def _floatify_audio(data: list):
-    new_data = np.zeros(len(data))
-    for i in range(len(data)):
-        if data[i] < 0:
-            new_data[i] = float(data[i]) / 32768
-        elif data[i] == 0:
-            new_data[i] = 0.0
-        if data[i] > 0:
-            new_data[i] = float(data[i]) / 32767
-    return new_data
+# def _floatify_audio(data: list):
+#     new_data = np.zeros(len(data))
+#     for i in range(len(data)):
+#         if data[i] < 0:
+#             new_data[i] = float(data[i]) / 32768
+#         elif data[i] == 0:
+#             new_data[i] = 0.0
+#         if data[i] > 0:
+#             new_data[i] = float(data[i]) / 32767
+#     return new_data
 
 
-def _normalize_corr(correlation: list):
-    min_ = abs(min(correlation))
-    max_ = max(correlation)
-    for i in range(len(correlation)):
-        if correlation[i] < 0:
-            correlation[i] = float(correlation[i]) / min_
-        elif correlation[i] == 0:
-            correlation[i] = 0.0
-        else:
-            correlation[i] = float(correlation[i]) / max_
-    return correlation, scaling_factor
+# def _normalize_corr(correlation: list):
+#     # image *= (255.0/image.max())
+#     # image = image.astype('float64')
+
+#     # min_ = abs(min(correlation))
+#     # for i in range(len(correlation)):
+#     #     if correlation[i] == 0:
+#     #         correlation[i] = 0.0
+#     #     # if correlation[i] < 0:
+#     #     #     correlation[i] = float(correlation[i]) / min_
+#     #     else:
+#     #         correlation[i] = correlation[i] / max_
+#     return correlation, max_
 
 
 def find_maxes(correlation: list, filter_matches: float):
@@ -117,8 +127,11 @@ def find_maxes(correlation: list, filter_matches: float):
     return results_list
 
 
-def process_results(results_list: list, file_name: str, sample_rate: int):
+def process_results(
+    results_list: list, file_name: str, scaling_factor: float, sample_rate: int
+):
 
+    return None
     # TODO
     print("Calculating results... ", end="")
     i = 0  # remove bad results or results below threshold
