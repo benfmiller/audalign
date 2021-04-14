@@ -141,4 +141,3 @@ class TestAlign:
             technique="correlation",
         )
         assert result
-        # TODO

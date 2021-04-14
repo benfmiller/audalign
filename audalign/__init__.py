@@ -462,6 +462,22 @@ class Audalign:
         plot: bool = False,
         **kwargs,
     ):
+        """[summary]
+
+        Args:
+            target_file_path (str): [description]
+            against_file_path (str): [description]
+            start_end_target (tuple, optional): [description]. Defaults to None.
+            start_end_against (tuple, optional): [description]. Defaults to None.
+            filter_matches (float, optional): [description]. Defaults to 0.5.
+            match_len_filter (int, optional): [description]. Defaults to 30.
+            sample_rate (int, optional): [description]. Defaults to fingerprint.DEFAULT_FS.
+            plot (bool, optional): [description]. Defaults to False.
+
+        # TODO Documentation
+        Returns:
+            [type]: [description]
+        """
         return correcognize.correcognize(
             target_file_path,
             against_file_path,
@@ -473,7 +489,6 @@ class Audalign:
             plot=plot,
             **kwargs,
         )
-        # TODO
 
     def visrecognize(
         self,
@@ -543,6 +558,21 @@ class Audalign:
         plot: bool = False,
         **kwargs,
     ):
+        """
+
+        Args:
+            target_file_path (str): [description]
+            against_directory (str): [description]
+            start_end (tuple, optional): [description]. Defaults to None.
+            filter_matches (float, optional): [description]. Defaults to 0.5.
+            match_len_filter (int, optional): [description]. Defaults to 30.
+            sample_rate (int, optional): [description]. Defaults to fingerprint.DEFAULT_FS.
+            plot (bool, optional): [description]. Defaults to False.
+
+        Returns:
+            [type]: [description]
+        """
+        # TODO
         return correcognize.correcognize_directory(
             target_file_path,
             against_directory,
@@ -553,7 +583,6 @@ class Audalign:
             plot=plot,
             **kwargs,
         )
-        # TODO
 
     def visrecognize_directory(
         self,
@@ -707,6 +736,7 @@ class Audalign:
             img_width (float, optional): width of image comparison for visual recognition
             calc_mse (bool): also calculates mse for each shift if true. If false, uses default mse 20000000
             cor_sample_rate (int): optionally change the sample rate if using correlation
+            #TODO
 
         Returns:
             dict: dict of file name with shift as value along with match info
@@ -775,7 +805,7 @@ class Audalign:
                     filter_matches=filter_matches,
                     sample_rate=cor_sample_rate,
                     **kwargs,
-                )  # TODO
+                )
             else:
                 raise NameError(
                     f'Technique parameter must be fingerprint, visual, or correlation, not "{technique}"'
@@ -899,7 +929,6 @@ class Audalign:
                             file_path, filter_matches=filter_matches, locality=locality
                         )
                     elif technique == "correlation":
-                        # TODO
                         alignment = self.correcognize_directory(
                             file_path,
                             directory_path,
