@@ -457,8 +457,10 @@ class Audalign:
         start_end_target: tuple = None,
         start_end_against: tuple = None,
         filter_matches: float = 0.5,
+        match_len_filter: int = 30,
         sample_rate: int = fingerprint.DEFAULT_FS,
         plot: bool = False,
+        **kwargs,
     ):
         correcognize.correcognize(
             target_file_path,
@@ -466,8 +468,10 @@ class Audalign:
             start_end_target=start_end_target,
             start_end_against=start_end_against,
             filter_matches=filter_matches,
+            match_len_filter=match_len_filter,
             sample_rate=sample_rate,
             plot=plot,
+            **kwargs,
         )
         # TODO
 
@@ -534,16 +538,20 @@ class Audalign:
         against_directory: str,
         start_end: tuple = None,
         filter_matches: float = 0.5,
+        match_len_filter: int = 30,
         sample_rate: int = fingerprint.DEFAULT_FS,
         plot: bool = False,
+        **kwargs,
     ):
         correcognize.correcognize_directory(
             target_file_path,
             against_directory,
             start_end=start_end,
             filter_matches=filter_matches,
+            match_len_filter=match_len_filter,
             sample_rate=sample_rate,
             plot=plot,
+            **kwargs,
         )
         # TODO
 
@@ -676,6 +684,7 @@ class Audalign:
         img_width: float = 1.0,
         calc_mse: bool = False,
         cor_sample_rate: int = fingerprint.DEFAULT_FS,
+        **kwargs,
     ):
         """matches and relative offsets for all files in directory_path using only target file,
         aligns them, and writes them to destination_path if given. Uses fingerprinting by defualt,
@@ -765,6 +774,7 @@ class Audalign:
                     start_end=start_end,
                     filter_matches=filter_matches,
                     sample_rate=cor_sample_rate,
+                    **kwargs
                 )  # TODO
             else:
                 raise NameError(
@@ -833,6 +843,7 @@ class Audalign:
         filter_matches: float = None,
         locality: float = None,
         cor_sample_rate: int = fingerprint.DEFAULT_FS,
+        **kwargs,
     ):
         """
         Finds matches and relative offsets for all files in directory_path, aligns them, and writes them to destination_path
@@ -894,6 +905,7 @@ class Audalign:
                             directory_path,
                             filter_matches=filter_matches,
                             sample_rate=cor_sample_rate,
+                            **kwargs,
                         )
                     file_names_and_paths[name] = file_path
                     total_alignment[name] = alignment

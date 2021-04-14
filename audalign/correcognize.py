@@ -14,8 +14,10 @@ def correcognize(
     start_end_target: tuple = None,
     start_end_against: tuple = None,
     filter_matches: float = 0,
+    match_len_filter: int = 30,
     sample_rate: int = fingerprint.DEFAULT_FS,
     plot: bool = False,
+    **kwargs,
 ):
     assert (
         sample_rate < 200000
@@ -23,15 +25,9 @@ def correcognize(
 
     t = time.time()
 
-    # target_array = _floatify_audio(
-    #     read(target_file_path, start_end=start_end_target, sample_rate=sample_rate)[0]
-    # )
     target_array = read(
         target_file_path, start_end=start_end_target, sample_rate=sample_rate
     )[0]
-    # against_array = _floatify_audio(
-    #     read(against_file_path, start_end=start_end_against, sample_rate=sample_rate)[0]
-    # )
     against_array = read(
         against_file_path, start_end=start_end_against, sample_rate=sample_rate
     )[0]
@@ -58,7 +54,10 @@ def correcognize(
         )
 
     results_list_tuple = find_maxes(
-        correlation=correlation, filter_matches=filter_matches
+        correlation=correlation,
+        filter_matches=filter_matches,
+        match_len_filter=match_len_filter,
+        **kwargs,
     )
     file_match = process_results(
         results_list=results_list_tuple,
@@ -85,42 +84,21 @@ def correcognize_directory(
     filter_matches: float = 0,
     sample_rate: int = fingerprint.DEFAULT_FS,
     plot: bool = False,
+    **kwargs,
 ):
     print(f"{target_file_path} : {against_directory}")
     # TODO correcognize directory
     ...
 
 
-# def _floatify_audio(data: list):
-#     new_data = np.zeros(len(data))
-#     for i in range(len(data)):
-#         if data[i] < 0:
-#             new_data[i] = float(data[i]) / 32768
-#         elif data[i] == 0:
-#             new_data[i] = 0.0
-#         if data[i] > 0:
-#             new_data[i] = float(data[i]) / 32767
-#     return new_data
+def find_maxes(
+    correlation: list, filter_matches: float, match_len_filter: int, **kwargs
+):
+    peaks, properties = signal.find_peaks(correlation, height=filter_matches, **kwargs)
+    peaks_tuples = zip(peaks, properties["peak_heights"])
 
-
-# def _normalize_corr(correlation: list):
-#     # image *= (255.0/image.max())
-#     # image = image.astype('float64')
-
-#     # min_ = abs(min(correlation))
-#     # for i in range(len(correlation)):
-#     #     if correlation[i] == 0:
-#     #         correlation[i] = 0.0
-#     #     # if correlation[i] < 0:
-#     #     #     correlation[i] = float(correlation[i]) / min_
-#     #     else:
-#     #         correlation[i] = correlation[i] / max_
-#     return correlation, max_
-
-
-def find_maxes(correlation: list, filter_matches: float):
-    peaks, properties = signal.find_peaks(correlation, height=filter_matches)
-    # peaks_tuples = zip(peaks, properties["peak_heights"])
+    # for more info
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.find_peaks.html
 
     results_list = []
     # TODO
