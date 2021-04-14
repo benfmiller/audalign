@@ -43,22 +43,25 @@ def correcognize(
     scaling_factor = max(correlation)
     correlation /= np.max(np.abs(correlation), axis=0)
 
-    if plot:
-        plot_cor(  # add results list option for scatter of maxes???
-            array_a=target_array,
-            array_b=against_array,
-            corr_array=correlation,
-            sample_rate=sample_rate,
-            arr_a_title=target_file_path,
-            arr_b_title=against_file_path,
-        )
-
     results_list_tuple = find_maxes(
         correlation=correlation,
         filter_matches=filter_matches,
         match_len_filter=match_len_filter,
         **kwargs,
     )
+
+    if plot:
+        plot_cor(
+            array_a=target_array,
+            array_b=against_array,
+            corr_array=correlation,
+            sample_rate=sample_rate,
+            arr_a_title=target_file_path,
+            arr_b_title=against_file_path,
+            scaling_factor=scaling_factor,
+            peaks=results_list_tuple,
+        )
+
     file_match = process_results(
         results_list=results_list_tuple,
         file_name=os.path.basename(against_file_path),
@@ -213,6 +216,8 @@ def plot_cor(
     title="Comparison",
     arr_a_title=None,
     arr_b_title=None,
+    peaks=None,
+    scaling_factor=None,
 ):
     new_vis_wsize = int(fingerprint.DEFAULT_WINDOW_SIZE / 44100 * sample_rate)
     fig = plt.figure(title)
@@ -251,9 +256,16 @@ def plot_cor(
 
     fig.add_subplot(3, 2, 5)
     plt.plot(corr_array)
-    plt.title(f"Correlation")
+    if scaling_factor:
+        plt.title(f"Correlation - Scaling Factor: {scaling_factor}")
+    else:
+        plt.title(f"Correlation")
     plt.xlabel("Sample Index")
     plt.ylabel("correlation")
+    if peaks:
+        indexes = [x[0] + int(len(corr_array) / 2) for x in peaks]
+        heights = [x[1] for x in peaks]
+        plt.plot(indexes, heights, "x")
 
     fig.tight_layout()
 
