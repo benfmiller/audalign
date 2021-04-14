@@ -1,6 +1,7 @@
 import audalign.fingerprint as fingerprint
-from audalign.filehandler import read
+from audalign.filehandler import read, find_files
 import audalign
+from pydub.exceptions import CouldntDecodeError
 import numpy as np
 import time
 import os
@@ -90,12 +91,82 @@ def correcognize_directory(
     start_end: tuple = None,
     filter_matches: float = 0,
     sample_rate: int = fingerprint.DEFAULT_FS,
+    match_len_filter: int = 30,
     plot: bool = False,
     **kwargs,
 ):
-    print(f"{target_file_path} : {against_directory}")
-    # TODO correcognize directory
-    ...
+    assert (
+        sample_rate < 200000
+    )  # I accidentally used 441000 once... not good, big crash
+
+    t = time.time()
+
+    target_array = read(target_file_path, start_end=start_end, sample_rate=sample_rate)[
+        0
+    ]
+    sos = signal.butter(
+        10, fingerprint.threshold, "highpass", fs=sample_rate, output="sos"
+    )
+    target_array = signal.sosfilt(sos, target_array)
+
+    against_files = find_files(against_directory)
+    file_match = {}
+    for file_path, _ in against_files:
+
+        if os.path.basename(file_path) == os.path.basename(target_file_path):
+            continue
+        try:
+            print(
+                f"Comparing {os.path.basename(target_file_path)} against {os.path.basename(file_path)}... "
+            )
+            against_array = read(file_path, sample_rate=sample_rate)[0]
+            against_array = signal.sosfilt(sos, against_array)
+
+            print("Calculating correlation... ", end="")
+            correlation = signal.correlate(against_array, target_array)
+            scaling_factor = max(correlation)
+            correlation /= np.max(np.abs(correlation), axis=0)
+
+            results_list_tuple = find_maxes(
+                correlation=correlation,
+                filter_matches=filter_matches,
+                match_len_filter=match_len_filter,
+                **kwargs,
+            )
+
+            if plot:
+                plot_cor(
+                    array_a=target_array,
+                    array_b=against_array,
+                    corr_array=correlation,
+                    sample_rate=sample_rate,
+                    arr_a_title=target_file_path,
+                    arr_b_title=file_path,
+                    scaling_factor=scaling_factor,
+                    peaks=results_list_tuple,
+                )
+
+            single_file_match = process_results(
+                results_list=results_list_tuple,
+                file_name=os.path.basename(file_path),
+                scaling_factor=scaling_factor,
+                sample_rate=sample_rate,
+            )
+            if single_file_match:
+                file_match = {**file_match, **single_file_match}
+
+        except CouldntDecodeError:
+            print(f'File "{file_path}" could not be decoded')
+
+    t = time.time() - t
+
+    result = {}
+    if file_match:
+        result["match_time"] = t
+        result["match_info"] = file_match
+        return result
+
+    return None
 
 
 def find_maxes(
@@ -116,8 +187,6 @@ def find_maxes(
 def process_results(
     results_list: list, file_name: str, scaling_factor: float, sample_rate: int
 ):
-
-    # TODO
 
     offset_samples = []
     offset_seconds = []

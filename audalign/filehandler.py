@@ -90,7 +90,7 @@ def get_audio_files_directory(directory_path: str) -> list:
     for file_path, _ in find_files(directory_path):
         try:
             AudioSegment.from_file(file_path)
-            aud_list += file_path
+            aud_list += [file_path]
         except CouldntDecodeError:
             pass  # Do nothing
     return aud_list

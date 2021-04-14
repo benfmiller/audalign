@@ -66,7 +66,8 @@ class TestRecognize:
         )
         assert results
 
-    @pytest.mark.skip(reason="Not implemented yet")
+    # @pytest.mark.skip(reason="Not implemented yet")
+    @pytest.mark.smoke
     def test_correcognize(self):
         results = self.ada.correcognize(
             test_file,
@@ -74,7 +75,7 @@ class TestRecognize:
         )
         assert results
 
-    @pytest.mark.skip(reason="Not implemented yet")
+    # @pytest.mark.skip(reason="Not implemented yet")
     def test_correcognize_directory(self):
         results = self.ada.correcognize_directory(
             test_file,
@@ -98,7 +99,7 @@ class TestAlign:
         )
         assert result
 
-    @pytest.mark.skip(reason="Not implemented yet")
+    # @pytest.mark.skip(reason="Not implemented yet")
     def test_align_cor(self):
         result = self.ada.align(
             "test_audio/test_shifts", "test_alignment", technique="correlation"
@@ -107,7 +108,8 @@ class TestAlign:
         result = self.ada.align(
             "test_audio/test_shifts",
             "test_alignment",
-            filter_matches=0.5,  # might have to adjust this
+            technique="correlation",
+            filter_matches=0.3,  # might have to adjust this
         )
         assert result
 
@@ -130,7 +132,7 @@ class TestAlign:
         )
         assert result
 
-    @pytest.mark.skip(reason="Not implemented yet")
+    # @pytest.mark.skip(reason="Not implemented yet")
     def test_target_align_cor(self):
         result = self.ada.target_align(
             "test_audio/test_shifts/Eigen-song-base.mp3",
