@@ -5,6 +5,7 @@ import audalign.align as align
 import audalign.visrecognize as visrecognize
 import audalign.correcognize as correcognize
 from pydub.exceptions import CouldntDecodeError
+from pydub.utils import mediainfo
 from typing import Tuple
 from functools import partial
 import multiprocessing
@@ -996,6 +997,20 @@ class Audalign:
         filehandler.shift_write_files(
             files_shifts, destination_path, names_and_paths, write_extension
         )
+
+    @staticmethod
+    def get_metadata(file_path: str):
+        """Returns metadata of audio or video file
+
+        if file_path is not a valid file or is a directory, returns empty dict
+
+        Args:
+            file_path (str): file path to file
+
+        Returns:
+            dict: dict of tags and values
+        """
+        return mediainfo(filepath=file_path)
 
     @staticmethod
     def write_shifted_file(
