@@ -93,16 +93,16 @@ def correcognize_directory(
 
 def find_maxes(
     correlation: list, filter_matches: float, match_len_filter: int, **kwargs
-):
-    peaks, properties = signal.find_peaks(correlation, height=filter_matches, **kwargs)
-    peaks_tuples = zip(peaks, properties["peak_heights"])
-
+) -> list:
     # for more info
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.find_peaks.html
-
-    results_list = []
-    # TODO
-    return results_list
+    peaks, properties = signal.find_peaks(correlation, height=filter_matches, **kwargs)
+    peaks -= int(len(correlation) / 2)
+    peaks_tuples = zip(peaks, properties["peak_heights"])
+    peaks_tuples = sorted(peaks_tuples, key=lambda x: x[1], reverse=True)
+    if len(peaks_tuples) > match_len_filter:
+        peaks_tuples = peaks_tuples[0:match_len_filter]
+    return peaks_tuples
 
 
 def process_results(
