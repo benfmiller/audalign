@@ -9,7 +9,7 @@ def test_always_true():
 
 class TestObject:
 
-    test_file = "test_audio/test.mp3"
+    test_file = "test_audio/testers/test.mp3"
 
     @pytest.mark.smoke
     def test_initialization(self):
@@ -76,6 +76,10 @@ class TestObject:
         assert len(ada.file_names) == 0
         ada.load_fingerprinted_files("test_save_fingerprints.json")
         assert len(ada.file_names) > 0
+
+    def test_get_metadata(self):
+        metatdata = ad.Audalign.get_metadata(file_path=self.test_file)
+        assert metatdata != {}
 
 
 class TestRemoveNoise:

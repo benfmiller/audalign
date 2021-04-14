@@ -19,7 +19,7 @@ def parse_requirements(requirements):
 
 
 PACKAGE_NAME = "audalign"
-PACKAGE_VERSION = "0.1.6"
+PACKAGE_VERSION = "0.2.0"
 SUMMARY = "Audio Alignment and Recognition in Python"
 
 REQUIREMENTS = parse_requirements("requirements.txt")
@@ -33,9 +33,9 @@ setup(
     long_description=README,
     long_description_content_type="text/markdown",
     author="Ben Miller",
-    author_email="ben.miller.ben.miller24@gmail.com",
+    author_email="benfmiller132@gmail.com",
     maintainer="Ben Miller",
-    maintainer_email="ben.f.miller24@gmail.com",
+    maintainer_email="benfmiller132@gmail.com",
     url="http://github.com/benfmiller/audalign",
     include_package_data=True,
     platforms=["Unix", "Windows"],

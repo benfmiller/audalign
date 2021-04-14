@@ -3,7 +3,9 @@ import audalign.fingerprint as fingerprint
 import audalign.recognize as recognize
 import audalign.align as align
 import audalign.visrecognize as visrecognize
+import audalign.correcognize as correcognize
 from pydub.exceptions import CouldntDecodeError
+from pydub.utils import mediainfo
 from typing import Tuple
 from functools import partial
 import multiprocessing
@@ -17,9 +19,9 @@ class Audalign:
     # Names that appear in match information
     CONFIDENCE = "confidence"
     MATCH_TIME = "match_time"
-    OFFSET_SAMPLES = "offset_samples"
+    OFFSET_SAMPLES = "offset_frames"
     OFFSET_SECS = "offset_seconds"
-    LOCALITY = "locality"
+    LOCALITY = "locality_frames"
     LOCALITY_SECS = "locality_seconds"
 
     def __init__(
@@ -150,7 +152,20 @@ class Audalign:
         Args:
             threshold ([int]): [threshold]
         """
-        fingerprint.threshold = threshold
+        self.freq_threshold = threshold
+        self._set_freq_threshold(freq_threshold=threshold)
+
+    @staticmethod
+    def _set_freq_threshold(freq_threshold: int) -> None:
+        fingerprint.threshold = freq_threshold
+
+    def get_freq_threshold(self):
+        """Returns the frequency threshold
+
+        Returns:
+            [int]: frequency threshold
+        """
+        return self.freq_threshold
 
     def set_multiprocessing(self, true_or_false: bool) -> None:
         """Sets to true for on or false for off
@@ -290,6 +305,7 @@ class Audalign:
             hash_style=self.hash_style,
             plot=plot,
             accuracy=self.accuracy,
+            freq_threshold=self.freq_threshold,
         )
 
         if self.multiprocessing == True:
@@ -388,6 +404,7 @@ class Audalign:
             start_end=start_end,
             plot=plot,
             accuracy=self.accuracy,
+            freq_threshold=self.freq_threshold,
         )
         file_name = set_file_name or file_name
         return [file_name, hashes]
@@ -431,6 +448,49 @@ class Audalign:
             locality=locality,
             start_end=start_end,
             *args,
+            **kwargs,
+        )
+
+    def correcognize(
+        self,
+        target_file_path: str,
+        against_file_path: str,
+        start_end_target: tuple = None,
+        start_end_against: tuple = None,
+        filter_matches: float = 0.5,
+        match_len_filter: int = 30,
+        sample_rate: int = fingerprint.DEFAULT_FS,
+        plot: bool = False,
+        **kwargs,
+    ):
+        """Uses cross correlation to find alignment
+
+        Faster than visrecognize or recognize and more useful for amplitude
+        based alignments
+
+        Args:
+            target_file_path (str): File to recognize
+            against_file_path (str): File to recognize against
+            start_end_target (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
+            start_end_against (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
+            filter_matches (float, optional): Filters based on confidence. Ranges between 0 and 1. Defaults to 0.5.
+            match_len_filter (int, optional): Limits number of matches returned. Defaults to 30.
+            sample_rate (int, optional): Decodes audio file to this sample rate. Defaults to fingerprint.DEFAULT_FS.
+            plot (bool, optional): Plots. Defaults to False.
+            kwargs: additional arguments for scipy.signal.find_peaks.
+
+        Returns:
+            dict: dictionary of recognition information
+        """
+        return correcognize.correcognize(
+            target_file_path,
+            against_file_path,
+            start_end_target=start_end_target,
+            start_end_against=start_end_against,
+            filter_matches=filter_matches,
+            match_len_filter=match_len_filter,
+            sample_rate=sample_rate,
+            plot=plot,
             **kwargs,
         )
 
@@ -489,6 +549,46 @@ class Audalign:
             use_multiprocessing=self.multiprocessing,
             num_processes=self.num_processors,
             plot=plot,
+        )
+
+    def correcognize_directory(
+        self,
+        target_file_path: str,
+        against_directory: str,
+        start_end: tuple = None,
+        filter_matches: float = 0.5,
+        match_len_filter: int = 30,
+        sample_rate: int = fingerprint.DEFAULT_FS,
+        plot: bool = False,
+        **kwargs,
+    ):
+        """Uses cross correlation to find alignment
+
+        Faster than visrecognize or recognize and more useful for amplitude
+        based alignments
+
+        Args:
+            target_file_path (str): File to recognize
+            against_directory (str): Directory to recognize against
+            start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
+            filter_matches (float, optional): Filters based on confidence. Ranges between 0 and 1. Defaults to 0.5.
+            match_len_filter (int, optional): Limits number of matches returned. Defaults to 30.
+            sample_rate (int, optional): Decodes audio file to this sample rate. Defaults to fingerprint.DEFAULT_FS.
+            plot (bool, optional): Plots. Defaults to False.
+            kwargs: additional arguments for scipy.signal.find_peaks.
+
+        Returns:
+            dict: dictionary of recognition information
+        """
+        return correcognize.correcognize_directory(
+            target_file_path,
+            against_directory,
+            start_end=start_end,
+            filter_matches=filter_matches,
+            match_len_filter=match_len_filter,
+            sample_rate=sample_rate,
+            plot=plot,
+            **kwargs,
         )
 
     def visrecognize_directory(
@@ -609,9 +709,9 @@ class Audalign:
         destination_path: str = None,
         start_end: tuple = None,
         write_extension: str = None,
-        use_fingerprints: bool = True,
+        technique: str = "fingerprints",
         alternate_strength_stat: str = None,
-        filter_matches: int = 1,
+        filter_matches: float = None,
         locality: float = None,
         volume_threshold: float = 216,
         volume_floor: float = 10.0,
@@ -619,6 +719,8 @@ class Audalign:
         horiz_scaling: float = 1.0,
         img_width: float = 1.0,
         calc_mse: bool = False,
+        cor_sample_rate: int = fingerprint.DEFAULT_FS,
+        **kwargs,
     ):
         """matches and relative offsets for all files in directory_path using only target file,
         aligns them, and writes them to destination_path if given. Uses fingerprinting by defualt,
@@ -630,9 +732,9 @@ class Audalign:
             destination_path (str, optional): Directory to write alignments to
             start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
             write_extension (str, optional): audio file format to write to. Defaults to None.
-            use_fingerprints (bool, optional): Fingerprints if True, visual recognition if False. Defaults to True.
+            technique (str, optional): options are "fingerprints", "visual", "correlation"
             alternate_strength_stat (str, optional): confidence for fingerprints, ssim for visual, mse or count also work for visual. Defaults to None.
-            filter_matches (int, optional): filter matches level for fingerprinting. Defaults to 1.
+            filter_matches (int, float, optional): filter matches level for fingerprinting. Defaults to 1.
             locality (float, optional): In seconds for fingerprints, only matches files within given window sizes
             volume_threshold (float, optional): volume threshold for visual recognition. Defaults to 216.
             volume_floor (float): ignores volume levels below floow.
@@ -640,6 +742,8 @@ class Audalign:
             horiz_scaling (float): scales horizontally to speed up calculations. Smaller numbers have smaller images. Affects alignment granularity.
             img_width (float, optional): width of image comparison for visual recognition
             calc_mse (bool): also calculates mse for each shift if true. If false, uses default mse 20000000
+            cor_sample_rate (int): optionally change the sample rate if using correlation
+            kwargs: additional arguments for scipy.signal.find_peaks
 
         Returns:
             dict: dict of file name with shift as value along with match info
@@ -659,7 +763,10 @@ class Audalign:
             total_alignment = {}
             file_names_and_paths = {}
 
-            if use_fingerprints:
+            if technique == "fingerprints":
+
+                if filter_matches is None:
+                    filter_matches = 1
 
                 if start_end is not None:
                     self.fingerprint_file(target_file, start_end=start_end)
@@ -683,7 +790,7 @@ class Audalign:
                     start_end=start_end,
                 )
 
-            else:
+            elif technique == "visual":
                 alignment = self.visrecognize_directory(
                     target_file_path=target_file,
                     against_directory=directory_path,
@@ -694,6 +801,21 @@ class Audalign:
                     horiz_scaling=horiz_scaling,
                     img_width=img_width,
                     calc_mse=calc_mse,
+                )
+            elif technique == "correlation":
+                if filter_matches is None:
+                    filter_matches = 0.5
+                alignment = self.correcognize_directory(
+                    target_file_path=target_file,
+                    against_directory=directory_path,
+                    start_end=start_end,
+                    filter_matches=filter_matches,
+                    sample_rate=cor_sample_rate,
+                    **kwargs,
+                )
+            else:
+                raise NameError(
+                    f'Technique parameter must be fingerprint, visual, or correlation, not "{technique}"'
                 )
 
             file_names_and_paths[target_name] = target_file
@@ -711,10 +833,12 @@ class Audalign:
                     file_names_and_paths[os.path.basename(file_path)] = file_path
 
             if not alternate_strength_stat:
-                if use_fingerprints:
+                if technique == "fingerprints":
                     alternate_strength_stat = self.CONFIDENCE
-                else:
+                elif technique == "visual":
                     alternate_strength_stat = "ssim"
+                else:
+                    alternate_strength_stat = self.CONFIDENCE
             files_shifts = align.find_most_matches(
                 total_alignment, strength_stat=alternate_strength_stat
             )
@@ -752,8 +876,11 @@ class Audalign:
         directory_path: str,
         destination_path: str = None,
         write_extension: str = None,
-        filter_matches: int = 1,
+        technique: str = "fingerprints",
+        filter_matches: float = None,
         locality: float = None,
+        cor_sample_rate: int = fingerprint.DEFAULT_FS,
+        **kwargs,
     ):
         """
         Finds matches and relative offsets for all files in directory_path, aligns them, and writes them to destination_path
@@ -762,7 +889,11 @@ class Audalign:
             directory_path (str): String of directory for alignment
             destination_path (str): String of path to write alignments to
             write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
+            technique (str): either "fingerprints" or "correlation"
+            filter_matches (float): filters based on confidence.
             locality (float): Only recognizes against fingerprints in given width. In seconds
+            cor_sample_rate (int): Sampling rate for correlation
+            **kwargs: Additional arguments for finding peaks in correlation
 
         Returns
         -------
@@ -783,7 +914,18 @@ class Audalign:
                 if not os.path.exists(destination_path):
                     os.makedirs(destination_path)
 
-            self.fingerprint_directory(directory_path)
+            if technique == "fingerprints":
+                if filter_matches is None:
+                    filter_matches = 1
+                self.fingerprint_directory(directory_path)
+            elif technique == "correlation":
+                if filter_matches is None:
+                    filter_matches = 0.5
+                self.file_names = filehandler.get_audio_files_directory(directory_path)
+            else:
+                raise NameError(
+                    f'Technique parameter must be fingerprint, visual, or correlation, not "{technique}"'
+                )
 
             total_alignment = {}
             file_names_and_paths = {}
@@ -792,9 +934,18 @@ class Audalign:
             for file_path, _ in filehandler.find_files(directory_path):
                 name = os.path.basename(file_path)
                 if name in self.file_names:
-                    alignment = self.recognize(
-                        file_path, filter_matches=filter_matches, locality=locality
-                    )
+                    if technique == "fingerprints":
+                        alignment = self.recognize(
+                            file_path, filter_matches=filter_matches, locality=locality
+                        )
+                    elif technique == "correlation":
+                        alignment = self.correcognize_directory(
+                            file_path,
+                            directory_path,
+                            filter_matches=filter_matches,
+                            sample_rate=cor_sample_rate,
+                            **kwargs,
+                        )
                     file_names_and_paths[name] = file_path
                     total_alignment[name] = alignment
 
@@ -846,6 +997,20 @@ class Audalign:
         filehandler.shift_write_files(
             files_shifts, destination_path, names_and_paths, write_extension
         )
+
+    @staticmethod
+    def get_metadata(file_path: str):
+        """Returns metadata of audio or video file
+
+        if file_path is not a valid file or is a directory, returns empty dict
+
+        Args:
+            file_path (str): file path to file
+
+        Returns:
+            dict: dict of tags and values
+        """
+        return mediainfo(filepath=file_path)
 
     @staticmethod
     def write_shifted_file(
@@ -963,6 +1128,7 @@ def _fingerprint_worker(
     start_end: tuple = None,
     plot=False,
     accuracy=2,
+    freq_threshold=200,
 ) -> Tuple:
     """
     Runs the file through the fingerprinter and returns file_name and hashes
@@ -973,6 +1139,7 @@ def _fingerprint_worker(
         start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
         plot (bool): displays the plot of the peaks if true
         accuracy (int): which accuracy level 1-4
+        freq_threshold (int): what the freq threshold is in specgram bins
 
     Returns
     -------
@@ -980,6 +1147,7 @@ def _fingerprint_worker(
     """
 
     Audalign._set_accuracy(accuracy)
+    Audalign._set_freq_threshold(freq_threshold)
 
     file_name = os.path.basename(file_path)
 

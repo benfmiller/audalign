@@ -1,7 +1,7 @@
 # Audalign
-Python package for aligning audio files using audio fingerprinting or visual alignment techniques.
+Python package for aligning audio files using audio fingerprinting, cross-correlation, or visual alignment techniques.
 
-This package offers tools to align many recordings of the same event. This is primarily accomplished with fingerprinting, though where fingerprinting fails, visual alignment techniques can be used to get a closer result.
+This package offers tools to align many recordings of the same event. This is primarily accomplished with fingerprinting, though where fingerprinting fails, correlation and visual alignment techniques can be used to get a closer result.
 
 Alignment consists of a dictionary containing alignment data for all files in a given directory. If an output directory is given, silence is placed before all files in the target directory so that all will automatically be aligned and writen to the output directory along with an audio file containing the sum of all audio. 
 
@@ -14,8 +14,6 @@ Regular file recogniton can also be done with Audalign similar to dejavu but hel
 This package is also primarirly focused on accuracy of alignments and has several accuracy settings. Parameters for visual alignment can be adjusted. Fingerprinting parameters can be generally set to get consistent results, but visual alignment requires case by case adjustment.
 
 Noisereduce is very useful for this application and a wrapper is implemented for ease of use.
-
-Waveform alignment techniques are not implemented, though they could be in the future.
 
 ## Installation
 
@@ -63,9 +61,17 @@ print(ada.target_align(
     "target/files",
     "target/folder/",
     destination_path="write/alignments/to/folder",
-    use_fingerprints=False,
+    technique="visual",
     ))
 # volume_threshold might need to be adjusted depending on the file
+
+# For Correlation
+print(ada.target_align(
+    "target/files",
+    "target/folder/",
+    destination_path="write/alignments/to/folder",
+    technique="correlation",
+    ))
 ```
 Returns dictionary of each file recognized and best alignment. Also returns match info dictionary of each recognition in the folder
 
@@ -108,6 +114,11 @@ print(ada.recognize("matching_file.mp3", filter_matches=50, locality=5))
 print(ada.visrecognize(
     target_file_path="target_file.mp3", against_file_path="against_file.mp3"
     ))
+
+# For Correlation
+print(ada.correcognize(
+    target_file_path="target_file.mp3", against_file_path="against_file.mp3"
+    ))
 ```
 File doesn't have to be fingerprinted already. If it is, the file is not re-fingerprinted
 
@@ -116,6 +127,7 @@ Returns dictionary match time and match info. Match info is a dictionary of each
 ## Other Functions
 
 ```python
+# wrapper for timsainb/noisereduce
 ada.remove_noise_file(
     "target/file",
     "5", # noise start in seconds
@@ -136,6 +148,7 @@ ada.remove_noise_directory(
 
 ada.plot("file.wav") # Plots spectrogram with peaks overlaid
 ada.convert_audio_file("audio.wav", "audio.mp3") # Also convert video file to audio file
+ada.get_metadata("file.wav") # Returns metadata from ffmpeg/ avlib
 ```
 ## Audalign Functions
 
