@@ -462,21 +462,24 @@ class Audalign:
         plot: bool = False,
         **kwargs,
     ):
-        """[summary]
+        """Uses cross correlation to find alignment
+
+        Faster than visrecognize or recognize and more useful for amplitude
+        based alignments
 
         Args:
-            target_file_path (str): [description]
-            against_file_path (str): [description]
-            start_end_target (tuple, optional): [description]. Defaults to None.
-            start_end_against (tuple, optional): [description]. Defaults to None.
-            filter_matches (float, optional): [description]. Defaults to 0.5.
-            match_len_filter (int, optional): [description]. Defaults to 30.
-            sample_rate (int, optional): [description]. Defaults to fingerprint.DEFAULT_FS.
-            plot (bool, optional): [description]. Defaults to False.
+            target_file_path (str): File to recognize
+            against_file_path (str): File to recognize against
+            start_end_target (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
+            start_end_against (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
+            filter_matches (float, optional): Filters based on confidence. Ranges between 0 and 1. Defaults to 0.5.
+            match_len_filter (int, optional): Limits number of matches returned. Defaults to 30.
+            sample_rate (int, optional): Decodes audio file to this sample rate. Defaults to fingerprint.DEFAULT_FS.
+            plot (bool, optional): Plots. Defaults to False.
+            kwargs: additional arguments for scipy.signal.find_peaks.
 
-        # TODO Documentation
         Returns:
-            [type]: [description]
+            dict: dictionary of recognition information
         """
         return correcognize.correcognize(
             target_file_path,
@@ -558,21 +561,24 @@ class Audalign:
         plot: bool = False,
         **kwargs,
     ):
-        """
+        """Uses cross correlation to find alignment
+
+        Faster than visrecognize or recognize and more useful for amplitude
+        based alignments
 
         Args:
-            target_file_path (str): [description]
-            against_directory (str): [description]
-            start_end (tuple, optional): [description]. Defaults to None.
-            filter_matches (float, optional): [description]. Defaults to 0.5.
-            match_len_filter (int, optional): [description]. Defaults to 30.
-            sample_rate (int, optional): [description]. Defaults to fingerprint.DEFAULT_FS.
-            plot (bool, optional): [description]. Defaults to False.
+            target_file_path (str): File to recognize
+            against_directory (str): Directory to recognize against
+            start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
+            filter_matches (float, optional): Filters based on confidence. Ranges between 0 and 1. Defaults to 0.5.
+            match_len_filter (int, optional): Limits number of matches returned. Defaults to 30.
+            sample_rate (int, optional): Decodes audio file to this sample rate. Defaults to fingerprint.DEFAULT_FS.
+            plot (bool, optional): Plots. Defaults to False.
+            kwargs: additional arguments for scipy.signal.find_peaks.
 
         Returns:
-            [type]: [description]
+            dict: dictionary of recognition information
         """
-        # TODO
         return correcognize.correcognize_directory(
             target_file_path,
             against_directory,
@@ -736,7 +742,7 @@ class Audalign:
             img_width (float, optional): width of image comparison for visual recognition
             calc_mse (bool): also calculates mse for each shift if true. If false, uses default mse 20000000
             cor_sample_rate (int): optionally change the sample rate if using correlation
-            #TODO
+            kwargs: additional arguments for scipy.signal.find_peaks
 
         Returns:
             dict: dict of file name with shift as value along with match info
@@ -882,8 +888,11 @@ class Audalign:
             directory_path (str): String of directory for alignment
             destination_path (str): String of path to write alignments to
             write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
-            # TODO docs
+            technique (str): either "fingerprints" or "correlation"
+            filter_matches (float): filters based on confidence.
             locality (float): Only recognizes against fingerprints in given width. In seconds
+            cor_sample_rate (int): Sampling rate for correlation
+            **kwargs: Additional arguments for finding peaks in correlation
 
         Returns
         -------

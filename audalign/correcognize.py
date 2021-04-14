@@ -20,6 +20,21 @@ def correcognize(
     plot: bool = False,
     **kwargs,
 ):
+    """Called from audalign correcognize
+
+    Args:
+        target_file_path (str): [description]
+        against_file_path (str): [description]
+        start_end_target (tuple, optional): [description]. Defaults to None.
+        start_end_against (tuple, optional): [description]. Defaults to None.
+        filter_matches (float, optional): [description]. Defaults to 0.
+        match_len_filter (int, optional): [description]. Defaults to 30.
+        sample_rate (int, optional): [description]. Defaults to fingerprint.DEFAULT_FS.
+        plot (bool, optional): [description]. Defaults to False.
+
+    Returns:
+        [type]: [description]
+    """
     assert (
         sample_rate < 200000
     )  # I accidentally used 441000 once... not good, big crash
@@ -95,6 +110,7 @@ def correcognize_directory(
     plot: bool = False,
     **kwargs,
 ):
+    """Called from audalign correcognize_directory"""
     assert (
         sample_rate < 200000
     )  # I accidentally used 441000 once... not good, big crash
@@ -172,6 +188,7 @@ def correcognize_directory(
 def find_maxes(
     correlation: list, filter_matches: float, match_len_filter: int, **kwargs
 ) -> list:
+    """This is where kwargs go. returns zip of peak indices and their heights sorted by height"""
     print("Finding Local Maximums... ", end="")
     # for more info
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.find_peaks.html
@@ -187,6 +204,7 @@ def find_maxes(
 def process_results(
     results_list: list, file_name: str, scaling_factor: float, sample_rate: int
 ):
+    """Processes peaks and stuff into our regular recognition dictionary"""
 
     offset_samples = []
     offset_seconds = []
@@ -226,6 +244,10 @@ def plot_cor(
     peaks=None,
     scaling_factor=None,
 ):
+    """
+    Really nifty plotter, lots of good information here.
+    Can get really slow if the sample rate is high and the audio file is long.
+    """
     new_vis_wsize = int(fingerprint.DEFAULT_WINDOW_SIZE / 44100 * sample_rate)
     fig = plt.figure(title)
 
