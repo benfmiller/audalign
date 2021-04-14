@@ -462,7 +462,7 @@ class Audalign:
         plot: bool = False,
         **kwargs,
     ):
-        correcognize.correcognize(
+        return correcognize.correcognize(
             target_file_path,
             against_file_path,
             start_end_target=start_end_target,
@@ -543,7 +543,7 @@ class Audalign:
         plot: bool = False,
         **kwargs,
     ):
-        correcognize.correcognize_directory(
+        return correcognize.correcognize_directory(
             target_file_path,
             against_directory,
             start_end=start_end,
@@ -774,7 +774,7 @@ class Audalign:
                     start_end=start_end,
                     filter_matches=filter_matches,
                     sample_rate=cor_sample_rate,
-                    **kwargs
+                    **kwargs,
                 )  # TODO
             else:
                 raise NameError(
