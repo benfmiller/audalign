@@ -13,7 +13,7 @@ Regular file recogniton can also be done with Audalign similar to dejavu but hel
 
 This package is also primarirly focused on accuracy of alignments and has several accuracy settings. Parameters for visual alignment can be adjusted. Fingerprinting parameters can be generally set to get consistent results, but visual alignment requires case by case adjustment.
 
-Noisereduce is very useful for this application and a wrapper is implemented for ease of use.
+[Noisereduce](https://timsainburg.com/noise-reduction-python.html) is very useful for this application and a wrapper is implemented for ease of use.
 
 ## Installation
 

@@ -156,9 +156,11 @@ def locality_align_matches(matches: list, locality: int):
         # sorts by t_offset
         file_dict[name] = sorted(file_dict[name], key=lambda x: x[1])
 
-        while file_dict[name][end_window - 1][1] - file_dict[name][start_window][
-            1
-        ] <= locality and end_window < len(file_dict[name]):
+        while (
+            end_window < len(file_dict[name]) - 1
+            and file_dict[name][end_window][1] - file_dict[name][start_window][1]
+            <= locality
+        ):
             end_window += 1
             last_end = end_window
 
@@ -181,14 +183,17 @@ def locality_align_matches(matches: list, locality: int):
                     temp_file_dict[samp_diff][1] += [tup]
 
             # breaks out of while if at end of file and within locality
-            if end_window == len(file_dict[name]):
+            if end_window >= len(file_dict[name]):
                 break
 
             while True:
                 start_window += 1
-                while file_dict[name][end_window - 1][1] - file_dict[name][
-                    start_window
-                ][1] <= locality and end_window != len(file_dict[name]):
+                while (
+                    end_window <= len(file_dict[name]) - 1
+                    and file_dict[name][end_window][1]
+                    - file_dict[name][start_window][1]
+                    <= locality
+                ):
                     end_window += 1
                 if end_window >= len(file_dict[name]):
                     break
@@ -230,21 +235,27 @@ def find_loc_matches(matches_list: list, locality: int):
     a_matches = sorted(matches_list, key=lambda x: x[2])
     temp_file_dict = {}
     start_window = 0
-    end_window = 1
-    last_end = 1
+    end_window = 0
+    last_end = 0
 
-    while a_matches[end_window - 1][2] - a_matches[start_window][
-        2
-    ] <= locality and end_window < len(a_matches):
+    while (
+        end_window < len(a_matches) - 1
+        and a_matches[end_window + 1][2] - a_matches[start_window][2] <= locality
+    ):
         end_window += 1
         last_end = end_window
 
     while True:  # end_window <= len(a_matches):
 
         loc_tup = (
-            (matches_list[-1][1] - matches_list[0][1]) // 2,
-            (a_matches[end_window - 1][2] - a_matches[start_window][2]) // 2,
+            ((matches_list[-1][1] - matches_list[0][1]) // 2) + matches_list[0][1],
+            ((a_matches[end_window][2] - a_matches[start_window][2]) // 2)
+            + a_matches[start_window][2],
         )
+        # loc_tup = ( # Old version
+        #     (matches_list[-1][1] - matches_list[0][1]) // 2,
+        #     (a_matches[end_window][2] - a_matches[start_window][2]) // 2,
+        # )
         temp_file_dict[loc_tup] = {}
         for sample_difference, t_offset, a_offset in a_matches[start_window:end_window]:
             if sample_difference not in temp_file_dict[loc_tup].keys():
@@ -254,16 +265,18 @@ def find_loc_matches(matches_list: list, locality: int):
 
         # breaks out of while if at end of file and within locality
 
-        if end_window == len(a_matches):
+        if end_window >= len(a_matches) - 1:
             break
 
         while True:
             start_window += 1
-            while a_matches[end_window - 1][2] - a_matches[start_window][
-                2
-            ] <= locality and end_window != len(a_matches):
+            while (
+                end_window < len(a_matches) - 1
+                and a_matches[end_window + 1][2] - a_matches[start_window][2]
+                <= locality
+            ):
                 end_window += 1
-            if end_window >= len(a_matches):
+            if end_window >= len(a_matches) - 1:
                 break
             if end_window > last_end:
                 last_end = end_window
