@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.2.2] 2021 - 05 - 02
+
+### Fixed
+- Locality, improperly sorted through tuple noise
+
 ## [0.2.1] 2021 - 04 - 28
 
 ### Fixed
