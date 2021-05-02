@@ -414,6 +414,7 @@ class Audalign:
         file_path: str,
         filter_matches: int = 1,
         locality: float = None,
+        locality_filter_prop: float = None,
         start_end: tuple = None,
         *args,
         **kwargs,
@@ -429,6 +430,7 @@ class Audalign:
             file_path (str): file path of target file to recognize
             filter_matches (int): filters all matches lower than given argument, 1 is recommended
             locality (float): filters matches to only count within locality. In seconds
+            locality_filter_prop (int, float,optional): within each offset, filters locality tuples by proportion of highest confidence to tuple confidence
             start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
 
         Returns
@@ -441,11 +443,15 @@ class Audalign:
             None : if no match
         """
 
+        if locality_filter_prop is None or locality_filter_prop > 1.0:
+            locality_filter_prop = 1.0
+
         return recognize.recognize(
             self,
             file_path=file_path,
             filter_matches=filter_matches,
             locality=locality,
+            locality_filter_prop=locality_filter_prop,
             start_end=start_end,
             *args,
             **kwargs,
@@ -713,6 +719,7 @@ class Audalign:
         alternate_strength_stat: str = None,
         filter_matches: float = None,
         locality: float = None,
+        locality_filter_prop: float = None,
         volume_threshold: float = 216,
         volume_floor: float = 10.0,
         vert_scaling: float = 1.0,
@@ -736,6 +743,7 @@ class Audalign:
             alternate_strength_stat (str, optional): confidence for fingerprints, ssim for visual, mse or count also work for visual. Defaults to None.
             filter_matches (int, float, optional): filter matches level for fingerprinting. Defaults to 1.
             locality (float, optional): In seconds for fingerprints, only matches files within given window sizes
+            locality_filter_prop (int, float,optional): within each offset, filters locality tuples by proportion of highest confidence to tuple confidence
             volume_threshold (float, optional): volume threshold for visual recognition. Defaults to 216.
             volume_floor (float): ignores volume levels below floow.
             vert_scaling (float): scales vertically to speed up calculations. Smaller numbers have smaller images.
@@ -767,6 +775,8 @@ class Audalign:
 
                 if filter_matches is None:
                     filter_matches = 1
+                if locality_filter_prop is None or locality_filter_prop > 1.0:
+                    locality_filter_prop = 1.0
 
                 if start_end is not None:
                     self.fingerprint_file(target_file, start_end=start_end)
@@ -787,6 +797,7 @@ class Audalign:
                     target_file,
                     filter_matches=filter_matches,
                     locality=locality,
+                    locality_filter_prop=locality_filter_prop,
                     start_end=start_end,
                 )
 
@@ -879,6 +890,7 @@ class Audalign:
         technique: str = "fingerprints",
         filter_matches: float = None,
         locality: float = None,
+        locality_filter_prop: float = None,
         cor_sample_rate: int = fingerprint.DEFAULT_FS,
         **kwargs,
     ):
@@ -892,6 +904,7 @@ class Audalign:
             technique (str): either "fingerprints" or "correlation"
             filter_matches (float): filters based on confidence.
             locality (float): Only recognizes against fingerprints in given width. In seconds
+            locality_filter_prop (int, float,optional): within each offset, filters locality tuples by proportion of highest confidence to tuple confidence
             cor_sample_rate (int): Sampling rate for correlation
             **kwargs: Additional arguments for finding peaks in correlation
 
@@ -917,6 +930,8 @@ class Audalign:
             if technique == "fingerprints":
                 if filter_matches is None:
                     filter_matches = 1
+                if locality_filter_prop is None or locality_filter_prop > 1.0:
+                    locality_filter_prop = 1.0
                 self.fingerprint_directory(directory_path)
             elif technique == "correlation":
                 if filter_matches is None:
@@ -936,7 +951,10 @@ class Audalign:
                 if name in self.file_names:
                     if technique == "fingerprints":
                         alignment = self.recognize(
-                            file_path, filter_matches=filter_matches, locality=locality
+                            file_path,
+                            filter_matches=filter_matches,
+                            locality=locality,
+                            locality_filter_prop=locality_filter_prop,
                         )
                     elif technique == "correlation":
                         alignment = self.correcognize_directory(

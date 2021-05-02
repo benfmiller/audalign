@@ -8,6 +8,7 @@ def recognize(
     file_path: str,
     filter_matches: int,
     locality: float,
+    locality_filter_prop: float,
     start_end: tuple,
 ):
     """
@@ -41,7 +42,7 @@ def recognize(
     t = time.time()
     matches = find_matches(audalign_object, file_path, start_end=start_end)
     if locality:
-        rough_match = locality_align_matches(matches, locality)
+        rough_match = locality_align_matches(matches, locality, locality_filter_prop)
     else:
         rough_match = align_matches(matches)
 
@@ -134,7 +135,7 @@ def align_matches(matches: list):
     return sample_difference_counter
 
 
-def locality_align_matches(matches: list, locality: int):
+def locality_align_matches(matches: list, locality: int, locality_filter_prop: int):
 
     print("Aligning matches")
     sample_difference_counter = {}
@@ -176,12 +177,19 @@ def locality_align_matches(matches: list, locality: int):
             for tup, samp_dict in toff_dict.items():
                 for samp_diff, confidence in samp_dict.items():
                     if temp_file_dict.get(samp_diff) is None:
-                        temp_file_dict[samp_diff] = [confidence, [tup]]
+                        temp_file_dict[samp_diff] = [confidence, []]
                     elif temp_file_dict[samp_diff][0] < confidence:
                         temp_file_dict[samp_diff][0] = confidence
-                        temp_file_dict[samp_diff][1] = [tup]
-                    elif temp_file_dict[samp_diff][0] == confidence:
-                        temp_file_dict[samp_diff][1] += [tup]
+                    temp_file_dict[samp_diff][1] += [(*tup, confidence)]
+                    # if confidence > locality_filter_prop:
+                    #     if temp_file_dict.get(samp_diff) is None:
+                    #         temp_file_dict[samp_diff] = [confidence, []]
+                    #     elif temp_file_dict[samp_diff][0] < confidence:
+                    #         temp_file_dict[samp_diff][0] = confidence
+                    #     temp_file_dict[samp_diff][1] += [(*tup, confidence)]
+                    # else:
+                    #     if temp_file_dict.get(samp_diff) is None:
+                    #         temp_file_dict[samp_diff] = [confidence, []]
 
             # breaks out of while if at end of file and within locality
             if end_window >= len(file_dict[name]):
@@ -213,6 +221,15 @@ def locality_align_matches(matches: list, locality: int):
             temp_file_dict = {}
             for i in range(30):
                 temp_file_dict[temp_file_list[i][0]] = temp_file_list[i][1]
+
+        # locality_filter_prop
+        for _, matches in temp_file_dict.items():
+            index = 0
+            while index < len(matches[1]):
+                if matches[1][index][2] < matches[0] * locality_filter_prop:
+                    matches[1].pop(index)
+                    continue
+                index += 1
 
         sample_difference_counter[name] = temp_file_dict
 
@@ -375,6 +392,7 @@ def process_results(
                                 * fingerprint.DEFAULT_OVERLAP_RATIO,
                                 5,
                             ),
+                            offset_loc[instance][location][2],
                         )
                     ]
             else:
