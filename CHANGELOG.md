@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.3.0] 2021 - 05 - 02
+
+### Added
+- Locality_filter_prop: filters locality tuples by proportion of highest confidence to tuple confidence within each offset
+- Locality tuples include individual confidences at the end of each tuple
+
 ## [0.2.2] 2021 - 05 - 02
 
 ### Fixed
