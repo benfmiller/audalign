@@ -176,11 +176,12 @@ def locality_align_matches(matches: list, locality: int):
             for tup, samp_dict in toff_dict.items():
                 for samp_diff, confidence in samp_dict.items():
                     if temp_file_dict.get(samp_diff) is None:
-                        temp_file_dict[samp_diff] = [0, []]
-                    if temp_file_dict[samp_diff][0] < confidence:
+                        temp_file_dict[samp_diff] = [confidence, [tup]]
+                    elif temp_file_dict[samp_diff][0] < confidence:
                         temp_file_dict[samp_diff][0] = confidence
-                        temp_file_dict[samp_diff][1] = []
-                    temp_file_dict[samp_diff][1] += [tup]
+                        temp_file_dict[samp_diff][1] = [tup]
+                    elif temp_file_dict[samp_diff][0] == confidence:
+                        temp_file_dict[samp_diff][1] += [tup]
 
             # breaks out of while if at end of file and within locality
             if end_window >= len(file_dict[name]):
