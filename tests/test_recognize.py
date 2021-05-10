@@ -8,16 +8,12 @@ test_file2 = "test_audio/testers/pink_noise.mp3"
 
 class TestRecognize:
 
-    ada = ad.Audalign("all_audio_panako2.json")
+    ada = ad.Audalign("test_fingerprints.json")
 
     @pytest.mark.smoke
     def test_recognize(self):
         assert self.ada.total_fingerprints > 0
         self.ada.set_accuracy(4)
-
-        # from before loading all audio panako
-        # ada.fingerprinted_files[0][0] = "different"
-        # ada.file_names[0] = "different"
 
         result = self.ada.recognize(test_file)
         assert len(result) > 1
@@ -66,7 +62,6 @@ class TestRecognize:
         )
         assert results
 
-    # @pytest.mark.skip(reason="Not implemented yet")
     @pytest.mark.smoke
     def test_correcognize(self):
         results = self.ada.correcognize(
@@ -75,7 +70,6 @@ class TestRecognize:
         )
         assert results
 
-    # @pytest.mark.skip(reason="Not implemented yet")
     def test_correcognize_directory(self):
         results = self.ada.correcognize_directory(
             test_file,
@@ -87,23 +81,18 @@ class TestRecognize:
 class TestAlign:
 
     ada = ad.Audalign()
-    # if not os.path.isdir("test_alignment"):
-    #     os.mkdir("test_alignment")
 
     @pytest.mark.smoke
     def test_align_fingerprint(self, tmpdir):
-        # result = self.ada.align("test_audio/test_shifts", "test_alignment")
         result = self.ada.align("test_audio/test_shifts", tmpdir)
         assert result
         result = self.ada.align(
-            # "test_audio/test_shifts", "test_alignment", write_extension=".wav"
             "test_audio/test_shifts",
             tmpdir,
             write_extension=".wav",
         )
         assert result
 
-    # @pytest.mark.skip(reason="Not implemented yet")
     def test_align_cor(self, tmpdir):
         result = self.ada.align(
             "test_audio/test_shifts", tmpdir, technique="correlation"
@@ -136,7 +125,6 @@ class TestAlign:
         )
         assert result
 
-    # @pytest.mark.skip(reason="Not implemented yet")
     def test_target_align_cor(self, tmpdir):
         result = self.ada.target_align(
             "test_audio/test_shifts/Eigen-song-base.mp3",

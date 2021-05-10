@@ -1,6 +1,5 @@
 import audalign as ad
 import pytest
-import os
 
 
 def test_always_true():
@@ -17,25 +16,25 @@ class TestObject:
         ada = ad.Audalign()
         assert ada.total_fingerprints == 0
 
-        ada2 = ad.Audalign("all_audio.json")
+        ada2 = ad.Audalign("test_fingerprints.json")
         assert ada2.total_fingerprints > 0
         assert len(ada2.fingerprinted_files) > 0
 
     def test_filter_duplicates(self):
         ada1 = ad.Audalign()
 
-        ada1.load_fingerprinted_files("all_audio_panako.json")
+        ada1.load_fingerprinted_files("test_fingerprints.json")
         a = len(ada1.file_names)
         b = ada1.total_fingerprints
         c = len(ada1.fingerprinted_files)
-        ada1.load_fingerprinted_files("all_audio_panako.json")
+        ada1.load_fingerprinted_files("test_fingerprints.json")
         ada1.filter_duplicates()
         assert a == len(ada1.file_names)
         assert b == ada1.total_fingerprints
         assert c == len(ada1.fingerprinted_files)
 
     def test_clear(self):
-        ada = ad.Audalign("all_audio.json")
+        ada = ad.Audalign("test_fingerprints.json")
         assert len(ada.fingerprinted_files) > 0
         ada.clear_fingerprints()
         assert len(ada.fingerprinted_files) == 0
@@ -64,7 +63,7 @@ class TestObject:
         assert ad.fingerprint.threshold == 200
 
     def test_write_and_load(self):
-        ada = ad.Audalign("all_audio_panako.json")
+        ada = ad.Audalign("test_fingerprints.json")
         assert len(ada.file_names) > 0
         ada.save_fingerprinted_files("test_save_fingerprints.json")
         ada.save_fingerprinted_files("test_save_fingerprints.pickle")
@@ -84,23 +83,11 @@ class TestObject:
 
 class TestRemoveNoise:
     test_file = "test_audio/testers/test.mp3"
-    # a_dir = tmpdir_factory.mktemp("test_alignment")
-    # a_dir = tmp_path
-    # if not os.path.isdir("test_alignment"):
-    #     os.mkdir("test_alignment")
 
     def test_remove_noise_directory(self, tmpdir):
-        # p = tmpdir.mkdir("test_alignmnet")
         ada = ad.Audalign()
         ada.remove_noise_directory(
-            "test_audio/testers",
-            "test_audio/testers/pink_noise.mp3",
-            10,
-            30,
-            tmpdir
-            # p
-            # self.a_dir
-            # "test_alignment",
+            "test_audio/testers", "test_audio/testers/pink_noise.mp3", 10, 30, tmpdir
         )
 
     def test_remove_noise(self, tmpdir):
@@ -109,7 +96,6 @@ class TestRemoveNoise:
             10,
             20,
             tmpdir.join("test.mp3"),
-            # "test_alignment/test.mp3",
         )
 
         ad.Audalign.remove_noise_file(
@@ -117,7 +103,6 @@ class TestRemoveNoise:
             1,
             3,
             tmpdir.join("test.mp3"),
-            # "test_alignment/test.mp3",
             alt_noise_filepath="test_audio/testers/pink_noise.mp3",
         )
 
@@ -181,26 +166,19 @@ class TestFingerprinting:
 
 class TestStartEnd:
     test_file = "test_audio/testers/test.mp3"
-    # if not os.path.isdir("test_audio/convert"):
-    #     os.mkdir("test_audio/convert")
 
     ada = ad.Audalign()
 
     def test_start(self, tmpdir):
         self.ada.convert_audio_file(
-            self.test_file,
-            tmpdir.join("test_temp.mp3"),
-            start_end=(0, 0)
-            # self.test_file, "test_audio/convert/test_temp.mp3", start_end=(0, 0)
+            self.test_file, tmpdir.join("test_temp.mp3"), start_end=(0, 0)
         )
         self.ada.convert_audio_file(
-            # self.test_file, "test_audio/convert/test_temp.mp3", start_end=(10, 0)
             self.test_file,
             tmpdir.join("test_temp.mp3"),
             start_end=(10, 0),
         )
         self.ada.convert_audio_file(
-            # self.test_file, "test_audio/convert/test_temp.mp3", start_end=(1000, 0)
             self.test_file,
             tmpdir.join("test_temp.mp3"),
             start_end=(1000, 0),
@@ -208,19 +186,16 @@ class TestStartEnd:
 
     def test_end(self, tmpdir):
         self.ada.convert_audio_file(
-            # self.test_file, "test_audio/convert/test_temp.mp3", start_end=(0, 10)
             self.test_file,
             tmpdir.join("test_temp.mp3"),
             start_end=(0, 10),
         )
         self.ada.convert_audio_file(
-            # self.test_file, "test_audio/convert/test_temp.mp3", start_end=(0, -10)
             self.test_file,
             tmpdir.join("test_temp.mp3"),
             start_end=(0, -10),
         )
         self.ada.convert_audio_file(
-            # self.test_file, "test_audio/convert/test_temp.mp3", start_end=(0, 1000)
             self.test_file,
             tmpdir.join("test_temp.mp3"),
             start_end=(0, 1000),
@@ -228,13 +203,11 @@ class TestStartEnd:
 
     def test_both(self, tmpdir):
         self.ada.convert_audio_file(
-            # self.test_file, "test_audio/convert/test_temp.mp3", start_end=(5, 10)
             self.test_file,
             tmpdir.join("test_temp.mp3"),
             start_end=(5, 10),
         )
         self.ada.convert_audio_file(
-            # self.test_file, "test_audio/convert/test_temp.mp3", start_end=(5, -10)
             self.test_file,
             tmpdir.join("test_temp.mp3"),
             start_end=(5, -10),
