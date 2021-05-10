@@ -84,32 +84,40 @@ class TestObject:
 
 class TestRemoveNoise:
     test_file = "test_audio/testers/test.mp3"
-    if not os.path.isdir("test_alignment"):
-        os.mkdir("test_alignment")
+    # a_dir = tmpdir_factory.mktemp("test_alignment")
+    # a_dir = tmp_path
+    # if not os.path.isdir("test_alignment"):
+    #     os.mkdir("test_alignment")
 
-    def test_remove_noise_directory(self):
+    def test_remove_noise_directory(self, tmpdir):
+        # p = tmpdir.mkdir("test_alignmnet")
         ada = ad.Audalign()
         ada.remove_noise_directory(
             "test_audio/testers",
             "test_audio/testers/pink_noise.mp3",
             10,
             30,
-            "test_alignment",
+            tmpdir
+            # p
+            # self.a_dir
+            # "test_alignment",
         )
 
-    def test_remove_noise(self):
+    def test_remove_noise(self, tmpdir):
         ad.Audalign.remove_noise_file(
             self.test_file,
             10,
             20,
-            "test_alignment/test.mp3",
+            tmpdir.join("test.mp3"),
+            # "test_alignment/test.mp3",
         )
 
         ad.Audalign.remove_noise_file(
             self.test_file,
             1,
             3,
-            "test_alignment/test.mp3",
+            tmpdir.join("test.mp3"),
+            # "test_alignment/test.mp3",
             alt_noise_filepath="test_audio/testers/pink_noise.mp3",
         )
 
@@ -173,37 +181,61 @@ class TestFingerprinting:
 
 class TestStartEnd:
     test_file = "test_audio/testers/test.mp3"
-    if not os.path.isdir("test_audio/convert"):
-        os.mkdir("test_audio/convert")
+    # if not os.path.isdir("test_audio/convert"):
+    #     os.mkdir("test_audio/convert")
 
     ada = ad.Audalign()
 
-    def test_start(self):
+    def test_start(self, tmpdir):
         self.ada.convert_audio_file(
-            self.test_file, "test_audio/convert/test_temp.mp3", start_end=(0, 0)
+            self.test_file,
+            tmpdir.join("test_temp.mp3"),
+            start_end=(0, 0)
+            # self.test_file, "test_audio/convert/test_temp.mp3", start_end=(0, 0)
         )
         self.ada.convert_audio_file(
-            self.test_file, "test_audio/convert/test_temp.mp3", start_end=(10, 0)
+            # self.test_file, "test_audio/convert/test_temp.mp3", start_end=(10, 0)
+            self.test_file,
+            tmpdir.join("test_temp.mp3"),
+            start_end=(10, 0),
         )
         self.ada.convert_audio_file(
-            self.test_file, "test_audio/convert/test_temp.mp3", start_end=(1000, 0)
-        )
-
-    def test_end(self):
-        self.ada.convert_audio_file(
-            self.test_file, "test_audio/convert/test_temp.mp3", start_end=(0, 10)
-        )
-        self.ada.convert_audio_file(
-            self.test_file, "test_audio/convert/test_temp.mp3", start_end=(0, -10)
-        )
-        self.ada.convert_audio_file(
-            self.test_file, "test_audio/convert/test_temp.mp3", start_end=(0, 1000)
+            # self.test_file, "test_audio/convert/test_temp.mp3", start_end=(1000, 0)
+            self.test_file,
+            tmpdir.join("test_temp.mp3"),
+            start_end=(1000, 0),
         )
 
-    def test_both(self):
+    def test_end(self, tmpdir):
         self.ada.convert_audio_file(
-            self.test_file, "test_audio/convert/test_temp.mp3", start_end=(5, 10)
+            # self.test_file, "test_audio/convert/test_temp.mp3", start_end=(0, 10)
+            self.test_file,
+            tmpdir.join("test_temp.mp3"),
+            start_end=(0, 10),
         )
         self.ada.convert_audio_file(
-            self.test_file, "test_audio/convert/test_temp.mp3", start_end=(5, -10)
+            # self.test_file, "test_audio/convert/test_temp.mp3", start_end=(0, -10)
+            self.test_file,
+            tmpdir.join("test_temp.mp3"),
+            start_end=(0, -10),
+        )
+        self.ada.convert_audio_file(
+            # self.test_file, "test_audio/convert/test_temp.mp3", start_end=(0, 1000)
+            self.test_file,
+            tmpdir.join("test_temp.mp3"),
+            start_end=(0, 1000),
+        )
+
+    def test_both(self, tmpdir):
+        self.ada.convert_audio_file(
+            # self.test_file, "test_audio/convert/test_temp.mp3", start_end=(5, 10)
+            self.test_file,
+            tmpdir.join("test_temp.mp3"),
+            start_end=(5, 10),
+        )
+        self.ada.convert_audio_file(
+            # self.test_file, "test_audio/convert/test_temp.mp3", start_end=(5, -10)
+            self.test_file,
+            tmpdir.join("test_temp.mp3"),
+            start_end=(5, -10),
         )
