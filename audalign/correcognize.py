@@ -125,7 +125,10 @@ def correcognize_directory(
     )
     target_array = signal.sosfilt(sos, target_array)
 
-    against_files = find_files(against_directory)
+    if type(against_directory) == str:
+        against_files = find_files(against_directory)
+    elif type(against_directory) == list:
+        against_files = zip(against_directory, ["_"] * len(against_directory))
     file_match = {}
     for file_path, _ in against_files:
 

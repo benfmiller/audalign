@@ -882,6 +882,42 @@ class Audalign:
             self.fingerprinted_files = temp_fingerprinted_files
             self.total_fingerprints = temp_total_fingerprints
 
+    def align_files(
+        self,
+        filename_a,
+        filename_b,
+        *filenames,
+        destination_path: str = None,
+        write_extension: str = None,
+        technique: str = "fingerprints",
+        filter_matches: float = None,
+        locality: float = None,
+        locality_filter_prop: float = None,
+        cor_sample_rate: int = fingerprint.DEFAULT_FS,
+        **kwargs,
+    ):
+        """[summary]
+
+        Args:
+            filename_a ([type]): [description]
+            filename_b ([type]): [description]
+        """  # TODO Docs
+        filename_list = [filename_a, filename_b, *filenames]
+        # print(filename_a, filename_b, *filenames, sep="\n")
+        # print(filename_list)
+        return self._align(
+            filename_list=filename_list,
+            file_dir=None,
+            destination_path=destination_path,
+            write_extension=write_extension,
+            technique=technique,
+            filter_matches=filter_matches,
+            locality=locality,
+            locality_filter_prop=locality_filter_prop,
+            cor_sample_rate=cor_sample_rate,
+            **kwargs,
+        )
+
     def align(
         self,
         directory_path: str,
@@ -912,6 +948,32 @@ class Audalign:
         -------
             files_shifts (dict{float}): dict of file name with shift as value
         """
+        return self._align(
+            filename_list=None,
+            file_dir=directory_path,
+            destination_path=destination_path,
+            write_extension=write_extension,
+            technique=technique,
+            filter_matches=filter_matches,
+            locality=locality,
+            locality_filter_prop=locality_filter_prop,
+            cor_sample_rate=cor_sample_rate,
+            **kwargs,
+        )
+
+    def _align(
+        self,
+        filename_list: str,
+        file_dir: str,
+        destination_path: str = None,
+        write_extension: str = None,
+        technique: str = "fingerprints",
+        filter_matches: float = None,
+        locality: float = None,
+        locality_filter_prop: float = None,
+        cor_sample_rate: int = fingerprint.DEFAULT_FS,
+        **kwargs,
+    ):
 
         self.file_names, temp_file_names = [], self.file_names
         self.fingerprinted_files, temp_fingerprinted_files = (
@@ -932,11 +994,18 @@ class Audalign:
                     filter_matches = 1
                 if locality_filter_prop is None or locality_filter_prop > 1.0:
                     locality_filter_prop = 1.0
-                self.fingerprint_directory(directory_path)
+                if file_dir:
+                    self.fingerprint_directory(file_dir)
+                else:
+                    [self.fingerprint_file(x) for x in filename_list]
             elif technique == "correlation":
                 if filter_matches is None:
                     filter_matches = 0.5
-                self.file_names = filehandler.get_audio_files_directory(directory_path)
+                if file_dir:
+                    self.file_names = filehandler.get_audio_files_directory(file_dir)
+                else:
+                    self.file_names = [os.path.basename(x) for x in filename_list]
+
             else:
                 raise NameError(
                     f'Technique parameter must be fingerprint, visual, or correlation, not "{technique}"'
@@ -945,8 +1014,14 @@ class Audalign:
             total_alignment = {}
             file_names_and_paths = {}
 
+            if file_dir:
+                file_list = filehandler.find_files(file_dir)
+                dir_or_list = file_dir
+            else:
+                file_list = zip(filename_list, ["_"] * len(filename_list))
+                dir_or_list = filename_list
             # Get matches and paths
-            for file_path, _ in filehandler.find_files(directory_path):
+            for file_path, _ in file_list:
                 name = os.path.basename(file_path)
                 if name in self.file_names:
                     if technique == "fingerprints":
@@ -959,7 +1034,7 @@ class Audalign:
                     elif technique == "correlation":
                         alignment = self.correcognize_directory(
                             file_path,
-                            directory_path,
+                            dir_or_list,
                             filter_matches=filter_matches,
                             sample_rate=cor_sample_rate,
                             **kwargs,
@@ -1174,7 +1249,10 @@ def _fingerprint_worker(
     except FileNotFoundError:
         print(f'"{file_path}" not found')
         return None, None
-    except CouldntDecodeError:
+    except (
+        CouldntDecodeError,
+        IndexError,
+    ):  # Pydub throws IndexErrors for some files on Ubuntu (json, txt, others?)
         print(f'File "{file_name}" could not be decoded')
         return None, None
 
