@@ -1,5 +1,18 @@
 # Change Log
 
+## [0.3.1] 2021 - 05 - 12
+
+### Added
+- align_files: like align, but takes two or more filenames/paths to align
+- align_files tests
+- addopts to pytest.ini file
+
+### Changed
+- tests: all write to tmpdir except for saving fingerprints
+
+### Fixed
+- Pydub linux file reading bug: throws IndexError where it should be CouldntDecodeError
+
 ## [0.3.0] 2021 - 05 - 02
 
 ### Added
