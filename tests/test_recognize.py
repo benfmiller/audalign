@@ -106,6 +106,24 @@ class TestAlign:
         )
         assert result
 
+    def test_align_files_fingerprints(self, tmpdir):
+        result = self.ada.align_files(
+            "test_audio/test_shifts/Eigen-20sec.mp3",
+            "test_audio/test_shifts/Eigen-song-base.mp3",
+            destination_path=tmpdir,
+        )
+        assert result
+
+    def test_align_files_cor(self, tmpdir):
+        result = self.ada.align_files(
+            "test_audio/test_shifts/Eigen-20sec.mp3",
+            "test_audio/test_shifts/Eigen-song-base.mp3",
+            destination_path=tmpdir,
+            write_extension=".wav",
+            technique="correlation",
+        )
+        assert result
+
     def test_target_align_fingerprint(self, tmpdir):
         result = self.ada.target_align(
             "test_audio/test_shifts/Eigen-song-base.mp3",
