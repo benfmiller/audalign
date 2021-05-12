@@ -919,7 +919,7 @@ class Audalign:
         Returns
         -------
             files_shifts (dict{float}): dict of file name with shift as value
-        """  # TODO Docs
+        """
         filename_list = [filename_a, filename_b, *filenames]
         # print(filename_a, filename_b, *filenames, sep="\n")
         # print(filename_list)
