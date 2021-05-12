@@ -285,11 +285,13 @@ class Audalign:
         -------
         None
         """
+        if type(path) == str:
+            file_names = filehandler.find_files(path, extensions)
+        elif type(path) == list:
+            file_names = zip(path, ["_"] * len(path))
 
         filenames_to_fingerprint = []
-        for filename, _ in filehandler.find_files(
-            path, extensions
-        ):  # finds all files to fingerprint
+        for filename, _ in file_names:  # finds all files to fingerprint
             file_name = os.path.basename(filename)
             if file_name in self.file_names:
                 print(f"{file_name} already fingerprinted")
@@ -997,7 +999,7 @@ class Audalign:
                 if file_dir:
                     self.fingerprint_directory(file_dir)
                 else:
-                    [self.fingerprint_file(x) for x in filename_list]
+                    self.fingerprint_directory(filename_list)
             elif technique == "correlation":
                 if filter_matches is None:
                     filter_matches = 0.5
