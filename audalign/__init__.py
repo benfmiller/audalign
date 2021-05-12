@@ -898,11 +898,27 @@ class Audalign:
         cor_sample_rate: int = fingerprint.DEFAULT_FS,
         **kwargs,
     ):
-        """[summary]
+        """
+        Finds matches and relative offsets for all files given, aligns them, and writes them to destination_path if given
 
-        Args:
-            filename_a ([type]): [description]
-            filename_b ([type]): [description]
+        try align_files(*filepath_list) for more concision if desired
+
+        Args
+            filename_a (str): String of path for alignment
+            filename_b (str): String of path for alignment
+            *filenames (strs): strings of paths for alignment
+            destination_path (str): String of path to write alignments to
+            write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
+            technique (str): either "fingerprints" or "correlation"
+            filter_matches (float): filters based on confidence.
+            locality (float): Only recognizes against fingerprints in given width. In seconds
+            locality_filter_prop (int, float,optional): within each offset, filters locality tuples by proportion of highest confidence to tuple confidence
+            cor_sample_rate (int): Sampling rate for correlation
+            **kwargs: Additional arguments for finding peaks in correlation
+
+        Returns
+        -------
+            files_shifts (dict{float}): dict of file name with shift as value
         """  # TODO Docs
         filename_list = [filename_a, filename_b, *filenames]
         # print(filename_a, filename_b, *filenames, sep="\n")
