@@ -1,17 +1,19 @@
-import audalign.filehandler as filehandler
-import audalign.fingerprint as fingerprint
-import audalign.recognize as recognize
-import audalign.align as align
-import audalign.visrecognize as visrecognize
-import audalign.correcognize as correcognize
-from pydub.exceptions import CouldntDecodeError
-from pydub.utils import mediainfo
-from typing import Tuple
-from functools import partial
+import json
 import multiprocessing
 import os
 import pickle
-import json
+from functools import partial
+from typing import Tuple
+
+from pydub.exceptions import CouldntDecodeError
+from pydub.utils import mediainfo
+
+import audalign.align as align
+import audalign.correcognize as correcognize
+import audalign.filehandler as filehandler
+import audalign.fingerprint as fingerprint
+import audalign.recognize as recognize
+import audalign.visrecognize as visrecognize
 
 
 class Audalign:
@@ -877,6 +879,7 @@ class Audalign:
             )
 
             files_shifts["match_info"] = total_alignment
+            files_shifts["names_and_paths"] = file_names_and_paths
             return files_shifts
 
         finally:
@@ -1083,12 +1086,27 @@ class Audalign:
             )
 
             files_shifts["match_info"] = total_alignment
+            files_shifts["names_and_paths"] = file_names_and_paths
             return files_shifts
 
         finally:
             self.file_names = temp_file_names
             self.fingerprinted_files = temp_fingerprinted_files
             self.total_fingerprints = temp_total_fingerprints
+
+    def fine_align(
+        self,
+        results,
+        destination_path: str = None,
+        write_extension: str = None,
+        technique="correlation",
+        width: float = 2,
+        cor_sample_rate: int = fingerprint.DEFAULT_FS,
+        match_index: int = 0,
+        **kwargs,
+    ):
+
+        print("sup")
 
     @staticmethod
     def _write_shifted_files(
