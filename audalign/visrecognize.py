@@ -245,8 +245,6 @@ def _visrecognize(
     _calculate_comp_values = partial(
         calculate_comp_values,
         img_width=img_width,
-        target_arr2d=transposed_target_arr2d,
-        against_arr2d=transposed_against_arr2d,
         calc_mse=calc_mse,
     )
 
@@ -260,18 +258,41 @@ def _visrecognize(
         else:
             nprocesses = 1 if nprocesses <= 0 else nprocesses
 
-        with multiprocessing.Pool(nprocesses) as pool:
-            results_list = pool.map(_calculate_comp_values, tqdm.tqdm(index_list))
+        print(nprocesses)  # FIXME
+
+        index_list = divy_index_list(
+            index_list, transposed_target_arr2d, transposed_against_arr2d, nprocesses
+        )
+        # index_list = index_list[:10]
+
+        multiprocessing.set_start_method("spawn")
+
+        with multiprocessing.get_context("spawn").Pool(nprocesses) as pool:
+            # pool = multiprocessing.get_context("spawn").Pool(nprocesses)
+            results_list = pool.map(_calculate_comp_values, tqdm.tqdm(list(index_list)))
             pool.close()
             pool.join()
     else:
+        index_list = divy_index_list(
+            index_list, transposed_target_arr2d, transposed_against_arr2d, 1
+        )
         results_list = []
-        for i in tqdm.tqdm(index_list):
+        for i in tqdm.tqdm(list(index_list)):
             results_list += [_calculate_comp_values(i)]
-    return results_list
+    new_results_list = []
+    for i in results_list:
+        new_results_list += i
+
+    return new_results_list
 
 
 # ------------------------------------------------------------------------------------------
+
+
+def divy_index_list(index_list, target_arr, against_arr, nprocesses):
+    index_list = index_list[:6]
+    sublists = [list(index_list)[i::nprocesses] for i in range(nprocesses)]
+    return zip(sublists, [target_arr] * nprocesses, [against_arr] * nprocesses)
 
 
 def get_arrays(
@@ -343,30 +364,38 @@ def pair_index_tuples(target_list, against_list):
 
 
 def calculate_comp_values(
-    index_tuple, img_width=0, target_arr2d=[[]], against_arr2d=[[]], calc_mse=False
+    index_tuple_target_arr_against_arr, img_width=0, calc_mse=False
 ):
     # print(np.amax(target_arr2d[index_tuple[0] : index_tuple[0] + img_width]))
     # array.mean() very small range of values, usually between 0.4 and 2
     # Plus, finding the max only uses regions with large peaks, which could reduce
     # noisy secions being included.
-    try:
-        if calc_mse:
-            m = mean_squared_error(
+    index_tuples = index_tuple_target_arr_against_arr[0]
+    target_arr2d = index_tuple_target_arr_against_arr[1]
+    against_arr2d = index_tuple_target_arr_against_arr[2]
+    results_list = []
+    for index_tuple in tqdm.tqdm(index_tuples):
+        try:
+            if calc_mse:
+                m = mean_squared_error(
+                    target_arr2d[index_tuple[0] : index_tuple[0] + img_width],
+                    against_arr2d[index_tuple[1] : index_tuple[1] + img_width],
+                )
+            else:
+                m = 20000000
+            s = ssim(
                 target_arr2d[index_tuple[0] : index_tuple[0] + img_width],
                 against_arr2d[index_tuple[1] : index_tuple[1] + img_width],
             )
-        else:
-            m = 20000000
-        s = ssim(
-            target_arr2d[index_tuple[0] : index_tuple[0] + img_width],
-            against_arr2d[index_tuple[1] : index_tuple[1] + img_width],
-        )
-        return (index_tuple[1], index_tuple[0], (m, s))
-    except ZeroDivisionError as e:
-        m = 10000000
-        print(f"zero division error for index {index_tuple} and img width{img_width}")
-        s = 10000000
-        return (index_tuple[1], index_tuple[0], (m, s))
+            results_list += [(index_tuple[1], index_tuple[0], (m, s))]
+        except ZeroDivisionError as e:
+            m = 10000000
+            print(
+                f"zero division error for index {index_tuple} and img width{img_width}"
+            )
+            s = 10000000
+            results_list += [(index_tuple[1], index_tuple[0], (m, s))]
+    return results_list
 
 
 # ------------------------------------------------------------------------------------------
