@@ -153,3 +153,4 @@ audio_files
 test_save_fingerprints*
 .vs
 .icon
+Session.vim
