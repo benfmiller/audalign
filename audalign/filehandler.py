@@ -281,15 +281,39 @@ def _remove_noise(
         print(f"    Coudn't Decode {file_path}")
 
 
-def shift_write_files(files_shifts, destination_path, names_and_paths, write_extension):
+def shift_get_files(results):
+    names_and_paths = results.pop("names_and_paths")
+    results.pop("match_info")
 
+    return _shift_files(
+        results,
+        None,
+        names_and_paths,
+        None,
+        return_files=True,
+    )
+
+
+def shift_write_files(files_shifts, destination_path, names_and_paths, write_extension):
+    _shift_files(
+        files_shifts,
+        destination_path,
+        names_and_paths,
+        write_extension,
+        return_files=False,
+    )
+
+
+def _shift_files(
+    files_shifts, destination_path, names_and_paths, write_extension, return_files=False
+):
     max_shift = max(files_shifts.values())
 
     if write_extension:
         if write_extension[0] != ".":
             write_extension = "." + write_extension
 
-    audsegs = []
+    audsegs = {}
     for name in files_shifts.keys():
         file_path = names_and_paths[name]
 
@@ -300,34 +324,40 @@ def shift_write_files(files_shifts, destination_path, names_and_paths, write_ext
         audiofile = create_audiosegment(file_path)
 
         file_name = os.path.basename(file_path)
-        destination_name = os.path.join(destination_path, file_name)
         audiofile = silence + audiofile
+        if not return_files:
+            destination_name = os.path.join(destination_path, file_name)
 
-        if os.path.splitext(destination_name)[1] in cant_write_ext:
-            destination_name = os.path.splitext(destination_name)[0] + ".wav"
+            if os.path.splitext(destination_name)[1] in cant_write_ext:
+                destination_name = os.path.splitext(destination_name)[0] + ".wav"
 
-        if write_extension:
-            destination_name = os.path.splitext(destination_name)[0] + write_extension
-
-            print(f"Writing {destination_name}")
-
-            with open(destination_name, "wb") as file_place:
-                audiofile.export(
-                    file_place, format=os.path.splitext(destination_name)[1][1:]
+            if write_extension:
+                destination_name = (
+                    os.path.splitext(destination_name)[0] + write_extension
                 )
 
-        else:
-            print(f"Writing {destination_name}")
+                print(f"Writing {destination_name}")
 
-            with open(destination_name, "wb") as file_place:
-                audiofile.export(
-                    file_place, format=os.path.splitext(destination_name)[1][1:]
-                )
+                with open(destination_name, "wb") as file_place:
+                    audiofile.export(
+                        file_place, format=os.path.splitext(destination_name)[1][1:]
+                    )
 
-        audsegs += [audiofile]
+            else:
+                print(f"Writing {destination_name}")
+
+                with open(destination_name, "wb") as file_place:
+                    audiofile.export(
+                        file_place, format=os.path.splitext(destination_name)[1][1:]
+                    )
+
+        audsegs[file_path] = audiofile
+
+    if return_files:
+        return audsegs
 
     # adds silence to end of tracks to make them equally long for total
-    longest_seconds = max(audseg.duration_seconds for audseg in audsegs)
+    longest_seconds = max(audseg.duration_seconds for audseg in audsegs.values())
     for i in range(len(audsegs)):
         audsegs[i] = audsegs[i] + AudioSegment.silent(
             (longest_seconds - audsegs[i].duration_seconds) * 1000,
