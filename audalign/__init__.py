@@ -246,7 +246,9 @@ class Audalign:
                 name_checker.add(self.file_names[i])
                 i += 1
 
-    def fingerprint_directory(self, path: str, plot=False, extensions=["*"]) -> None:
+    def fingerprint_directory(
+        self, path: str, plot=False, extensions=["*"], _file_audsegs: dict = None
+    ) -> None:
         """
         Fingerprints all files in given directory and all subdirectories
 
@@ -254,6 +256,8 @@ class Audalign:
             path (str): path to directory to be fingerprinted
             plot (boolean): if true, plots the peaks to be fingerprinted on a spectrogram
             extensions (list[str]): specify which extensions to fingerprint
+            _file_audsegs (dict, None): For internal use with fine align
+            #TODO
 
         Returns
         -------
@@ -420,6 +424,7 @@ class Audalign:
         locality: float = None,
         locality_filter_prop: float = None,
         start_end: tuple = None,
+        max_lags: float = None,
         *args,
         **kwargs,
     ) -> None:
@@ -436,6 +441,7 @@ class Audalign:
             locality (float): filters matches to only count within locality. In seconds
             locality_filter_prop (int, float,optional): within each offset, filters locality tuples by proportion of highest confidence to tuple confidence
             start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
+            max_lags (float, optional): Maximum lags in seconds.
 
         Returns
         -------
@@ -457,6 +463,7 @@ class Audalign:
             locality=locality,
             locality_filter_prop=locality_filter_prop,
             start_end=start_end,
+            max_lags=max_lags,
             *args,
             **kwargs,
         )
@@ -471,6 +478,7 @@ class Audalign:
         match_len_filter: int = 30,
         sample_rate: int = fingerprint.DEFAULT_FS,
         plot: bool = False,
+        max_lags: float = None,
         **kwargs,
     ):
         """Uses cross correlation to find alignment
@@ -487,6 +495,7 @@ class Audalign:
             match_len_filter (int, optional): Limits number of matches returned. Defaults to 30.
             sample_rate (int, optional): Decodes audio file to this sample rate. Defaults to fingerprint.DEFAULT_FS.
             plot (bool, optional): Plots. Defaults to False.
+            max_lags (float, optional): Maximum lags in seconds.
             kwargs: additional arguments for scipy.signal.find_peaks.
 
         Returns:
@@ -501,6 +510,7 @@ class Audalign:
             match_len_filter=match_len_filter,
             sample_rate=sample_rate,
             plot=plot,
+            max_lags=max_lags,
             **kwargs,
         )
 
@@ -570,6 +580,8 @@ class Audalign:
         match_len_filter: int = 30,
         sample_rate: int = fingerprint.DEFAULT_FS,
         plot: bool = False,
+        max_lags: float = None,
+        _file_audsegs: dict = None,
         **kwargs,
     ):
         """Uses cross correlation to find alignment
@@ -585,6 +597,8 @@ class Audalign:
             match_len_filter (int, optional): Limits number of matches returned. Defaults to 30.
             sample_rate (int, optional): Decodes audio file to this sample rate. Defaults to fingerprint.DEFAULT_FS.
             plot (bool, optional): Plots. Defaults to False.
+            max_lags (float, optional): Maximum lags in seconds.
+            _file_audsegs (dict, optional): For use with align.
             kwargs: additional arguments for scipy.signal.find_peaks.
 
         Returns:
@@ -598,6 +612,8 @@ class Audalign:
             match_len_filter=match_len_filter,
             sample_rate=sample_rate,
             plot=plot,
+            max_lags=max_lags,
+            _file_audsegs=_file_audsegs,
             **kwargs,
         )
 
@@ -899,6 +915,7 @@ class Audalign:
         locality: float = None,
         locality_filter_prop: float = None,
         cor_sample_rate: int = fingerprint.DEFAULT_FS,
+        max_lags: float = None,
         **kwargs,
     ):
         """
@@ -917,6 +934,7 @@ class Audalign:
             locality (float): Only recognizes against fingerprints in given width. In seconds
             locality_filter_prop (int, float,optional): within each offset, filters locality tuples by proportion of highest confidence to tuple confidence
             cor_sample_rate (int): Sampling rate for correlation
+            max_lags (float, optional): Maximum lags in seconds for correlation.
             **kwargs: Additional arguments for finding peaks in correlation
 
         Returns
@@ -936,6 +954,7 @@ class Audalign:
             locality=locality,
             locality_filter_prop=locality_filter_prop,
             cor_sample_rate=cor_sample_rate,
+            max_lags=max_lags,
             **kwargs,
         )
 
@@ -949,6 +968,7 @@ class Audalign:
         locality: float = None,
         locality_filter_prop: float = None,
         cor_sample_rate: int = fingerprint.DEFAULT_FS,
+        max_lags: float = None,
         **kwargs,
     ):
         """
@@ -979,6 +999,7 @@ class Audalign:
             locality=locality,
             locality_filter_prop=locality_filter_prop,
             cor_sample_rate=cor_sample_rate,
+            max_lags=max_lags,
             **kwargs,
         )
 
@@ -993,6 +1014,8 @@ class Audalign:
         locality: float = None,
         locality_filter_prop: float = None,
         cor_sample_rate: int = fingerprint.DEFAULT_FS,
+        max_lags: float = None,
+        fine_aud_file_dict: dict = None,
         **kwargs,
     ):
 
@@ -1018,12 +1041,19 @@ class Audalign:
                 if file_dir:
                     self.fingerprint_directory(file_dir)
                 else:
-                    self.fingerprint_directory(filename_list)
+                    self.fingerprint_directory(
+                        filename_list,
+                        _file_audsegs=fine_aud_file_dict,
+                    )
             elif technique == "correlation":
                 if filter_matches is None:
                     filter_matches = 0.5
                 if file_dir:
                     self.file_names = filehandler.get_audio_files_directory(file_dir)
+                elif fine_aud_file_dict:
+                    self.file_names = [
+                        os.path.basename(x) for x in fine_aud_file_dict.keys()
+                    ]
                 else:
                     self.file_names = [os.path.basename(x) for x in filename_list]
 
@@ -1038,6 +1068,9 @@ class Audalign:
             if file_dir:
                 file_list = filehandler.find_files(file_dir)
                 dir_or_list = file_dir
+            elif fine_aud_file_dict:
+                file_list = zip(fine_aud_file_dict.keys(), ["_"] * len(filename_list))
+                dir_or_list = fine_aud_file_dict.keys()
             else:
                 file_list = zip(filename_list, ["_"] * len(filename_list))
                 dir_or_list = filename_list
@@ -1051,6 +1084,7 @@ class Audalign:
                             filter_matches=filter_matches,
                             locality=locality,
                             locality_filter_prop=locality_filter_prop,
+                            max_lags=max_lags,
                         )
                     elif technique == "correlation":
                         alignment = self.correcognize_directory(
@@ -1058,6 +1092,8 @@ class Audalign:
                             dir_or_list,
                             filter_matches=filter_matches,
                             sample_rate=cor_sample_rate,
+                            _file_audsegs=fine_aud_file_dict,
+                            max_lags=max_lags,
                             **kwargs,
                         )
                     file_names_and_paths[name] = file_path
@@ -1100,13 +1136,34 @@ class Audalign:
         destination_path: str = None,
         write_extension: str = None,
         technique="correlation",
-        width: float = 2,
+        filter_matches: float = None,
+        max_lags: float = 2,
+        locality: float = None,
+        locality_filter_prop: float = None,
         cor_sample_rate: int = fingerprint.DEFAULT_FS,
         match_index: int = 0,
         **kwargs,
     ):
+        paths_audio = filehandler.shift_get_files(
+            results, match_index=match_index
+        )  # TODO Match_index
 
-        print("sup")
+        new_results = self._align(
+            filename_list=None,
+            file_dir=None,
+            destination_path=destination_path,
+            write_extension=write_extension,
+            technique=technique,
+            filter_matches=filter_matches,
+            locality=locality,
+            locality_filter_prop=locality_filter_prop,
+            cor_sample_rate=cor_sample_rate,
+            max_lags=max_lags,
+            fine_aud_file_dict=paths_audio,
+            **kwargs,
+        )
+
+        return align.combine_fine(results, new_results)
 
     @staticmethod
     def _write_shifted_files(
