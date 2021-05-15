@@ -281,7 +281,7 @@ def _remove_noise(
         print(f"    Coudn't Decode {file_path}")
 
 
-def shift_get_files(results):
+def shift_get_files(results: dict):
     names_and_paths = results.pop("names_and_paths")
     results.pop("match_info")
 
@@ -294,7 +294,12 @@ def shift_get_files(results):
     )
 
 
-def shift_write_files(files_shifts, destination_path, names_and_paths, write_extension):
+def shift_write_files(
+    files_shifts: dict,
+    destination_path: str,
+    names_and_paths: dict,
+    write_extension: str,
+):
     _shift_files(
         files_shifts,
         destination_path,
@@ -305,7 +310,11 @@ def shift_write_files(files_shifts, destination_path, names_and_paths, write_ext
 
 
 def _shift_files(
-    files_shifts, destination_path, names_and_paths, write_extension, return_files=False
+    files_shifts: dict,
+    destination_path: str,
+    names_and_paths: dict,
+    write_extension: str,
+    return_files: bool = False,
 ):
     max_shift = max(files_shifts.values())
 
@@ -356,8 +365,10 @@ def _shift_files(
     if return_files:
         return audsegs
 
+    audsegs = list(audsegs.values())
+
     # adds silence to end of tracks to make them equally long for total
-    longest_seconds = max(audseg.duration_seconds for audseg in audsegs.values())
+    longest_seconds = max(audseg.duration_seconds for audseg in audsegs)
     for i in range(len(audsegs)):
         audsegs[i] = audsegs[i] + AudioSegment.silent(
             (longest_seconds - audsegs[i].duration_seconds) * 1000,
