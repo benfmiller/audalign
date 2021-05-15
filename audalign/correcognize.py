@@ -18,6 +18,7 @@ def correcognize(
     match_len_filter: int = 30,
     sample_rate: int = fingerprint.DEFAULT_FS,
     plot: bool = False,
+    max_lags: float = None,
     **kwargs,
 ):
     """Called from audalign correcognize
@@ -108,6 +109,8 @@ def correcognize_directory(
     sample_rate: int = fingerprint.DEFAULT_FS,
     match_len_filter: int = 30,
     plot: bool = False,
+    max_lags: float = None,
+    _file_audsegs: dict = None,
     **kwargs,
 ):
     """Called from audalign correcognize_directory"""

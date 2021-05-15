@@ -10,6 +10,7 @@ def recognize(
     locality: float,
     locality_filter_prop: float,
     start_end: tuple,
+    max_lags: float = None,
 ):
     """
     Recognizes given file against already fingerprinted files
@@ -54,7 +55,12 @@ def recognize(
     file_match = None
     if len(rough_match) > 0:
         file_match = process_results(
-            audalign_object, rough_match, locality, filter_matches, filter_set
+            audalign_object,
+            rough_match,
+            locality,
+            filter_matches,
+            filter_set,
+            max_lags=max_lags,
         )
     t = time.time() - t
 
@@ -304,7 +310,12 @@ def find_loc_matches(matches_list: list, locality: int):
 
 
 def process_results(
-    audalign_object, results, locality, filter_matches=1, filter_set=False
+    audalign_object,
+    results,
+    locality,
+    filter_matches: int = 1,
+    filter_set: bool = False,
+    max_lags: float = None,
 ):
     """
     Takes matches from align_matches, filters and orders them, returns dictionary of match info
@@ -319,6 +330,7 @@ def process_results(
         match_info (dict{dict{}}): dict of file_names with match info as values
     """
 
+    # TODO Maxlags
     complete_match_info = {}
 
     for file_name in results.keys():
