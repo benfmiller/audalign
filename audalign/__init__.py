@@ -3,9 +3,7 @@ import multiprocessing
 import os
 import pickle
 from functools import partial
-from typing import Tuple
 
-from pydub.exceptions import CouldntDecodeError
 from pydub.utils import mediainfo
 
 import audalign.align as align
@@ -257,14 +255,15 @@ class Audalign:
             plot (boolean): if true, plots the peaks to be fingerprinted on a spectrogram
             extensions (list[str]): specify which extensions to fingerprint
             _file_audsegs (dict, None): For internal use with fine align
-            #TODO
 
         Returns
         -------
         None
         """
 
-        result = self._fingerprint_directory(path, plot, extensions)
+        result = self._fingerprint_directory(
+            path, plot=plot, extensions=extensions, _file_audsegs=_file_audsegs
+        )
 
         if result:
             for processed_file in result:
@@ -276,7 +275,13 @@ class Audalign:
                     self.file_names.append(processed_file[0])
                     self.total_fingerprints += len(processed_file[1])
 
-    def _fingerprint_directory(self, path: str, plot=False, extensions=["*"]):
+    def _fingerprint_directory(
+        self,
+        path: str,
+        plot: bool = False,
+        extensions: list = ["*"],
+        _file_audsegs: dict = None,
+    ):
         """
         Worker function for fingerprint_directory
 
@@ -308,8 +313,14 @@ class Audalign:
             print("Directory contains 0 files or could not be found")
             return
 
+        if _file_audsegs is not None:
+            filenames_to_fingerprint = [
+                (filename, _file_audsegs[filename])
+                for filename in filenames_to_fingerprint
+            ]
+
         _fingerprint_worker_directory = partial(
-            _fingerprint_worker,
+            fingerprint._fingerprint_worker,
             hash_style=self.hash_style,
             plot=plot,
             accuracy=self.accuracy,
@@ -406,7 +417,7 @@ class Audalign:
         [file_name, hashes]
         """
 
-        file_name, hashes = _fingerprint_worker(
+        file_name, hashes = fingerprint._fingerprint_worker(
             file_path,
             self.hash_style,
             start_end=start_end,
@@ -1308,56 +1319,3 @@ class Audalign:
             num_processes=self.num_processors,
             **kwargs,
         )
-
-
-def _fingerprint_worker(
-    file_path: str,
-    hash_style="panako_mod",
-    start_end: tuple = None,
-    plot=False,
-    accuracy=2,
-    freq_threshold=200,
-) -> Tuple:
-    """
-    Runs the file through the fingerprinter and returns file_name and hashes
-
-    Args
-        file_path (str): file_path to be fingerprinted
-        hash_style (str): which hash style to use : ['base','panako_mod','panako', 'base_three']
-        start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
-        plot (bool): displays the plot of the peaks if true
-        accuracy (int): which accuracy level 1-4
-        freq_threshold (int): what the freq threshold is in specgram bins
-
-    Returns
-    -------
-        file_name (str, hashes : dict{str: [int]}): file_name and hash dictionary
-    """
-
-    Audalign._set_accuracy(accuracy)
-    Audalign._set_freq_threshold(freq_threshold)
-
-    file_name = os.path.basename(file_path)
-
-    try:
-        channel, _ = filehandler.read(file_path, start_end=start_end)
-    except FileNotFoundError:
-        print(f'"{file_path}" not found')
-        return None, None
-    except (
-        CouldntDecodeError,
-        IndexError,
-    ):  # Pydub throws IndexErrors for some files on Ubuntu (json, txt, others?)
-        print(f'File "{file_name}" could not be decoded')
-        return None, None
-
-    print(f"Fingerprinting {file_name}")
-    hashes = fingerprint.fingerprint(
-        channel,
-        hash_style=hash_style,
-        plot=plot,
-    )
-
-    print(f"Finished fingerprinting {file_name}")
-
-    return file_name, hashes

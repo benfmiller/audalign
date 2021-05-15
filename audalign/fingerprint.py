@@ -8,7 +8,7 @@ from scipy.ndimage.morphology import (
     binary_erosion,
 )
 import hashlib
-from operator import itemgetter
+from pydub.exceptions import CouldntDecodeError
 
 np.seterr(divide="ignore")
 
@@ -70,6 +70,65 @@ FINGERPRINT_REDUCTION = 20
 
 
 threshold = 200
+
+
+def _fingerprint_worker(
+    file_path: str,
+    hash_style="panako_mod",
+    start_end: tuple = None,
+    plot=False,
+    accuracy=2,
+    freq_threshold=200,
+) -> tuple:
+    import audalign
+    import os
+
+    """
+    Runs the file through the fingerprinter and returns file_name and hashes
+
+    Args
+        file_path (str): file_path to be fingerprinted
+        hash_style (str): which hash style to use : ['base','panako_mod','panako', 'base_three']
+        start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
+        plot (bool): displays the plot of the peaks if true
+        accuracy (int): which accuracy level 1-4
+        freq_threshold (int): what the freq threshold is in specgram bins
+
+    Returns
+    -------
+        file_name (str, hashes : dict{str: [int]}): file_name and hash dictionary
+    """
+
+    audalign.Audalign._set_accuracy(accuracy)
+    audalign.Audalign._set_freq_threshold(freq_threshold)
+
+    if type(file_path) == str:
+        file_name = os.path.basename(file_path)
+
+        try:
+            channel, _ = audalign.filehandler.read(file_path, start_end=start_end)
+        except FileNotFoundError:
+            print(f'"{file_path}" not found')
+            return None, None
+        except (
+            CouldntDecodeError,
+            IndexError,
+        ):  # Pydub throws IndexErrors for some files on Ubuntu (json, txt, others?)
+            print(f'File "{file_name}" could not be decoded')
+            return None, None
+    elif type(file_path) == tuple:  # TODO make sure fingerprinting aud segs works
+        channel = np.frombuffer(file_path[1]._data, np.int16)
+
+    print(f"Fingerprinting {file_name}")
+    hashes = fingerprint(
+        channel,
+        hash_style=hash_style,
+        plot=plot,
+    )
+
+    print(f"Finished fingerprinting {file_name}")
+
+    return file_name, hashes
 
 
 def fingerprint(
