@@ -265,9 +265,10 @@ def _visrecognize(
         )
         # index_list = index_list[:10]
 
-        multiprocessing.set_start_method("spawn")
+        # multiprocessing.set_start_method("fork")
 
-        with multiprocessing.get_context("spawn").Pool(nprocesses) as pool:
+        # with multiprocessing.get_context("fork").Pool(nprocesses) as pool:
+        with multiprocessing.Pool(nprocesses) as pool:
             # pool = multiprocessing.get_context("spawn").Pool(nprocesses)
             results_list = pool.map(_calculate_comp_values, tqdm.tqdm(list(index_list)))
             pool.close()
