@@ -477,8 +477,8 @@ class Audalign:
         filter_matches: float = 0.5,
         match_len_filter: int = 30,
         sample_rate: int = fingerprint.DEFAULT_FS,
-        plot: bool = False,
         max_lags: float = None,
+        plot: bool = False,
         **kwargs,
     ):
         """Uses cross correlation to find alignment
@@ -579,8 +579,8 @@ class Audalign:
         filter_matches: float = 0.5,
         match_len_filter: int = 30,
         sample_rate: int = fingerprint.DEFAULT_FS,
-        plot: bool = False,
         max_lags: float = None,
+        plot: bool = False,
         _file_audsegs: dict = None,
         **kwargs,
     ):
@@ -1144,9 +1144,11 @@ class Audalign:
         match_index: int = 0,
         **kwargs,
     ):
-        paths_audio = filehandler.shift_get_files(
-            results, match_index=match_index
-        )  # TODO Match_index
+        if match_index != 0:
+            recalc_shifts_results = align.recalc_shifts_index(results, match_index)
+            paths_audio = filehandler.shift_get_files(recalc_shifts_results)
+        else:
+            paths_audio = filehandler.shift_get_files(results)
 
         new_results = self._align(
             filename_list=None,

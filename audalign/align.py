@@ -94,3 +94,12 @@ def find_matches_not_in_file_shifts(total_alignment, files_shifts):
                         )
 
     return files_shifts
+
+
+def combine_fine(results: dict, new_results: dict):
+    print("implement this")
+    ...  # TODO combine results
+
+
+def recalc_shifts_index(results: dict, index: int):
+    ...  # TODO recalc_shifts_index
