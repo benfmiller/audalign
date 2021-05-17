@@ -17,8 +17,8 @@ def correcognize(
     filter_matches: float = 0,
     match_len_filter: int = 30,
     sample_rate: int = fingerprint.DEFAULT_FS,
-    plot: bool = False,
     max_lags: float = None,
+    plot: bool = False,
     **kwargs,
 ):
     """Called from audalign correcognize
@@ -31,6 +31,7 @@ def correcognize(
         filter_matches (float, optional): [description]. Defaults to 0.
         match_len_filter (int, optional): [description]. Defaults to 30.
         sample_rate (int, optional): [description]. Defaults to fingerprint.DEFAULT_FS.
+        max_lags (int, optional): defaults to None
         plot (bool, optional): [description]. Defaults to False.
 
     Returns:
@@ -68,6 +69,8 @@ def correcognize(
         correlation=correlation,
         filter_matches=filter_matches,
         match_len_filter=match_len_filter,
+        max_lags=max_lags,
+        sample_rate=sample_rate,
         **kwargs,
     )
 
@@ -153,6 +156,8 @@ def correcognize_directory(
                 correlation=correlation,
                 filter_matches=filter_matches,
                 match_len_filter=match_len_filter,
+                max_lags=max_lags,
+                sample_rate=sample_rate,
                 **kwargs,
             )
 
@@ -192,7 +197,12 @@ def correcognize_directory(
 
 
 def find_maxes(
-    correlation: list, filter_matches: float, match_len_filter: int, **kwargs
+    correlation: list,
+    filter_matches: float,
+    match_len_filter: int,
+    max_lags: float,
+    sample_rate: int,
+    **kwargs,
 ) -> list:
     """This is where kwargs go. returns zip of peak indices and their heights sorted by height"""
     print("Finding Local Maximums... ", end="")
@@ -202,6 +212,16 @@ def find_maxes(
     peaks -= int(len(correlation) / 2)
     peaks_tuples = zip(peaks, properties["peak_heights"])
     peaks_tuples = sorted(peaks_tuples, key=lambda x: x[1], reverse=True)
+
+    if max_lags is not None:
+        max_lags = max_lags / sample_rate * 2
+        i = 0
+        while i < len(peaks_tuples):
+            if max_lags > abs(peaks_tuples[i][0]):
+                peaks_tuples.pop(i)
+                continue
+            i += 1
+
     if len(peaks_tuples) > match_len_filter:
         peaks_tuples = peaks_tuples[0:match_len_filter]
     return peaks_tuples
