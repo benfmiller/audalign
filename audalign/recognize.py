@@ -342,7 +342,6 @@ def process_results(
         match_info (dict{dict{}}): dict of file_names with match info as values
     """
 
-    # TODO Maxlags
     complete_match_info = {}
 
     for file_name in results.keys():

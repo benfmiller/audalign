@@ -486,7 +486,7 @@ class Audalign:
         start_end_target: tuple = None,
         start_end_against: tuple = None,
         filter_matches: float = 0.5,
-        match_len_filter: int = 30,
+        match_len_filter: int = None,
         sample_rate: int = fingerprint.DEFAULT_FS,
         max_lags: float = None,
         plot: bool = False,
@@ -588,7 +588,7 @@ class Audalign:
         against_directory: str,
         start_end: tuple = None,
         filter_matches: float = 0.5,
-        match_len_filter: int = 30,
+        match_len_filter: int = None,
         sample_rate: int = fingerprint.DEFAULT_FS,
         max_lags: float = None,
         plot: bool = False,
@@ -845,8 +845,6 @@ class Audalign:
                     calc_mse=calc_mse,
                 )
             elif technique == "correlation":
-                if filter_matches is None:
-                    filter_matches = 0.5
                 alignment = self.correcognize_directory(
                     target_file_path=target_file,
                     against_directory=directory_path,
@@ -1057,8 +1055,6 @@ class Audalign:
                         _file_audsegs=fine_aud_file_dict,
                     )
             elif technique == "correlation":
-                if filter_matches is None:
-                    filter_matches = 0.5
                 if file_dir:
                     self.file_names = filehandler.get_audio_files_directory(file_dir)
                 elif fine_aud_file_dict:

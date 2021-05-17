@@ -14,8 +14,8 @@ def correcognize(
     against_file_path: str,
     start_end_target: tuple = None,
     start_end_against: tuple = None,
-    filter_matches: float = 0,
-    match_len_filter: int = 30,
+    filter_matches: float = None,
+    match_len_filter: int = None,
     sample_rate: int = fingerprint.DEFAULT_FS,
     max_lags: float = None,
     plot: bool = False,
@@ -40,6 +40,9 @@ def correcognize(
     assert (
         sample_rate < 200000
     )  # I accidentally used 441000 once... not good, big crash
+
+    if filter_matches is None:
+        filter_matches = 0.5
 
     print(
         f"Comparing {os.path.basename(target_file_path)} against {os.path.basename(against_file_path)}... "
@@ -108,9 +111,9 @@ def correcognize_directory(
     target_file_path: str,
     against_directory: str,
     start_end: tuple = None,
-    filter_matches: float = 0,
+    filter_matches: float = None,
     sample_rate: int = fingerprint.DEFAULT_FS,
-    match_len_filter: int = 30,
+    match_len_filter: int = None,
     plot: bool = False,
     max_lags: float = None,
     _file_audsegs: dict = None,
@@ -123,9 +126,18 @@ def correcognize_directory(
 
     t = time.time()
 
-    target_array = read(target_file_path, start_end=start_end, sample_rate=sample_rate)[
-        0
-    ]
+    if _file_audsegs is not None:
+        target_array = np.frombuffer(_file_audsegs[target_file_path]._data, np.int16)
+        if filter_matches is None:
+            filter_matches = 0
+    else:
+        target_array = read(
+            target_file_path, start_end=start_end, sample_rate=sample_rate
+        )[0]
+
+    if filter_matches is None:
+        filter_matches = 0.5
+
     sos = signal.butter(
         10, fingerprint.threshold, "highpass", fs=sample_rate, output="sos"
     )
@@ -144,7 +156,10 @@ def correcognize_directory(
             print(
                 f"Comparing {os.path.basename(target_file_path)} against {os.path.basename(file_path)}... "
             )
-            against_array = read(file_path, sample_rate=sample_rate)[0]
+            if _file_audsegs is not None:
+                against_array = np.frombuffer(_file_audsegs[file_path]._data, np.int16)
+            else:
+                against_array = read(file_path, sample_rate=sample_rate)[0]
             against_array = signal.sosfilt(sos, against_array)
 
             print("Calculating correlation... ", end="")
@@ -222,6 +237,8 @@ def find_maxes(
                 continue
             i += 1
 
+    if match_len_filter is None:
+        match_len_filter = 30
     if len(peaks_tuples) > match_len_filter:
         peaks_tuples = peaks_tuples[0:match_len_filter]
     return peaks_tuples
