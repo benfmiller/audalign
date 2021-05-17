@@ -1149,10 +1149,13 @@ class Audalign:
         locality_filter_prop: float = None,
         cor_sample_rate: int = fingerprint.DEFAULT_FS,
         match_index: int = 0,
+        strength_stat: str = CONFIDENCE,
         **kwargs,
     ):
         if match_index != 0:
-            recalc_shifts_results = align.recalc_shifts_index(results, match_index)
+            recalc_shifts_results = align.recalc_shifts_index(
+                results, strength_stat=strength_stat, match_index=match_index
+            )
             paths_audio = filehandler.shift_get_files(recalc_shifts_results)
         else:
             paths_audio = filehandler.shift_get_files(results)

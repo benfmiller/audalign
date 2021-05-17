@@ -1,7 +1,9 @@
 import audalign
 
 
-def find_most_matches(total_alignment, strength_stat: str = "confidence"):
+def find_most_matches(
+    total_alignment, strength_stat: str = "confidence", match_index: int = 0
+):
     """
     Finds the file that matches with the most files and has the most matches, returns its matches and shifts
 
@@ -42,7 +44,7 @@ def find_most_matches(total_alignment, strength_stat: str = "confidence"):
     for file_match in most_matches_file["tied"]:
         running_strength = 0
         for _, match in total_alignment[file_match]["match_info"].items():
-            running_strength += match[strength_stat][0]
+            running_strength += match[strength_stat][match_index]
         if running_strength > total_match_strength:
             total_match_strength = running_strength
             most_matches_file["most_matches"] = file_match
@@ -52,12 +54,17 @@ def find_most_matches(total_alignment, strength_stat: str = "confidence"):
     files_shifts[most_matches_file["most_matches"]] = 0
 
     for name, file_match in most_matches_file["match_info"].items():
-        files_shifts[name] = file_match[audalign.Audalign.OFFSET_SECS][0]
+        files_shifts[name] = file_match[audalign.Audalign.OFFSET_SECS][match_index]
 
     return files_shifts
 
 
-def find_matches_not_in_file_shifts(total_alignment, files_shifts):
+def find_matches_not_in_file_shifts(
+    total_alignment,
+    files_shifts,
+    strength_stat: str = "confidence",
+    match_index: str = 0,
+):
     """
     Checks to find files that match with files that match with most matched file and update files_shifts
 
@@ -82,14 +89,14 @@ def find_matches_not_in_file_shifts(total_alignment, files_shifts):
                         nmatch_wt_most[main_name]["match_strength"] = 0
                         nmatch_wt_most[main_name][audalign.Audalign.OFFSET_SECS] = None
                     if (
-                        file_match[audalign.Audalign.CONFIDENCE][0]
+                        file_match[strength_stat][match_index]
                         > nmatch_wt_most[main_name]["match_strength"]
                     ):
-                        nmatch_wt_most["match_strength"] = file_match[
-                            audalign.Audalign.CONFIDENCE
-                        ][0]
+                        nmatch_wt_most["match_strength"] = file_match[strength_stat][
+                            match_index
+                        ]
                         nmatch_wt_most[audalign.Audalign.OFFSET_SECS] = (
-                            file_match[audalign.Audalign.OFFSET_SECS][0]
+                            file_match[audalign.Audalign.OFFSET_SECS][match_index]
                             - files_shifts[match_name]
                         )
 
@@ -101,5 +108,15 @@ def combine_fine(results: dict, new_results: dict):
     ...  # TODO combine results
 
 
-def recalc_shifts_index(results: dict, index: int):
-    ...  # TODO recalc_shifts_index
+def recalc_shifts_index(
+    results: dict, match_index: int, strength_stat: str = "confidence"
+):
+    files_shifts = find_most_matches(
+        results["match_info"], strength_stat=strength_stat, match_index=match_index
+    )
+    if not files_shifts:
+        return
+    files_shifts = find_matches_not_in_file_shifts(
+        results, files_shifts, strength_stat=strength_stat, match_index=match_index
+    )
+    return files_shifts
