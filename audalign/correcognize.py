@@ -214,10 +214,10 @@ def find_maxes(
     peaks_tuples = sorted(peaks_tuples, key=lambda x: x[1], reverse=True)
 
     if max_lags is not None:
-        max_lags = max_lags / sample_rate * 2
+        max_lags = max_lags * sample_rate / 2
         i = 0
         while i < len(peaks_tuples):
-            if max_lags > abs(peaks_tuples[i][0]):
+            if abs(peaks_tuples[i][0]) > max_lags:
                 peaks_tuples.pop(i)
                 continue
             i += 1
