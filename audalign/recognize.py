@@ -28,9 +28,21 @@ def recognize(
         None : if no match
     """
     if locality is not None:  # convert from seconds to samples
-        locality = max(
+        locality = max(  # turns into frames
             int(
                 locality
+                // (
+                    fingerprint.DEFAULT_WINDOW_SIZE
+                    / fingerprint.DEFAULT_FS
+                    * fingerprint.DEFAULT_OVERLAP_RATIO
+                )
+            ),
+            1,
+        )
+    if max_lags is not None:
+        max_lags = max(  # turns into frames
+            int(
+                max_lags
                 // (
                     fingerprint.DEFAULT_WINDOW_SIZE
                     / fingerprint.DEFAULT_FS
@@ -343,6 +355,13 @@ def process_results(
         match_offsets = sorted(match_offsets, reverse=True, key=lambda x: x[0][0])
         if match_offsets[0][0][0] <= filter_matches:
             continue
+        if max_lags is not None:  # TDDO Verify working gingerprints max_lags
+            i = 0
+            while i < len(match_offsets):
+                if abs(match_offsets[i][1]) > max_lags:
+                    match_offsets.pop(i)
+                    continue
+                i += 1
         for i in match_offsets:
             if i[0][0] <= filter_matches:
                 continue
