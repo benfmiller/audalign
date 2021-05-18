@@ -300,6 +300,8 @@ class Audalign:
             file_names = filehandler.find_files(path, extensions)
         elif type(path) == list:
             file_names = zip(path, ["_"] * len(path))
+        elif path is None and _file_audsegs is not None:
+            file_names = zip(_file_audsegs.keys(), ["_"] * len(_file_audsegs))
 
         filenames_to_fingerprint = []
         for filename, _ in file_names:  # finds all files to fingerprint
@@ -1066,7 +1068,7 @@ class Audalign:
 
             else:
                 raise NameError(
-                    f'Technique parameter must be fingerprint, visual, or correlation, not "{technique}"'
+                    f'Technique parameter must be fingerprints, visual, or correlation, not "{technique}"'
                 )
 
             total_alignment = {}
@@ -1180,6 +1182,9 @@ class Audalign:
             fine_aud_file_dict=paths_audio,
             **kwargs,
         )
+        if new_results is None:
+            print("No matches found for fine alignment")
+            return
 
         return align.combine_fine(results, new_results)
 
