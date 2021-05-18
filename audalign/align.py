@@ -123,6 +123,11 @@ def recalc_shifts_index(
     if not files_shifts:
         return
     files_shifts = find_matches_not_in_file_shifts(
-        results, files_shifts, strength_stat=strength_stat, match_index=match_index
+        results["match_info"],
+        files_shifts,
+        strength_stat=strength_stat,
+        match_index=match_index,
     )
-    return files_shifts
+    for name in files_shifts.keys():
+        results[name] = files_shifts[name]
+    return results
