@@ -104,8 +104,14 @@ def find_matches_not_in_file_shifts(
 
 
 def combine_fine(results: dict, new_results: dict):
-    print("implement this")
-    ...  # TODO combine results
+    fine_match_info = new_results.pop("match_info")
+    temp_names_and_paths = new_results.pop("names_and_paths")
+    for name in new_results.keys():
+        new_results[name] += results[name]
+    new_results["fine_match_info"] = fine_match_info
+    new_results["match_info"] = results["match_info"]
+    new_results["names_and_paths"] = temp_names_and_paths
+    return new_results
 
 
 def recalc_shifts_index(

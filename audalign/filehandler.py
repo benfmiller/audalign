@@ -34,6 +34,8 @@ def find_files(path, extensions=["*"]):
 
 
 def create_audiosegment(filepath: str, start_end: tuple = None, sample_rate=DEFAULT_FS):
+    if sample_rate is None:
+        sample_rate = DEFAULT_FS
     audiofile = AudioSegment.from_file(filepath)
     audiofile = audiofile.set_frame_rate(sample_rate)
     audiofile = audiofile.set_sample_width(2)
@@ -281,17 +283,21 @@ def _remove_noise(
         print(f"    Coudn't Decode {file_path}")
 
 
-def shift_get_files(results: dict):
+def shift_get_files(results: dict, sample_rate: int = None):
     names_and_paths = results.pop("names_and_paths")
-    results.pop("match_info")
+    temp_a = results.pop("match_info")
 
-    return _shift_files(
+    shifts_files = _shift_files(
         results,
         None,
         names_and_paths,
         None,
+        sample_rate=sample_rate,
         return_files=True,
     )
+    results["names_and_paths"] = names_and_paths
+    results["match_info"] = temp_a
+    return shifts_files
 
 
 def shift_write_files(
@@ -314,8 +320,11 @@ def _shift_files(
     destination_path: str,
     names_and_paths: dict,
     write_extension: str,
+    sample_rate: int = None,
     return_files: bool = False,
 ):
+    if sample_rate is None:
+        sample_rate = DEFAULT_FS
     max_shift = max(files_shifts.values())
 
     if write_extension:
@@ -327,13 +336,13 @@ def _shift_files(
         file_path = names_and_paths[name]
 
         silence = AudioSegment.silent(
-            (max_shift - files_shifts[name]) * 1000, frame_rate=DEFAULT_FS
+            (max_shift - files_shifts[name]) * 1000, frame_rate=sample_rate
         )
 
-        audiofile = create_audiosegment(file_path)
+        audiofile = create_audiosegment(file_path, sample_rate=sample_rate)
 
         file_name = os.path.basename(file_path)
-        audiofile = silence + audiofile
+        audiofile: AudioSegment = silence + audiofile
         if not return_files:
             destination_name = os.path.join(destination_path, file_name)
 
@@ -372,7 +381,7 @@ def _shift_files(
     for i in range(len(audsegs)):
         audsegs[i] = audsegs[i] + AudioSegment.silent(
             (longest_seconds - audsegs[i].duration_seconds) * 1000,
-            frame_rate=DEFAULT_FS,
+            frame_rate=sample_rate,
         )
 
     # lower volume so the sum is the same volume

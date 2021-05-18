@@ -1076,7 +1076,9 @@ class Audalign:
                 file_list = filehandler.find_files(file_dir)
                 dir_or_list = file_dir
             elif fine_aud_file_dict:
-                file_list = zip(fine_aud_file_dict.keys(), ["_"] * len(filename_list))
+                file_list = zip(
+                    fine_aud_file_dict.keys(), ["_"] * len(fine_aud_file_dict)
+                )
                 dir_or_list = fine_aud_file_dict.keys()
             else:
                 file_list = zip(filename_list, ["_"] * len(filename_list))
@@ -1156,9 +1158,13 @@ class Audalign:
             recalc_shifts_results = align.recalc_shifts_index(
                 results, strength_stat=strength_stat, match_index=match_index
             )
-            paths_audio = filehandler.shift_get_files(recalc_shifts_results)
+            paths_audio = filehandler.shift_get_files(
+                recalc_shifts_results, sample_rate=cor_sample_rate
+            )
         else:
-            paths_audio = filehandler.shift_get_files(results)
+            paths_audio = filehandler.shift_get_files(
+                results, sample_rate=cor_sample_rate
+            )
 
         new_results = self._align(
             filename_list=None,

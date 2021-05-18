@@ -145,7 +145,7 @@ def correcognize_directory(
 
     if type(against_directory) == str:
         against_files = find_files(against_directory)
-    elif type(against_directory) == list:
+    else:
         against_files = zip(against_directory, ["_"] * len(against_directory))
     file_match = {}
     for file_path, _ in against_files:
@@ -223,19 +223,16 @@ def find_maxes(
     print("Finding Local Maximums... ", end="")
     # for more info
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.find_peaks.html
+    if max_lags is not None:
+        max_lags = max_lags * sample_rate / 2
+        if len(correlation) > 2 * max_lags:
+            correlation[: int(len(correlation) / 2 - max_lags)] = 0
+            correlation[int(len(correlation) / 2 + max_lags) :] = 0
+
     peaks, properties = signal.find_peaks(correlation, height=filter_matches, **kwargs)
     peaks -= int(len(correlation) / 2)
     peaks_tuples = zip(peaks, properties["peak_heights"])
     peaks_tuples = sorted(peaks_tuples, key=lambda x: x[1], reverse=True)
-
-    if max_lags is not None:
-        max_lags = max_lags * sample_rate / 2
-        i = 0
-        while i < len(peaks_tuples):
-            if abs(peaks_tuples[i][0]) > max_lags:
-                peaks_tuples.pop(i)
-                continue
-            i += 1
 
     if match_len_filter is None:
         match_len_filter = 30
