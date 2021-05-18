@@ -1156,6 +1156,27 @@ class Audalign:
         strength_stat: str = CONFIDENCE,
         **kwargs,
     ):
+        """
+        Finds matches and relative offsets for all files in directory_path, aligns them, and writes them to destination_path
+
+        Args
+            results (dict): results from previous alignments.
+            directory_path (str): String of directory for alignment
+            destination_path (str): String of path to write alignments to
+            write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
+            technique (str): either "fingerprints" or "correlation"
+            filter_matches (float): filters based on confidence.
+            locality (float): Only recognizes against fingerprints in given width. In seconds
+            locality_filter_prop (int, float,optional): within each offset, filters locality tuples by proportion of highest confidence to tuple confidence
+            cor_sample_rate (int): Sampling rate for correlation
+            match_index (int): reorders the input results to the given match index.
+            strength_stat (str): strength stat for finding proper alignments. Defaults to confidence.
+            **kwargs: Additional arguments for finding peaks in correlation
+
+        Returns
+        -------
+            files_shifts (dict{float}): dict of file name with shift as value. Includes match_info, fine_match_info, and names_and_paths
+        """
         print("Fine Aligning...")
 
         if match_index != 0:
