@@ -117,6 +117,7 @@ def _fingerprint_worker(
             print(f'File "{file_name}" could not be decoded')
             return None, None
     elif type(file_path) == tuple:  # TODO make sure fingerprinting aud segs works
+        file_name = os.path.basename(file_path[0])
         channel = np.frombuffer(file_path[1]._data, np.int16)
 
     print(f"Fingerprinting {file_name}")
