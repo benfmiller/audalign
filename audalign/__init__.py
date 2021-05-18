@@ -1156,6 +1156,8 @@ class Audalign:
         strength_stat: str = CONFIDENCE,
         **kwargs,
     ):
+        print("Fine Aligning...")
+
         if match_index != 0:
             recalc_shifts_results = align.recalc_shifts_index(
                 results, strength_stat=strength_stat, match_index=match_index
@@ -1171,8 +1173,6 @@ class Audalign:
         new_results = self._align(
             filename_list=None,
             file_dir=None,
-            destination_path=destination_path,
-            write_extension=write_extension,
             technique=technique,
             filter_matches=filter_matches,
             locality=locality,
@@ -1185,8 +1185,24 @@ class Audalign:
         if new_results is None:
             print("No matches found for fine alignment")
             return
+        new_results = align.combine_fine(results, new_results)
 
-        return align.combine_fine(results, new_results)
+        if destination_path:
+            copy_dict = {}
+            for name, value in new_results.items():
+                if name not in ["names_and_paths", "match_info", "fine_match_info"]:
+                    copy_dict[name] = value
+            try:
+                self._write_shifted_files(
+                    copy_dict,
+                    destination_path,
+                    new_results["names_and_paths"],
+                    write_extension,
+                )
+            except PermissionError:
+                print("Permission Denied for write fine_align")
+
+        return new_results
 
     @staticmethod
     def _write_shifted_files(
