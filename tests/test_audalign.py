@@ -16,25 +16,32 @@ class TestObject:
         ada = ad.Audalign()
         assert ada.total_fingerprints == 0
 
-        ada2 = ad.Audalign("test_fingerprints.json")
+        ada2 = ad.Audalign("tests/test_fingerprints.json")
         assert ada2.total_fingerprints > 0
         assert len(ada2.fingerprinted_files) > 0
 
     def test_filter_duplicates(self):
         ada1 = ad.Audalign()
 
-        ada1.load_fingerprinted_files("test_fingerprints.json")
+        ada1.load_fingerprinted_files("tests/test_fingerprints.json")
         a = len(ada1.file_names)
         b = ada1.total_fingerprints
         c = len(ada1.fingerprinted_files)
-        ada1.load_fingerprinted_files("test_fingerprints.json")
+        ada1.load_fingerprinted_files("tests/test_fingerprints.json")
+        assert a == len(ada1.file_names)
+        assert b == ada1.total_fingerprints
+        assert c == len(ada1.fingerprinted_files)
+
+        ada1.fingerprinted_files.extend(ada1.fingerprinted_files)
+        ada1.total_fingerprints += ada1.total_fingerprints
+        ada1.file_names.extend(ada1.file_names)
         ada1.filter_duplicates()
         assert a == len(ada1.file_names)
         assert b == ada1.total_fingerprints
         assert c == len(ada1.fingerprinted_files)
 
     def test_clear(self):
-        ada = ad.Audalign("test_fingerprints.json")
+        ada = ad.Audalign("tests/test_fingerprints.json")
         assert len(ada.fingerprinted_files) > 0
         ada.clear_fingerprints()
         assert len(ada.fingerprinted_files) == 0
@@ -63,7 +70,7 @@ class TestObject:
         assert ad.fingerprint.threshold == 200
 
     def test_write_and_load(self):
-        ada = ad.Audalign("test_fingerprints.json")
+        ada = ad.Audalign("tests/test_fingerprints.json")
         assert len(ada.file_names) > 0
         ada.save_fingerprinted_files("test_save_fingerprints.json")
         ada.save_fingerprinted_files("test_save_fingerprints.pickle")

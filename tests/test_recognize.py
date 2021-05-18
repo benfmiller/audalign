@@ -1,4 +1,5 @@
 import audalign as ad
+import pickle
 import pytest
 import sys
 
@@ -11,7 +12,7 @@ linux_skip = pytest.mark.skipif(sys.platform == "linux", reason="Not working on 
 
 class TestRecognize:
 
-    ada = ad.Audalign("test_fingerprints.json")
+    ada = ad.Audalign("tests/test_fingerprints.json")
 
     @pytest.mark.smoke
     def test_recognize(self):
@@ -88,6 +89,9 @@ class TestAlign:
 
     ada = ad.Audalign()
 
+    with open("tests/align_test.pickle", "rb") as f:
+        align_fing_results = pickle.load(f)
+
     @pytest.mark.smoke
     def test_align_fingerprint(self, tmpdir):
         result = self.ada.align("test_audio/test_shifts", tmpdir)
@@ -158,3 +162,32 @@ class TestAlign:
             technique="correlation",
         )
         assert result
+
+    @pytest.mark.smoke
+    def test_fine_align(self):
+        result = self.ada.fine_align(
+            self.align_fing_results,
+        )
+        assert result is not None
+
+    def test_fine_align_fingerprints(self, tmpdir):
+        result = self.ada.fine_align(
+            self.align_fing_results,
+            technique="fingerprints",
+            destination_path=tmpdir,
+            locality=5,
+            locality_filter_prop=0.5,
+        )
+        assert result is not None
+
+    def test_fine_align_options(self, tmpdir):
+        result = self.ada.fine_align(
+            self.align_fing_results,
+            destination_path=tmpdir,
+            cor_sample_rate=8000,
+            max_lags=5,
+            match_index=1,
+            write_extension=".ogg",
+            filter_matches=0.1,
+        )
+        assert result is not None
