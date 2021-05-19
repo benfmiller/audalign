@@ -1,4 +1,5 @@
 import audalign
+import os
 
 
 def find_most_matches(
@@ -131,3 +132,129 @@ def recalc_shifts_index(
     for name in files_shifts.keys():
         results[name] = files_shifts[name]
     return results
+
+
+def _align(
+    ada_obj,
+    filename_list: str,
+    file_dir: str,
+    destination_path: str = None,
+    write_extension: str = None,
+    technique: str = "fingerprints",
+    filter_matches: float = None,
+    locality: float = None,
+    locality_filter_prop: float = None,
+    cor_sample_rate: int = None,
+    max_lags: float = None,
+    fine_aud_file_dict: dict = None,
+    **kwargs,
+):
+
+    ada_obj.file_names, temp_file_names = [], ada_obj.file_names
+    ada_obj.fingerprinted_files, temp_fingerprinted_files = (
+        [],
+        ada_obj.fingerprinted_files,
+    )
+    ada_obj.total_fingerprints, temp_total_fingerprints = 0, ada_obj.total_fingerprints
+
+    try:
+
+        # Make target directory
+        if destination_path:
+            if not os.path.exists(destination_path):
+                os.makedirs(destination_path)
+
+        if technique == "fingerprints":
+            if filter_matches is None:
+                filter_matches = 1
+            if locality_filter_prop is None or locality_filter_prop > 1.0:
+                locality_filter_prop = 1.0
+            if file_dir:
+                ada_obj.fingerprint_directory(file_dir)
+            else:
+                ada_obj.fingerprint_directory(
+                    filename_list,
+                    _file_audsegs=fine_aud_file_dict,
+                )
+        elif technique == "correlation":
+            if file_dir:
+                ada_obj.file_names = audalign.filehandler.get_audio_files_directory(
+                    file_dir
+                )
+            elif fine_aud_file_dict:
+                ada_obj.file_names = [
+                    os.path.basename(x) for x in fine_aud_file_dict.keys()
+                ]
+            else:
+                ada_obj.file_names = [os.path.basename(x) for x in filename_list]
+
+        else:
+            raise NameError(
+                f'Technique parameter must be fingerprints, visual, or correlation, not "{technique}"'
+            )
+
+        total_alignment = {}
+        file_names_and_paths = {}
+
+        if file_dir:
+            file_list = audalign.filehandler.find_files(file_dir)
+            dir_or_list = file_dir
+        elif fine_aud_file_dict:
+            file_list = zip(fine_aud_file_dict.keys(), ["_"] * len(fine_aud_file_dict))
+            dir_or_list = fine_aud_file_dict.keys()
+        else:
+            file_list = zip(filename_list, ["_"] * len(filename_list))
+            dir_or_list = filename_list
+        # Get matches and paths
+        for file_path, _ in file_list:
+            name = os.path.basename(file_path)
+            if name in ada_obj.file_names:
+                if technique == "fingerprints":
+                    alignment = ada_obj.recognize(
+                        file_path,
+                        filter_matches=filter_matches,
+                        locality=locality,
+                        locality_filter_prop=locality_filter_prop,
+                        max_lags=max_lags,
+                    )
+                elif technique == "correlation":
+                    alignment = ada_obj.correcognize_directory(
+                        file_path,
+                        dir_or_list,
+                        filter_matches=filter_matches,
+                        sample_rate=cor_sample_rate,
+                        _file_audsegs=fine_aud_file_dict,
+                        max_lags=max_lags,
+                        **kwargs,
+                    )
+                file_names_and_paths[name] = file_path
+                total_alignment[name] = alignment
+
+        files_shifts = find_most_matches(total_alignment)
+        if not files_shifts:
+            return
+        files_shifts = find_matches_not_in_file_shifts(total_alignment, files_shifts)
+
+        if destination_path:
+            try:
+                ada_obj._write_shifted_files(
+                    files_shifts,
+                    destination_path,
+                    file_names_and_paths,
+                    write_extension,
+                )
+            except PermissionError:
+                print("Permission Denied for write align")
+
+        print(
+            f"{len(files_shifts)} out of {len(file_names_and_paths)} found and aligned"
+        )
+
+        files_shifts["match_info"] = total_alignment
+        files_shifts["names_and_paths"] = file_names_and_paths
+        return files_shifts
+
+    finally:
+        ada_obj.file_names = temp_file_names
+        ada_obj.fingerprinted_files = temp_fingerprinted_files
+        ada_obj.total_fingerprints = temp_total_fingerprints

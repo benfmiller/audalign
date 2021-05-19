@@ -953,9 +953,8 @@ class Audalign:
             files_shifts (dict{float}): dict of file name with shift as value
         """
         filename_list = [filename_a, filename_b, *filenames]
-        # print(filename_a, filename_b, *filenames, sep="\n")
-        # print(filename_list)
-        return self._align(
+        return align._align(
+            ada_obj=self,
             filename_list=filename_list,
             file_dir=None,
             destination_path=destination_path,
@@ -1000,7 +999,8 @@ class Audalign:
         -------
             files_shifts (dict{float}): dict of file name with shift as value
         """
-        return self._align(
+        return align._align(
+            ada_obj=self,
             filename_list=None,
             file_dir=directory_path,
             destination_path=destination_path,
@@ -1013,133 +1013,6 @@ class Audalign:
             max_lags=max_lags,
             **kwargs,
         )
-
-    def _align(
-        self,
-        filename_list: str,
-        file_dir: str,
-        destination_path: str = None,
-        write_extension: str = None,
-        technique: str = "fingerprints",
-        filter_matches: float = None,
-        locality: float = None,
-        locality_filter_prop: float = None,
-        cor_sample_rate: int = fingerprint.DEFAULT_FS,
-        max_lags: float = None,
-        fine_aud_file_dict: dict = None,
-        **kwargs,
-    ):
-
-        self.file_names, temp_file_names = [], self.file_names
-        self.fingerprinted_files, temp_fingerprinted_files = (
-            [],
-            self.fingerprinted_files,
-        )
-        self.total_fingerprints, temp_total_fingerprints = 0, self.total_fingerprints
-
-        try:
-
-            # Make target directory
-            if destination_path:
-                if not os.path.exists(destination_path):
-                    os.makedirs(destination_path)
-
-            if technique == "fingerprints":
-                if filter_matches is None:
-                    filter_matches = 1
-                if locality_filter_prop is None or locality_filter_prop > 1.0:
-                    locality_filter_prop = 1.0
-                if file_dir:
-                    self.fingerprint_directory(file_dir)
-                else:
-                    self.fingerprint_directory(
-                        filename_list,
-                        _file_audsegs=fine_aud_file_dict,
-                    )
-            elif technique == "correlation":
-                if file_dir:
-                    self.file_names = filehandler.get_audio_files_directory(file_dir)
-                elif fine_aud_file_dict:
-                    self.file_names = [
-                        os.path.basename(x) for x in fine_aud_file_dict.keys()
-                    ]
-                else:
-                    self.file_names = [os.path.basename(x) for x in filename_list]
-
-            else:
-                raise NameError(
-                    f'Technique parameter must be fingerprints, visual, or correlation, not "{technique}"'
-                )
-
-            total_alignment = {}
-            file_names_and_paths = {}
-
-            if file_dir:
-                file_list = filehandler.find_files(file_dir)
-                dir_or_list = file_dir
-            elif fine_aud_file_dict:
-                file_list = zip(
-                    fine_aud_file_dict.keys(), ["_"] * len(fine_aud_file_dict)
-                )
-                dir_or_list = fine_aud_file_dict.keys()
-            else:
-                file_list = zip(filename_list, ["_"] * len(filename_list))
-                dir_or_list = filename_list
-            # Get matches and paths
-            for file_path, _ in file_list:
-                name = os.path.basename(file_path)
-                if name in self.file_names:
-                    if technique == "fingerprints":
-                        alignment = self.recognize(
-                            file_path,
-                            filter_matches=filter_matches,
-                            locality=locality,
-                            locality_filter_prop=locality_filter_prop,
-                            max_lags=max_lags,
-                        )
-                    elif technique == "correlation":
-                        alignment = self.correcognize_directory(
-                            file_path,
-                            dir_or_list,
-                            filter_matches=filter_matches,
-                            sample_rate=cor_sample_rate,
-                            _file_audsegs=fine_aud_file_dict,
-                            max_lags=max_lags,
-                            **kwargs,
-                        )
-                    file_names_and_paths[name] = file_path
-                    total_alignment[name] = alignment
-
-            files_shifts = align.find_most_matches(total_alignment)
-            if not files_shifts:
-                return
-            files_shifts = align.find_matches_not_in_file_shifts(
-                total_alignment, files_shifts
-            )
-
-            if destination_path:
-                try:
-                    self._write_shifted_files(
-                        files_shifts,
-                        destination_path,
-                        file_names_and_paths,
-                        write_extension,
-                    )
-                except PermissionError:
-                    print("Permission Denied for write align")
-
-            print(
-                f"{len(files_shifts)} out of {len(file_names_and_paths)} found and aligned"
-            )
-
-            files_shifts["match_info"] = total_alignment
-            files_shifts["names_and_paths"] = file_names_and_paths
-            return files_shifts
-
-        finally:
-            self.file_names = temp_file_names
-            self.fingerprinted_files = temp_fingerprinted_files
-            self.total_fingerprints = temp_total_fingerprints
 
     def fine_align(
         self,
@@ -1191,7 +1064,8 @@ class Audalign:
                 results, sample_rate=cor_sample_rate
             )
 
-        new_results = self._align(
+        new_results = align._align(
+            ada_obj=self,
             filename_list=None,
             file_dir=None,
             technique=technique,
