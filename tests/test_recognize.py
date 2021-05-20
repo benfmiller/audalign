@@ -92,8 +92,17 @@ class TestRecognize:
         results = self.ada.correcognize(
             test_file,
             test_file,
+            filter_matches=None,  # sets to 0.5
         )
         assert results
+
+    def test_correcognize_no_return(self):
+        results = self.ada.correcognize(
+            test_file,
+            test_file,
+            filter_matches=2,
+        )
+        assert results is None
 
     def test_correcognize_directory(self):
         results = self.ada.correcognize_directory(
@@ -101,6 +110,13 @@ class TestRecognize:
             "test_audio/testers/",
         )
         assert results
+
+    def test_correcognize_directory_no_return(self):
+        results = self.ada.correcognize_directory(
+            test_file,
+            "tests/",
+        )
+        assert results is None
 
 
 class TestAlign:
@@ -142,6 +158,10 @@ class TestAlign:
         )
         assert result
 
+    @pytest.mark.xfail
+    def test_align_bad_technique(self):
+        self.ada.align("test_audio/test_shifts", technique="correlationion_bad")
+
     def test_align_files_fingerprints(self, tmpdir):
         result = self.ada.align_files(
             "test_audio/test_shifts/Eigen-20sec.mp3",
@@ -180,6 +200,27 @@ class TestAlign:
         )
         assert result
 
+    @linux_skip
+    def test_target_align_vis_mse(self, tmpdir):
+        result = self.ada.target_align(
+            "test_audio/test_shifts/Eigen-song-base.mp3",
+            "test_audio/test_shifts",
+            destination_path=tmpdir.join("emptydir/"),
+            technique="visual",
+            img_width=0.5,
+            volume_threshold=215,
+            calc_mse=True,
+            start_end=(0, -1),
+        )
+        assert result
+
+    def test_target_align_bad_technique(self):
+        self.ada.target_align(
+            "test_audio/test_shifts/Eigen-song-base.mp3",
+            "test_audio/test_shifts",
+            technique="visual_bad",
+        )
+
     def test_target_align_cor(self, tmpdir):
         result = self.ada.target_align(
             "test_audio/test_shifts/Eigen-song-base.mp3",
@@ -209,7 +250,7 @@ class TestAlign:
     def test_fine_align_options(self, tmpdir):
         result = self.ada.fine_align(
             self.align_fing_results,
-            destination_path=tmpdir,
+            destination_path=tmpdir.join("emptydir/"),
             cor_sample_rate=8000,
             max_lags=5,
             match_index=1,
