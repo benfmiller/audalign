@@ -121,6 +121,14 @@ class TestAlign:
         )
         assert result
 
+    def test_align_badish_options(self, tmpdir):
+        result = self.ada.align(
+            "test_audio/test_shifts",
+            tmpdir,
+            write_extension="mov",
+        )
+        assert result
+
     def test_align_cor(self, tmpdir):
         result = self.ada.align(
             "test_audio/test_shifts", tmpdir, technique="correlation"

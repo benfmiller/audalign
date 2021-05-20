@@ -88,11 +88,35 @@ class TestObject:
         assert metatdata != {}
 
 
+class TestFilehandler:
+
+    ada = ad.Audalign()
+    test_file = "test_audio/testers/test.mp3"
+
+    def test_read(self):
+        array, _ = ad.filehandler.read(self.test_file, sample_rate=None)
+        assert len(array) > 0
+
+    def test_get_aud_dir(self):
+        file_list = ad.filehandler.get_audio_files_directory("tests")
+        assert len(file_list) == 0
+
+    def test_shift_write_files(self, tmpdir):
+        ada = ad.Audalign()
+        ada.write_shifted_file(self.test_file, tmpdir.join("place.mp3"), 5)
+
+
 class TestRemoveNoise:
     test_file = "test_audio/testers/test.mp3"
 
     def test_remove_noise_directory(self, tmpdir):
         ada = ad.Audalign()
+        ada.remove_noise_directory(
+            "test_audio/testers", "test_audio/testers/pink_noise.mp3", 10, 30, tmpdir
+        )
+
+    def test_remove_noise_directory_single_process(self, tmpdir):
+        ada = ad.Audalign(multiprocessing=False)
         ada.remove_noise_directory(
             "test_audio/testers", "test_audio/testers/pink_noise.mp3", 10, 30, tmpdir
         )
@@ -109,8 +133,14 @@ class TestRemoveNoise:
             self.test_file,
             1,
             3,
-            tmpdir.join("test.mp3"),
+            tmpdir.join("test.mov"),
             alt_noise_filepath="test_audio/testers/pink_noise.mp3",
+        )
+
+    @pytest.mark.xfail
+    def test_remove_noise_bad_file(self):
+        ad.Audalign.remove_noise_file(
+            "SillyFile.mp3",
         )
 
 
@@ -237,3 +267,17 @@ class TestStartEnd:
             tmpdir.join("test_temp.mp3"),
             start_end=(5, -10),
         )
+
+    def test_bounds_checks(self):
+        try:
+            ad.filehandler.read(self.test_file, start_end=(5, 4))
+            assert False  # should have raised value error
+        except ValueError:
+            pass
+        try:
+            ad.filehandler.read(self.test_file, start_end=(-2, 0))
+            assert False  # should have raised value error
+        except ValueError:
+            pass
+        array, _ = ad.filehandler.read(self.test_file, start_end=(0, -10000))
+        assert len(set(array)) == 1

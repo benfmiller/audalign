@@ -36,6 +36,8 @@ def find_files(path, extensions=["*"]):
 def create_audiosegment(filepath: str, start_end: tuple = None, sample_rate=DEFAULT_FS):
     if sample_rate is None:
         sample_rate = DEFAULT_FS
+    if os.path.splitext(filepath)[1] in [".txt", ".json"]:
+        raise CouldntDecodeError
     audiofile = AudioSegment.from_file(filepath)
     audiofile = audiofile.set_frame_rate(sample_rate)
     audiofile = audiofile.set_sample_width(2)
@@ -91,6 +93,8 @@ def get_audio_files_directory(directory_path: str) -> list:
     aud_list = []
     for file_path, _ in find_files(directory_path):
         try:
+            if os.path.splitext(file_path)[1] in [".txt", ".json"]:
+                continue
             AudioSegment.from_file(file_path)
             aud_list += [os.path.basename(file_path)]
         except CouldntDecodeError:

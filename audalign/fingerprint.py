@@ -116,7 +116,7 @@ def _fingerprint_worker(
         ):  # Pydub throws IndexErrors for some files on Ubuntu (json, txt, others?)
             print(f'File "{file_name}" could not be decoded')
             return None, None
-    elif type(file_path) == tuple:  # TODO make sure fingerprinting aud segs works
+    elif type(file_path) == tuple:
         file_name = os.path.basename(file_path[0])
         channel = np.frombuffer(file_path[1]._data, np.int16)
 
