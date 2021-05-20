@@ -25,6 +25,12 @@ class TestRecognize:
         result2 = self.ada.recognize(test_file, filter_matches=20000)
         assert not result2
 
+    def test_recognize_fingerprint(self):
+        ada2 = ad.Audalign()
+        ada2.fingerprint_file(test_file)
+        result = ada2.recognize(test_file2)
+        assert result
+
     @pytest.mark.smoke
     def test_recognize_locality(self):
         assert self.ada.total_fingerprints > 0
@@ -42,6 +48,18 @@ class TestRecognize:
             img_width=0.5,
             volume_threshold=215,
         )
+        assert results
+
+    def test_visrecognize_single_threaded(self):
+        self.ada.set_multiprocessing(False)
+        results = self.ada.visrecognize(
+            test_file,
+            test_file,
+            img_width=0.5,
+            volume_threshold=215,
+            calc_mse=True,
+        )
+        self.ada.set_multiprocessing(True)
         assert results
 
     @linux_skip

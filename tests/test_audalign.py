@@ -155,6 +155,15 @@ class TestFingerprinting:
         self.ada.fingerprint_file(self.test_file)
         assert self.ada.total_fingerprints > 0
 
+    def test_fingerprint_bad_hash_styles(self):
+        ada1 = ad.Audalign(hash_style="bad_hash_style")
+        assert ada1.hash_style == "panako_mod"
+        ada1.hash_style = "bad_hash_style"
+        ada1.fingerprint_file(self.test_file)
+        assert len(ada1.fingerprinted_files) == 0
+        assert len(ada1.file_names) == 0
+        assert ada1.total_fingerprints == 0
+
     @pytest.mark.smoke
     def test_fingerprint_directory_multiprocessing(self):
         self.ada.clear_fingerprints()
@@ -169,6 +178,15 @@ class TestFingerprinting:
         self.ada.fingerprint_directory("test_audio/testers")
         assert self.ada.total_fingerprints > 0
         assert len(self.ada.fingerprinted_files) > 0
+
+    def test_fingerprint_bad_file(self):
+        ada2 = ad.Audalign()
+        # both should print something and be just fine
+        ada2.fingerprint_file("filenot_even_there.txt")
+        ada2.fingerprint_file("requirements.txt")
+        assert len(ada2.fingerprinted_files) == 0
+        assert len(ada2.file_names) == 0
+        assert ada2.total_fingerprints == 0
 
 
 class TestStartEnd:
