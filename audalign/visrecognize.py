@@ -4,6 +4,7 @@ from pydub.exceptions import CouldntDecodeError
 import tqdm
 import time
 import os
+import sys
 from skimage.metrics import structural_similarity as ssim
 from skimage.metrics import mean_squared_error
 import matplotlib.pyplot as plt
@@ -239,14 +240,14 @@ def _visrecognize(
     # print()
     # print(offsets.count(215))
 
-    # print()
-    # print(len(index_list))
-
     _calculate_comp_values = partial(
         calculate_comp_values,
         img_width=img_width,
         calc_mse=calc_mse,
     )
+
+    if sys.platform == "linux":
+        use_multiprocessing = False
 
     # calculate all mse and ssim values
     if use_multiprocessing == True:
@@ -263,13 +264,8 @@ def _visrecognize(
         index_list = divy_index_list(
             index_list, transposed_target_arr2d, transposed_against_arr2d, nprocesses
         )
-        # index_list = index_list[:10]
 
-        # multiprocessing.set_start_method("fork")
-
-        # with multiprocessing.get_context("fork").Pool(nprocesses) as pool:
         with multiprocessing.Pool(nprocesses) as pool:
-            # pool = multiprocessing.get_context("spawn").Pool(nprocesses)
             results_list = pool.map(_calculate_comp_values, tqdm.tqdm(list(index_list)))
             pool.close()
             pool.join()
@@ -291,7 +287,6 @@ def _visrecognize(
 
 
 def divy_index_list(index_list, target_arr, against_arr, nprocesses):
-    index_list = index_list[:6]
     sublists = [list(index_list)[i::nprocesses] for i in range(nprocesses)]
     return zip(sublists, [target_arr] * nprocesses, [against_arr] * nprocesses)
 

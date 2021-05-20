@@ -7,9 +7,6 @@ test_file = "test_audio/testers/test.mp3"
 test_file2 = "test_audio/testers/pink_noise.mp3"
 
 
-linux_skip = pytest.mark.skipif(sys.platform == "linux", reason="Not working on Linux")
-
-
 class TestRecognize:
 
     ada = ad.Audalign("tests/test_fingerprints.json")
@@ -40,7 +37,6 @@ class TestRecognize:
         assert len(result) > 1
 
     @pytest.mark.smoke
-    @linux_skip
     def test_visrecognize(self):
         results = self.ada.visrecognize(
             test_file,
@@ -62,7 +58,6 @@ class TestRecognize:
         self.ada.set_multiprocessing(True)
         assert results
 
-    @linux_skip
     def test_visrecognize_options(self):
         results = self.ada.visrecognize(
             test_file,
@@ -77,7 +72,6 @@ class TestRecognize:
         assert results
         assert results["match_info"]["test.mp3"]["mse"][0] == 20000000.0
 
-    @linux_skip
     def test_visrecognize_directory(self):
         results = self.ada.visrecognize_directory(
             test_file,
@@ -188,7 +182,6 @@ class TestAlign:
         )
         assert result
 
-    @linux_skip
     def test_target_align_vis(self, tmpdir):
         result = self.ada.target_align(
             "test_audio/test_shifts/Eigen-song-base.mp3",
@@ -200,7 +193,6 @@ class TestAlign:
         )
         assert result
 
-    @linux_skip
     def test_target_align_vis_mse(self, tmpdir):
         result = self.ada.target_align(
             "test_audio/test_shifts/Eigen-song-base.mp3",
