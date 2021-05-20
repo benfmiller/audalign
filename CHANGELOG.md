@@ -1,5 +1,14 @@
 # Change Log
 
+## [0.4.1] 2021 - 05 - 20
+
+### Added
+- Lots more neat tests
+
+### Changed 
+- multiprocessing works for Windows. Linux forces single threaded. 
+  - By my tests, Windows multiprocessing and Linux were the same speed.
+
 ## [0.4.0] 2021 - 05 - 18
 
 ### Added
