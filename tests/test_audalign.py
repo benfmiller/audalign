@@ -58,6 +58,9 @@ class TestObject:
         assert ada.get_accuracy() == 1
         assert ad.fingerprint.default_amp_min == 80
 
+        ada.set_accuracy(0)
+        assert ada.get_accuracy() == 1
+
     def test_set_num_processors(self):
         ada = ad.Audalign(num_processors=1)
         assert ada.num_processors == 1
@@ -68,12 +71,15 @@ class TestObject:
         ada = ad.Audalign(freq_threshold=0)
         ada.set_freq_threshold(200)
         assert ad.fingerprint.threshold == 200
+        assert ada.get_freq_threshold() == 200
 
     def test_write_and_load(self):
         ada = ad.Audalign("tests/test_fingerprints.json")
         assert len(ada.file_names) > 0
         ada.save_fingerprinted_files("test_save_fingerprints.json")
         ada.save_fingerprinted_files("test_save_fingerprints.pickle")
+        ada.save_fingerprinted_files("test_no_write.txt")  # doesn't write anything
+
         ada.clear_fingerprints()
         assert len(ada.file_names) == 0
         ada.load_fingerprinted_files("test_save_fingerprints.pickle")
@@ -82,10 +88,15 @@ class TestObject:
         assert len(ada.file_names) == 0
         ada.load_fingerprinted_files("test_save_fingerprints.json")
         assert len(ada.file_names) > 0
+        ada.load_fingerprinted_files("tests/test_audalign.py")  # Not Loaded
+        ada.load_fingerprinted_files("file_not_there.json")
 
     def test_get_metadata(self):
         metatdata = ad.Audalign.get_metadata(file_path=self.test_file)
         assert metatdata != {}
+
+    def test_write_processed_file(self, tmpdir):
+        ad.Audalign.write_processed_file(self.test_file)
 
 
 class TestFilehandler:
@@ -101,7 +112,7 @@ class TestFilehandler:
         file_list = ad.filehandler.get_audio_files_directory("tests")
         assert len(file_list) == 0
 
-    def test_shift_write_files(self, tmpdir):
+    def test_write_shifted_file(self, tmpdir):
         ada = ad.Audalign()
         ada.write_shifted_file(self.test_file, tmpdir.join("place.mp3"), 5)
 
@@ -208,6 +219,11 @@ class TestFingerprinting:
         self.ada.fingerprint_directory("test_audio/testers")
         assert self.ada.total_fingerprints > 0
         assert len(self.ada.fingerprinted_files) > 0
+
+    def test_fingerprint_directory_not_there_already_done(self):
+        self.ada.fingerprint_directory("test_audio/testers")
+        self.ada.load_fingerprinted_files("tests/test_fingerprints.json")
+        self.ada.fingerprint_directory("test_audio/test_shifts")
 
     def test_fingerprint_bad_file(self):
         ada2 = ad.Audalign()

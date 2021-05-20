@@ -78,6 +78,7 @@ class Audalign:
         self.set_freq_threshold(freq_threshold)
         self.hash_style = "panako_mod"
         self.set_hash_style(hash_style)
+        self.accuracy = 2
         self.set_accuracy(accuracy)
 
     def set_hash_style(self, hash_style: str) -> None:
@@ -106,6 +107,7 @@ class Audalign:
         Args
             accuracy (int): which accuracy level: 1-4
         """
+        accuracy = int(accuracy)
         if accuracy < 1 or accuracy > 4:
             print("Accuracy must be between 1 and 4")
             return
@@ -685,8 +687,8 @@ class Audalign:
             plot=plot,
         )
 
+    @staticmethod
     def write_processed_file(
-        self,
         file_path: str,
         destination_file: str,
         start_end: tuple = None,
