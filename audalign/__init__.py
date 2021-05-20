@@ -76,6 +76,7 @@ class Audalign:
         self.set_num_processors(num_processors)
         self.set_multiprocessing(multiprocessing)
         self.set_freq_threshold(freq_threshold)
+        self.hash_style = "panako_mod"
         self.set_hash_style(hash_style)
         self.set_accuracy(accuracy)
 
