@@ -394,7 +394,7 @@ class Audalign:
         file_name, hashes = self._fingerprint_file(
             file_path, start_end=start_end, set_file_name=set_file_name, plot=plot
         )
-        if file_name != None:
+        if file_name is not None and hashes is not None:
             self.fingerprinted_files.append([file_name, hashes])
             self.file_names.append(file_name)
             self.total_fingerprints += len(hashes)

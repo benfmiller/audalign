@@ -214,6 +214,7 @@ class TestAlign:
         )
         assert result
 
+    @pytest.mark.xfail
     def test_target_align_bad_technique(self):
         self.ada.target_align(
             "test_audio/test_shifts/Eigen-song-base.mp3",
@@ -250,7 +251,7 @@ class TestAlign:
     def test_fine_align_options(self, tmpdir):
         result = self.ada.fine_align(
             self.align_fing_results,
-            destination_path=tmpdir.join("emptydir/"),
+            destination_path=tmpdir,
             cor_sample_rate=8000,
             max_lags=5,
             match_index=1,

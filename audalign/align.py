@@ -57,8 +57,8 @@ def _align(
                 ada_obj.file_names = [os.path.basename(x) for x in filename_list]
 
         else:
-            raise NameError(
-                f'Technique parameter must be fingerprints, visual, or correlation, not "{technique}"'
+            raise ValueError(
+                f'Technique parameter must be fingerprints or correlation, not "{technique}"'
             )
 
         total_alignment = {}
@@ -216,8 +216,8 @@ def target_align(
                 **kwargs,
             )
         else:
-            raise NameError(
-                f'Technique parameter must be fingerprint, visual, or correlation, not "{technique}"'
+            raise ValueError(
+                f'Technique parameter must be fingerprints, visual, or correlation, not "{technique}"'
             )
 
         file_names_and_paths[target_name] = target_file

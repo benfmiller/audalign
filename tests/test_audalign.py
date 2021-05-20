@@ -96,7 +96,7 @@ class TestObject:
         assert metatdata != {}
 
     def test_write_processed_file(self, tmpdir):
-        ad.Audalign.write_processed_file(self.test_file)
+        ad.Audalign.write_processed_file(self.test_file, tmpdir.join("test.wav"))
 
 
 class TestFilehandler:
