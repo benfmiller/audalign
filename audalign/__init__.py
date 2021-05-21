@@ -542,6 +542,7 @@ class Audalign:
         vert_scaling: float = 1.0,
         horiz_scaling: float = 1.0,
         calc_mse: bool = False,
+        max_lags: float = None,
         plot: bool = False,
     ) -> dict:
         """Recognize target file against against file visually.
@@ -582,6 +583,7 @@ class Audalign:
             vert_scaling=vert_scaling,
             horiz_scaling=horiz_scaling,
             calc_mse=calc_mse,
+            max_lags=max_lags,
             use_multiprocessing=self.multiprocessing,
             num_processes=self.num_processors,
             plot=plot,
@@ -644,7 +646,9 @@ class Audalign:
         vert_scaling: float = 1.0,
         horiz_scaling: float = 1.0,
         calc_mse: bool = False,
+        max_lags: float = None,
         plot: bool = False,
+        _file_audsegs: dict = None,
     ) -> dict:
         """Recognize target file against against directory visually.
         Uses image processing similarity techniques to identify areas with similar spectrums.
@@ -682,9 +686,11 @@ class Audalign:
             vert_scaling=vert_scaling,
             horiz_scaling=horiz_scaling,
             calc_mse=calc_mse,
+            max_lags=max_lags,
             use_multiprocessing=self.multiprocessing,
             num_processes=self.num_processors,
             plot=plot,
+            _file_audsegs=_file_audsegs,
         )
 
     @staticmethod
@@ -752,7 +758,7 @@ class Audalign:
         start_end: tuple = None,
         write_extension: str = None,
         technique: str = "fingerprints",
-        alternate_strength_stat: str = None,
+        strength_stat: str = CONFIDENCE,
         filter_matches: float = None,
         locality: float = None,
         locality_filter_prop: float = None,
@@ -793,15 +799,16 @@ class Audalign:
             dict: dict of file name with shift as value along with match info
         """
 
-        return align.target_align(
+        return align._align(
             self,
-            target_file=target_file,
-            directory_path=directory_path,
+            filename_list=[target_file],
+            file_dir=directory_path,
             destination_path=destination_path,
-            start_end=start_end,
+            target_aligning=True,
+            target_start_end=start_end,
             write_extension=write_extension,
             technique=technique,
-            alternate_strength_stat=alternate_strength_stat,
+            alternate_strength_stat=strength_stat,
             filter_matches=filter_matches,
             locality=locality,
             locality_filter_prop=locality_filter_prop,
@@ -828,6 +835,13 @@ class Audalign:
         locality_filter_prop: float = None,
         cor_sample_rate: int = fingerprint.DEFAULT_FS,
         max_lags: float = None,
+        strength_stat: str = CONFIDENCE,
+        volume_threshold: float = 216,
+        volume_floor: float = 10.0,
+        vert_scaling: float = 1.0,
+        horiz_scaling: float = 1.0,
+        img_width: float = 1.0,
+        calc_mse: bool = False,
         **kwargs,
     ):
         """
@@ -865,6 +879,13 @@ class Audalign:
             locality=locality,
             locality_filter_prop=locality_filter_prop,
             cor_sample_rate=cor_sample_rate,
+            alternate_strength_stat=strength_stat,
+            volume_threshold=volume_threshold,
+            volume_floor=volume_floor,
+            vert_scaling=vert_scaling,
+            horiz_scaling=horiz_scaling,
+            img_width=img_width,
+            calc_mse=calc_mse,
             max_lags=max_lags,
             **kwargs,
         )
@@ -880,6 +901,13 @@ class Audalign:
         locality_filter_prop: float = None,
         cor_sample_rate: int = fingerprint.DEFAULT_FS,
         max_lags: float = None,
+        strength_stat: str = CONFIDENCE,
+        volume_threshold: float = 216,
+        volume_floor: float = 10.0,
+        vert_scaling: float = 1.0,
+        horiz_scaling: float = 1.0,
+        img_width: float = 1.0,
+        calc_mse: bool = False,
         **kwargs,
     ):
         """
@@ -911,6 +939,13 @@ class Audalign:
             locality=locality,
             locality_filter_prop=locality_filter_prop,
             cor_sample_rate=cor_sample_rate,
+            alternate_strength_stat=strength_stat,
+            volume_threshold=volume_threshold,
+            volume_floor=volume_floor,
+            vert_scaling=vert_scaling,
+            horiz_scaling=horiz_scaling,
+            img_width=img_width,
+            calc_mse=calc_mse,
             max_lags=max_lags,
             **kwargs,
         )
@@ -928,6 +963,12 @@ class Audalign:
         cor_sample_rate: int = fingerprint.DEFAULT_FS,
         match_index: int = 0,
         strength_stat: str = CONFIDENCE,
+        volume_threshold: float = 216,
+        volume_floor: float = 10.0,
+        vert_scaling: float = 1.0,
+        horiz_scaling: float = 1.0,
+        img_width: float = 1.0,
+        calc_mse: bool = False,
         **kwargs,
     ):
         """
@@ -945,6 +986,7 @@ class Audalign:
             cor_sample_rate (int): Sampling rate for correlation
             match_index (int): reorders the input results to the given match index.
             strength_stat (str): strength stat for finding proper alignments. Defaults to confidence.
+            # TODO Docs
             **kwargs: Additional arguments for finding peaks in correlation
 
         Returns
@@ -952,6 +994,14 @@ class Audalign:
             files_shifts (dict{float}): dict of file name with shift as value. Includes match_info, fine_match_info, and names_and_paths
         """
         print("Fine Aligning...")
+
+        if strength_stat == "confidence":
+            _ = results["match_info"]
+            _ = _[list(_.keys())[0]]
+            _ = _["match_info"]
+            _ = _[list(_.keys())[0]]
+            if "confidence" not in _.keys():
+                strength_stat = "ssim"
 
         if match_index != 0:
             recalc_shifts_results = align.recalc_shifts_index(
@@ -976,6 +1026,13 @@ class Audalign:
             cor_sample_rate=cor_sample_rate,
             max_lags=max_lags,
             fine_aud_file_dict=paths_audio,
+            alternate_strength_stat=strength_stat,
+            volume_threshold=volume_threshold,
+            volume_floor=volume_floor,
+            vert_scaling=vert_scaling,
+            horiz_scaling=horiz_scaling,
+            img_width=img_width,
+            calc_mse=calc_mse,
             **kwargs,
         )
         if new_results is None:
