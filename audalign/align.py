@@ -69,6 +69,7 @@ def _align(
             locality_filter_prop=locality_filter_prop,
             max_lags=max_lags,
             target_start_end=target_start_end,
+            target_aligning=target_aligning,
             cor_sample_rate=cor_sample_rate,
             volume_threshold=volume_threshold,
             volume_floor=volume_floor,
@@ -210,6 +211,7 @@ def calc_alignments(
     locality_filter_prop,
     max_lags,
     target_start_end,
+    target_aligning,
     cor_sample_rate,
     volume_threshold,
     volume_floor,
@@ -227,6 +229,7 @@ def calc_alignments(
         ada_obj.multiprocessing == True
         and technique == "visual"
         and sys.platform != "win32"
+        and not target_aligning
     ):
 
         _calc_alignments = partial(
