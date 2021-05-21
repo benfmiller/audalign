@@ -1,10 +1,88 @@
 import audalign as ad
-import pickle
 import pytest
-import sys
 
 test_file = "test_audio/testers/test.mp3"
 test_file2 = "test_audio/testers/pink_noise.mp3"
+
+
+class TestFingerprinting:
+    test_file = "test_audio/testers/test.mp3"
+    ada = ad.Audalign()
+
+    def test_fingerprint_file(self):
+        self.ada.clear_fingerprints()
+        self.ada.set_accuracy(1)
+        self.ada.fingerprint_file(self.test_file)
+        self.ada.fingerprint_file(self.test_file, set_file_name="Sup", plot=False)
+        assert self.ada.total_fingerprints > 0
+        assert self.ada.file_names[0] == "test.mp3"
+        assert len(self.ada.fingerprinted_files) == 1
+
+        self.ada.clear_fingerprints()
+        assert self.ada.total_fingerprints == 0
+
+        self.ada.fingerprint_file(self.test_file, set_file_name="Sup")
+        assert self.ada.file_names[0] == "Sup"
+
+    def test_fingerprint_file_hash_styles(self):
+        self.ada.clear_fingerprints()
+        self.ada.set_accuracy(1)
+        self.ada.set_hash_style("base")
+        self.ada.fingerprint_file(self.test_file)
+        assert self.ada.total_fingerprints > 0
+        self.ada.clear_fingerprints()
+
+        self.ada.set_hash_style("panako")
+        self.ada.fingerprint_file(self.test_file)
+        assert self.ada.total_fingerprints > 0
+        self.ada.clear_fingerprints()
+
+        self.ada.set_hash_style("panako_mod")
+        self.ada.fingerprint_file(self.test_file)
+        assert self.ada.total_fingerprints > 0
+        self.ada.clear_fingerprints()
+
+        self.ada.set_hash_style("base_three")
+        self.ada.fingerprint_file(self.test_file)
+        assert self.ada.total_fingerprints > 0
+
+    def test_fingerprint_bad_hash_styles(self):
+        ada1 = ad.Audalign(hash_style="bad_hash_style")
+        assert ada1.hash_style == "panako_mod"
+        ada1.hash_style = "bad_hash_style"
+        ada1.fingerprint_file(self.test_file)
+        assert len(ada1.fingerprinted_files) == 0
+        assert len(ada1.file_names) == 0
+        assert ada1.total_fingerprints == 0
+
+    @pytest.mark.smoke
+    def test_fingerprint_directory_multiprocessing(self):
+        self.ada.clear_fingerprints()
+        self.ada.set_multiprocessing(True)
+        self.ada.fingerprint_directory("test_audio/testers")
+        assert self.ada.total_fingerprints > 0
+        assert len(self.ada.fingerprinted_files) > 0
+
+    def test_fingerprint_directory_single(self):
+        self.ada.set_multiprocessing(False)
+        self.ada.clear_fingerprints()
+        self.ada.fingerprint_directory("test_audio/testers")
+        assert self.ada.total_fingerprints > 0
+        assert len(self.ada.fingerprinted_files) > 0
+
+    def test_fingerprint_directory_not_there_already_done(self):
+        self.ada.fingerprint_directory("test_audio/testers")
+        self.ada.load_fingerprinted_files("tests/test_fingerprints.json")
+        self.ada.fingerprint_directory("test_audio/test_shifts")
+
+    def test_fingerprint_bad_file(self):
+        ada2 = ad.Audalign()
+        # both should print something and be just fine
+        ada2.fingerprint_file("filenot_even_there.txt")
+        ada2.fingerprint_file("requirements.txt")
+        assert len(ada2.fingerprinted_files) == 0
+        assert len(ada2.file_names) == 0
+        assert ada2.total_fingerprints == 0
 
 
 class TestRecognize:
@@ -111,153 +189,3 @@ class TestRecognize:
             "tests/",
         )
         assert results is None
-
-
-class TestAlign:
-
-    ada = ad.Audalign()
-
-    with open("tests/align_test.pickle", "rb") as f:
-        align_fing_results = pickle.load(f)
-
-    @pytest.mark.smoke
-    def test_align_fingerprint(self, tmpdir):
-        result = self.ada.align("test_audio/test_shifts", tmpdir)
-        assert result
-        result = self.ada.align(
-            "test_audio/test_shifts",
-            tmpdir,
-            write_extension=".wav",
-        )
-        assert result
-
-    def test_align_badish_options(self, tmpdir):
-        result = self.ada.align(
-            "test_audio/test_shifts",
-            tmpdir,
-            write_extension="mov",
-        )
-        assert result
-
-    def test_align_cor(self, tmpdir):
-        result = self.ada.align(
-            "test_audio/test_shifts", tmpdir, technique="correlation"
-        )
-        assert result
-        result = self.ada.align(
-            "test_audio/test_shifts",
-            tmpdir,
-            technique="correlation",
-            filter_matches=0.3,  # might have to adjust this
-        )
-        assert result
-
-    @pytest.mark.xfail
-    def test_align_bad_technique(self):
-        self.ada.align("test_audio/test_shifts", technique="correlationion_bad")
-
-    def test_align_files_fingerprints(self, tmpdir):
-        result = self.ada.align_files(
-            "test_audio/test_shifts/Eigen-20sec.mp3",
-            "test_audio/test_shifts/Eigen-song-base.mp3",
-            destination_path=tmpdir,
-        )
-        assert result
-
-    def test_align_files_cor(self, tmpdir):
-        result = self.ada.align_files(
-            "test_audio/test_shifts/Eigen-20sec.mp3",
-            "test_audio/test_shifts/Eigen-song-base.mp3",
-            destination_path=tmpdir,
-            write_extension=".wav",
-            technique="correlation",
-        )
-        assert result
-
-    def test_target_align_fingerprint(self, tmpdir):
-        result = self.ada.target_align(
-            "test_audio/test_shifts/Eigen-song-base.mp3",
-            "test_audio/test_shifts",
-            destination_path=tmpdir,
-        )
-        assert result
-
-    def test_target_align_vis(self, tmpdir):
-        result = self.ada.target_align(
-            "test_audio/test_shifts/Eigen-song-base.mp3",
-            "test_audio/test_shifts",
-            destination_path=tmpdir,
-            technique="visual",
-            img_width=0.5,
-            volume_threshold=215,
-        )
-        assert result
-
-    def test_target_align_vis_mse(self, tmpdir):
-        result = self.ada.target_align(
-            "test_audio/test_shifts/Eigen-song-base.mp3",
-            "test_audio/test_shifts",
-            destination_path=tmpdir.join("emptydir/"),
-            technique="visual",
-            img_width=0.5,
-            volume_threshold=215,
-            calc_mse=True,
-            start_end=(0, -1),
-        )
-        assert result
-
-    @pytest.mark.xfail
-    def test_target_align_bad_technique(self):
-        self.ada.target_align(
-            "test_audio/test_shifts/Eigen-song-base.mp3",
-            "test_audio/test_shifts",
-            technique="visual_bad",
-        )
-
-    def test_target_align_cor(self, tmpdir):
-        result = self.ada.target_align(
-            "test_audio/test_shifts/Eigen-song-base.mp3",
-            "test_audio/test_shifts",
-            destination_path=tmpdir,
-            technique="correlation",
-        )
-        assert result
-
-    @pytest.mark.smoke
-    def test_fine_align(self):
-        result = self.ada.fine_align(
-            self.align_fing_results,
-        )
-        assert result is not None
-
-    def test_fine_align_fingerprints(self, tmpdir):
-        result = self.ada.fine_align(
-            self.align_fing_results,
-            technique="fingerprints",
-            destination_path=tmpdir,
-            locality=5,
-            locality_filter_prop=0.5,
-        )
-        assert result is not None
-
-    def test_fine_align_visual(self, tmpdir):
-        result = self.ada.fine_align(
-            self.align_fing_results,
-            technique="visual",
-            destination_path=tmpdir,
-            volume_threshold=214,
-            img_width=0.5,
-        )
-        assert result is not None
-
-    def test_fine_align_options(self, tmpdir):
-        result = self.ada.fine_align(
-            self.align_fing_results,
-            destination_path=tmpdir,
-            cor_sample_rate=8000,
-            max_lags=5,
-            match_index=1,
-            write_extension=".ogg",
-            filter_matches=0.1,
-        )
-        assert result is not None
