@@ -1,6 +1,9 @@
-from attr import field
 import audalign
+import multiprocessing
+import sys
 import os
+from functools import partial
+import tqdm
 
 
 def _align(
@@ -87,6 +90,9 @@ def _align(
             write_extension=write_extension,
             target_aligning=target_aligning,
         )
+
+        if not files_shifts:
+            return
 
         print(
             f"{len(files_shifts)} out of {len(file_names_and_paths)} found and aligned"
@@ -216,44 +222,85 @@ def calc_alignments(
     total_alignment = {}
     file_names_and_paths = {}
     # Get matches and paths
-    for file_path, _ in file_list:
-        name = os.path.basename(file_path)
-        if name in ada_obj.file_names:
-            if technique == "fingerprints":
-                alignment = ada_obj.recognize(
-                    file_path,
-                    filter_matches=filter_matches,
-                    locality=locality,
-                    locality_filter_prop=locality_filter_prop,
-                    max_lags=max_lags,
-                )
-            elif technique == "correlation":
-                alignment = ada_obj.correcognize_directory(
-                    file_path,
-                    dir_or_list,
-                    start_end=target_start_end,
-                    filter_matches=filter_matches,
-                    sample_rate=cor_sample_rate,
-                    _file_audsegs=fine_aud_file_dict,
-                    max_lags=max_lags,
-                    **kwargs,
-                )
-            elif technique == "visual":
-                alignment = ada_obj.visrecognize_directory(
-                    target_file_path=file_path,
-                    against_directory=dir_or_list,
-                    start_end=target_start_end,
-                    volume_threshold=volume_threshold,
-                    volume_floor=volume_floor,
-                    vert_scaling=vert_scaling,
-                    horiz_scaling=horiz_scaling,
-                    img_width=img_width,
-                    calc_mse=ada_obj.calc_mse,
-                    _file_audsegs=fine_aud_file_dict,
-                    max_lags=max_lags,
-                )
-            file_names_and_paths[name] = file_path
-            total_alignment[name] = alignment
+
+    if (
+        ada_obj.multiprocessing == True
+        and technique == "visual"
+        and sys.platform != "win32"
+    ):
+
+        _calc_alignments = partial(
+            audalign.visrecognize.visrecognize_directory,
+            against_directory=dir_or_list,
+            start_end=target_start_end,
+            img_width=img_width,
+            volume_threshold=volume_threshold,
+            volume_floor=volume_floor,
+            vert_scaling=vert_scaling,
+            horiz_scaling=horiz_scaling,
+            calc_mse=ada_obj.calc_mse,
+            max_lags=max_lags,
+            use_multiprocessing=False,
+            num_processes=1,
+            plot=False,
+            _file_audsegs=fine_aud_file_dict,
+            _include_filename=True,
+        )
+        temp_file_list = []
+        for file_path, _ in file_list:
+            if os.path.basename(file_path) in ada_obj.file_names:
+                temp_file_list += [file_path]
+
+        with multiprocessing.Pool(ada_obj.num_processors) as pool:
+            results_list = pool.map(_calc_alignments, tqdm.tqdm(list(temp_file_list)))
+            pool.close()
+            pool.join()
+
+        for i in results_list:
+            if i is not None:
+                file_names_and_paths[os.path.basename(i["filename"])] = i["filename"]
+                total_alignment[os.path.basename(i["filename"])] = i
+                i.pop("filename")
+
+    else:
+        for file_path, _ in file_list:
+            name = os.path.basename(file_path)
+            if name in ada_obj.file_names:
+                if technique == "fingerprints":
+                    alignment = ada_obj.recognize(
+                        file_path,
+                        filter_matches=filter_matches,
+                        locality=locality,
+                        locality_filter_prop=locality_filter_prop,
+                        max_lags=max_lags,
+                    )
+                elif technique == "correlation":
+                    alignment = ada_obj.correcognize_directory(
+                        file_path,
+                        dir_or_list,
+                        start_end=target_start_end,
+                        filter_matches=filter_matches,
+                        sample_rate=cor_sample_rate,
+                        _file_audsegs=fine_aud_file_dict,
+                        max_lags=max_lags,
+                        **kwargs,
+                    )
+                elif technique == "visual":
+                    alignment = ada_obj.visrecognize_directory(
+                        target_file_path=file_path,
+                        against_directory=dir_or_list,
+                        start_end=target_start_end,
+                        volume_threshold=volume_threshold,
+                        volume_floor=volume_floor,
+                        vert_scaling=vert_scaling,
+                        horiz_scaling=horiz_scaling,
+                        img_width=img_width,
+                        calc_mse=ada_obj.calc_mse,
+                        _file_audsegs=fine_aud_file_dict,
+                        max_lags=max_lags,
+                    )
+                file_names_and_paths[name] = file_path
+                total_alignment[name] = alignment
     return total_alignment, file_names_and_paths
 
 
