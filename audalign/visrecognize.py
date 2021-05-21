@@ -228,8 +228,8 @@ def _visrecognize(
     max_lags: float = None,
 ):
 
-    th, _ = transposed_target_arr2d.shape
-    ah, _ = transposed_against_arr2d.shape
+    # th, _ = transposed_target_arr2d.shape
+    # ah, _ = transposed_against_arr2d.shape
 
     # plot_two_images(transposed_target_arr2d, transposed_against_arr2d)
 

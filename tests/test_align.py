@@ -4,11 +4,7 @@ import pickle
 
 
 class TestAlign:
-
-    ada = ad.Audalign()
-
-    with open("tests/align_test.pickle", "rb") as f:
-        align_fing_results = pickle.load(f)
+    ada = ad.Audalign(num_processors=4)
 
     @pytest.mark.smoke
     def test_align_fingerprint(self, tmpdir):
@@ -18,14 +14,6 @@ class TestAlign:
             "test_audio/test_shifts",
             tmpdir,
             write_extension=".wav",
-        )
-        assert result
-
-    def test_align_badish_options(self, tmpdir):
-        result = self.ada.align(
-            "test_audio/test_shifts",
-            tmpdir,
-            write_extension="mov",
         )
         assert result
 
@@ -42,6 +30,24 @@ class TestAlign:
         )
         assert result
 
+    def test_align_vis(self, tmpdir):
+        result = self.ada.align(
+            "test_audio/test_shifts",
+            tmpdir,
+            technique="visual",
+            volume_threshold=215,
+            img_width=0.5,
+        )
+        assert result
+
+    def test_align_badish_options(self, tmpdir):
+        result = self.ada.align(
+            "test_audio/test_shifts",
+            tmpdir,
+            write_extension="mov",
+        )
+        assert result
+
     @pytest.mark.xfail
     def test_align_bad_technique(self):
         self.ada.align("test_audio/test_shifts", technique="correlationion_bad")
@@ -51,6 +57,17 @@ class TestAlign:
             "test_audio/test_shifts/Eigen-20sec.mp3",
             "test_audio/test_shifts/Eigen-song-base.mp3",
             destination_path=tmpdir,
+        )
+        assert result
+
+    def test_align_files_vis(self, tmpdir):
+        result = self.ada.align_files(
+            "test_audio/test_shifts/Eigen-20sec.mp3",
+            "test_audio/test_shifts/Eigen-song-base.mp3",
+            destination_path=tmpdir,
+            technique="visual",
+            volume_threshold=215,
+            img_width=0.5,
         )
         assert result
 
@@ -64,13 +81,9 @@ class TestAlign:
         )
         assert result
 
-    def test_target_align_fingerprint(self, tmpdir):
-        result = self.ada.target_align(
-            "test_audio/test_shifts/Eigen-song-base.mp3",
-            "test_audio/test_shifts",
-            destination_path=tmpdir,
-        )
-        assert result
+
+class TestTargetAlign:
+    ada = ad.Audalign(num_processors=4)
 
     def test_target_align_vis(self, tmpdir):
         result = self.ada.target_align(
@@ -112,6 +125,22 @@ class TestAlign:
             technique="correlation",
         )
         assert result
+
+    def test_target_align_fingerprints(self, tmpdir):
+        result = self.ada.target_align(
+            "test_audio/test_shifts/Eigen-song-base.mp3",
+            "test_audio/test_shifts",
+            destination_path=tmpdir,
+            technique="fingerprints",
+        )
+        assert result
+
+
+class TestFineAlign:
+    ada = ad.Audalign(num_processors=4)
+
+    with open("tests/align_test.pickle", "rb") as f:
+        align_fing_results = pickle.load(f)
 
     @pytest.mark.smoke
     def test_fine_align(self):
