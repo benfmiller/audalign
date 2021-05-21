@@ -1,5 +1,5 @@
 import audalign.fingerprint as fingerprint
-from audalign.filehandler import read, find_files
+from audalign.filehandler import read, find_files, get_shifted_file
 import audalign
 from pydub.exceptions import CouldntDecodeError
 import numpy as np
@@ -127,7 +127,9 @@ def correcognize_directory(
     t = time.time()
 
     if _file_audsegs is not None:
-        target_array = np.frombuffer(_file_audsegs[target_file_path]._data, np.int16)
+        target_array = get_shifted_file(
+            target_file_path, _file_audsegs[target_file_path], sample_rate=sample_rate
+        )
         if filter_matches is None:
             filter_matches = 0
     else:
@@ -157,7 +159,9 @@ def correcognize_directory(
                 f"Comparing {os.path.basename(target_file_path)} against {os.path.basename(file_path)}... "
             )
             if _file_audsegs is not None:
-                against_array = np.frombuffer(_file_audsegs[file_path]._data, np.int16)
+                against_array = get_shifted_file(
+                    file_path, _file_audsegs[file_path], sample_rate=sample_rate
+                )
             else:
                 against_array = read(file_path, sample_rate=sample_rate)[0]
             against_array = signal.sosfilt(sos, against_array)

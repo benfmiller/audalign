@@ -338,16 +338,17 @@ def _shift_files(
     audsegs = {}
     for name in files_shifts.keys():
         file_path = names_and_paths[name]
+        if return_files:
+            audsegs[file_path] = max_shift - files_shifts[name]
+        else:
+            silence = AudioSegment.silent(
+                (max_shift - files_shifts[name]) * 1000, frame_rate=sample_rate
+            )
 
-        silence = AudioSegment.silent(
-            (max_shift - files_shifts[name]) * 1000, frame_rate=sample_rate
-        )
+            audiofile = create_audiosegment(file_path, sample_rate=sample_rate)
 
-        audiofile = create_audiosegment(file_path, sample_rate=sample_rate)
-
-        file_name = os.path.basename(file_path)
-        audiofile: AudioSegment = silence + audiofile
-        if not return_files:
+            file_name = os.path.basename(file_path)
+            audiofile: AudioSegment = silence + audiofile
             destination_name = os.path.join(destination_path, file_name)
 
             if os.path.splitext(destination_name)[1] in cant_write_ext:
@@ -372,8 +373,7 @@ def _shift_files(
                     audiofile.export(
                         file_place, format=os.path.splitext(destination_name)[1][1:]
                     )
-
-        audsegs[file_path] = audiofile
+            audsegs[file_path] = audiofile
 
     if return_files:
         return audsegs
@@ -421,3 +421,11 @@ def shift_write_file(file_path, destination_path, offset_seconds):
 
     with open(destination_path, "wb") as file_place:
         audiofile.export(file_place, format=os.path.splitext(destination_path)[1][1:])
+
+
+def get_shifted_file(file_path, offset_seconds, sample_rate=DEFAULT_FS) -> np.array:
+    silence = AudioSegment.silent(offset_seconds * 1000, frame_rate=sample_rate)
+
+    audiofile = create_audiosegment(file_path, sample_rate=sample_rate)
+    audiofile = silence + audiofile
+    return np.frombuffer(audiofile._data, np.int16)

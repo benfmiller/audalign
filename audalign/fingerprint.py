@@ -117,8 +117,10 @@ def _fingerprint_worker(
             print(f'File "{file_name}" could not be decoded')
             return None, None
     elif type(file_path) == tuple:
+        from audalign.filehandler import get_shifted_file
+
         file_name = os.path.basename(file_path[0])
-        channel = np.frombuffer(file_path[1]._data, np.int16)
+        channel = get_shifted_file(file_path[0], file_path[1], sample_rate=DEFAULT_FS)
 
     print(f"Fingerprinting {file_name}")
     hashes = fingerprint(

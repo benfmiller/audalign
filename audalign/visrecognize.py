@@ -1,5 +1,5 @@
 import audalign.fingerprint as fingerprint
-from audalign.filehandler import read, find_files
+from audalign.filehandler import read, find_files, get_shifted_file
 from pydub.exceptions import CouldntDecodeError
 import tqdm
 import time
@@ -262,11 +262,8 @@ def _visrecognize(
         calc_mse=calc_mse,
     )
 
-    if sys.platform == "linux":
-        use_multiprocessing = False
-
     # calculate all mse and ssim values
-    if use_multiprocessing == True:
+    if use_multiprocessing == True and sys.platform != "linux":
 
         try:
             nprocesses = num_processes or multiprocessing.cpu_count()
@@ -316,7 +313,7 @@ def get_arrays(
     _file_audsegs: dict = None,
 ):
     if _file_audsegs is not None:
-        samples = np.frombuffer(_file_audsegs[file_path]._data, np.int16)
+        samples = get_shifted_file(file_path, _file_audsegs[file_path])
     else:
         samples, _ = read(file_path, start_end=start_end)
     arr2d = fingerprint.fingerprint(samples, retspec=True)

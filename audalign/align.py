@@ -194,7 +194,7 @@ def set_list_and_dir(
         dir_or_list = file_dir
     elif fine_aud_file_dict:  # For fine_aligning
         file_list = zip(fine_aud_file_dict.keys(), ["_"] * len(fine_aud_file_dict))
-        dir_or_list = fine_aud_file_dict.keys()
+        dir_or_list = list(fine_aud_file_dict.keys())
     else:  # For align_files
         file_list = zip(filename_list, ["_"] * len(filename_list))
         dir_or_list = filename_list
