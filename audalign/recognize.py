@@ -27,6 +27,10 @@ def recognize(
 
         None : if no match
     """
+    if filter_matches is None:
+        filter_matches = 1
+    if locality_filter_prop is None or locality_filter_prop > 1.0:
+        locality_filter_prop = 1.0
     if locality is not None:  # convert from seconds to samples
         locality = max(  # turns into frames
             int(
@@ -199,15 +203,6 @@ def locality_align_matches(matches: list, locality: int, locality_filter_prop: i
                     elif temp_file_dict[samp_diff][0] < confidence:
                         temp_file_dict[samp_diff][0] = confidence
                     temp_file_dict[samp_diff][1] += [(*tup, confidence)]
-                    # if confidence > locality_filter_prop:
-                    #     if temp_file_dict.get(samp_diff) is None:
-                    #         temp_file_dict[samp_diff] = [confidence, []]
-                    #     elif temp_file_dict[samp_diff][0] < confidence:
-                    #         temp_file_dict[samp_diff][0] = confidence
-                    #     temp_file_dict[samp_diff][1] += [(*tup, confidence)]
-                    # else:
-                    #     if temp_file_dict.get(samp_diff) is None:
-                    #         temp_file_dict[samp_diff] = [confidence, []]
 
             # breaks out of while if at end of file and within locality
             if end_window >= len(file_dict[name]):
