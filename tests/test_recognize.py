@@ -240,6 +240,16 @@ class TestAlign:
         )
         assert result is not None
 
+    def test_fine_align_visual(self, tmpdir):
+        result = self.ada.fine_align(
+            self.align_fing_results,
+            technique="visual",
+            destination_path=tmpdir,
+            volume_threshold=214,
+            img_width=0.5,
+        )
+        assert result is not None
+
     def test_fine_align_options(self, tmpdir):
         result = self.ada.fine_align(
             self.align_fing_results,
