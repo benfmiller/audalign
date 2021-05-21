@@ -30,6 +30,7 @@ def visrecognize(
     vert_scaling: float = 1.0,
     horiz_scaling: float = 1.0,
     calc_mse=False,
+    max_lags: float = None,
     use_multiprocessing=True,
     num_processes=None,
     plot=False,
@@ -78,6 +79,7 @@ def visrecognize(
         calc_mse=calc_mse,
         use_multiprocessing=use_multiprocessing,
         num_processes=num_processes,
+        max_lags=max_lags,
     )
     file_match = process_results(
         results_list,
@@ -116,10 +118,12 @@ def visrecognize_directory(
     volume_floor: float = 10.0,
     vert_scaling: float = 1.0,
     horiz_scaling: float = 1.0,
-    calc_mse=False,
-    use_multiprocessing=True,
-    num_processes=None,
-    plot=False,
+    calc_mse: bool = False,
+    max_lags: float = None,
+    use_multiprocessing: bool = True,
+    num_processes: int = None,
+    plot: bool = False,
+    _file_audsegs: dict = None,
 ):
     # With frequency of 44100
     # Each frame is 0.0929 seconds with an overlap ratio of .5,
@@ -141,13 +145,17 @@ def visrecognize_directory(
         vert_scaling=vert_scaling,
         horiz_scaling=horiz_scaling,
         start_end=start_end,
+        _file_audsegs=_file_audsegs,
     )
 
     target_index_list = find_index_arr(
         transposed_target_arr2d, volume_threshold, img_width
     )
 
-    against_files = find_files(against_directory)
+    if type(against_directory) == str:
+        against_files = find_files(against_directory)
+    else:
+        against_files = zip(against_directory, ["_"] * len(against_directory))
     file_match = {}
 
     for file_path, _ in against_files:
@@ -160,6 +168,7 @@ def visrecognize_directory(
                 volume_floor=volume_floor,
                 vert_scaling=vert_scaling,
                 horiz_scaling=horiz_scaling,
+                _file_audsegs=_file_audsegs,
             )
             results_list = _visrecognize(
                 transposed_target_arr2d=transposed_target_arr2d,
@@ -172,6 +181,7 @@ def visrecognize_directory(
                 calc_mse=calc_mse,
                 use_multiprocessing=use_multiprocessing,
                 num_processes=num_processes,
+                max_lags=max_lags,
             )
             single_file_match = process_results(
                 results_list,
@@ -215,6 +225,7 @@ def _visrecognize(
     calc_mse=False,
     use_multiprocessing=True,
     num_processes=None,
+    max_lags: float = None,
 ):
 
     th, _ = transposed_target_arr2d.shape
@@ -234,7 +245,9 @@ def _visrecognize(
         transposed_against_arr2d, volume_threshold, img_width
     )
 
-    index_list = pair_index_tuples(target_index_list, against_index_list)
+    index_list = pair_index_tuples(
+        target_index_list, against_index_list, max_lags=max_lags
+    )
 
     # offsets = [x[0] - x[1] for x in index_list]
     # print()
@@ -297,8 +310,12 @@ def get_arrays(
     vert_scaling: float = 1.0,
     horiz_scaling: float = 1.0,
     start_end: tuple = None,
+    _file_audsegs: dict = None,
 ):
-    samples, _ = read(file_path, start_end=start_end)
+    if _file_audsegs is not None:
+        samples = np.frombuffer(_file_audsegs[file_path]._data, np.int16)
+    else:
+        samples, _ = read(file_path, start_end=start_end)
     arr2d = fingerprint.fingerprint(samples, retspec=True)
     if fingerprint.threshold > 0:
         arr2d = arr2d[0 : -fingerprint.threshold]
@@ -348,11 +365,28 @@ def find_index_arr(arr2d, threshold, img_width):
     return index_list
 
 
-def pair_index_tuples(target_list, against_list):
+def pair_index_tuples(target_list, against_list, max_lags: float = None):
     index_pairs = []
-    for i in target_list:
-        for j in against_list:
-            index_pairs += [(i, j)]
+    if max_lags is None:
+        for i in target_list:
+            for j in against_list:
+                index_pairs += [(i, j)]
+    else:
+        max_lags = max(  # turns into frames
+            int(
+                max_lags
+                // (
+                    fingerprint.DEFAULT_WINDOW_SIZE
+                    / fingerprint.DEFAULT_FS
+                    * fingerprint.DEFAULT_OVERLAP_RATIO
+                )
+            ),
+            1,
+        )
+        for i in target_list:
+            for j in against_list:
+                if abs(j - i) <= max_lags:
+                    index_pairs += [(i, j)]
     return index_pairs
 
 
