@@ -127,9 +127,10 @@ def correcognize_directory(
     t = time.time()
 
     if _file_audsegs is not None:
-        target_array = get_shifted_file(
-            target_file_path, _file_audsegs[target_file_path], sample_rate=sample_rate
-        )
+        target_array = _file_audsegs[target_file_path]
+        # target_array = get_shifted_file( # might want for multiprocessing in the future
+        #     target_file_path, _file_audsegs[target_file_path], sample_rate=sample_rate
+        # )
         if filter_matches is None:
             filter_matches = 0
     else:
@@ -159,9 +160,10 @@ def correcognize_directory(
                 f"Comparing {os.path.basename(target_file_path)} against {os.path.basename(file_path)}... "
             )
             if _file_audsegs is not None:
-                against_array = get_shifted_file(
-                    file_path, _file_audsegs[file_path], sample_rate=sample_rate
-                )
+                against_array = _file_audsegs[file_path]
+                # against_array = get_shifted_file( # might want for multiprocessing in the future
+                #     file_path, _file_audsegs[file_path], sample_rate=sample_rate
+                # )
             else:
                 against_array = read(file_path, sample_rate=sample_rate)[0]
             against_array = signal.sosfilt(sos, against_array)
