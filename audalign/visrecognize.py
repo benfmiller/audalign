@@ -109,6 +109,86 @@ def visrecognize(
 # ------------------------------------------------------------------------------------------
 
 
+def _visrecognize_directory(
+    file_path: str,
+    target_file_path: str,
+    start_end: tuple = None,
+    img_width=1.0,
+    volume_threshold=215.0,
+    volume_floor: float = 10.0,
+    vert_scaling: float = 1.0,
+    horiz_scaling: float = 1.0,
+    calc_mse: bool = False,
+    max_lags: float = None,
+    use_multiprocessing: bool = True,
+    num_processes: int = None,
+    plot: bool = False,
+    _file_audsegs: dict = None,
+):
+    if type(target_file_path) == str:
+        target_arr2d, transposed_target_arr2d = get_arrays(
+            target_file_path,
+            volume_floor=volume_floor,
+            vert_scaling=vert_scaling,
+            horiz_scaling=horiz_scaling,
+            start_end=start_end,
+            _file_audsegs=_file_audsegs,
+        )
+
+        target_index_list = find_index_arr(
+            transposed_target_arr2d, volume_threshold, img_width
+        )
+    else:
+        (
+            target_file_path,
+            target_arr2d,
+            transposed_target_arr2d,
+            target_index_list,
+        ) = target_file_path
+
+    file_path, _ = file_path
+
+    if os.path.basename(file_path) == os.path.basename(target_file_path):
+        return {}
+    try:
+        against_arr2d, transposed_against_arr2d = get_arrays(
+            file_path,
+            volume_floor=volume_floor,
+            vert_scaling=vert_scaling,
+            horiz_scaling=horiz_scaling,
+            _file_audsegs=_file_audsegs,
+        )
+        results_list = _visrecognize(
+            transposed_target_arr2d=transposed_target_arr2d,
+            target_file_path=target_file_path,
+            target_index_list=target_index_list,
+            against_file_path=file_path,
+            transposed_against_arr2d=transposed_against_arr2d,
+            img_width=img_width,
+            volume_threshold=volume_threshold,
+            calc_mse=calc_mse,
+            use_multiprocessing=use_multiprocessing,
+            num_processes=num_processes,
+            max_lags=max_lags,
+        )
+        single_file_match = process_results(
+            results_list,
+            os.path.basename(file_path),
+            horiz_scaling=horiz_scaling,
+        )
+        if plot:
+            plot_two_images(
+                target_arr2d,
+                against_arr2d,
+                imgA_title=os.path.basename(target_file_path),
+                imgB_title=os.path.basename(file_path),
+            )
+        return single_file_match
+    except CouldntDecodeError:
+        print(f'File "{file_path}" could not be decoded')
+        return {}
+
+
 def visrecognize_directory(
     target_file_path: str,
     against_directory: str,
@@ -140,66 +220,71 @@ def visrecognize_directory(
 
     img_width = get_frame_width(img_width)
 
-    target_arr2d, transposed_target_arr2d = get_arrays(
-        target_file_path,
+    if use_multiprocessing == False:
+        target_arr2d, transposed_target_arr2d = get_arrays(
+            target_file_path,
+            volume_floor=volume_floor,
+            vert_scaling=vert_scaling,
+            horiz_scaling=horiz_scaling,
+            start_end=start_end,
+            _file_audsegs=_file_audsegs,
+        )
+
+        target_index_list = find_index_arr(
+            transposed_target_arr2d, volume_threshold, img_width
+        )
+
+        target_file_path = (
+            target_file_path,
+            target_arr2d,
+            transposed_target_arr2d,
+            target_index_list,
+        )
+
+    if type(against_directory) == str:
+        against_files = list(find_files(against_directory))
+    else:
+        against_files = list(zip(against_directory, ["_"] * len(against_directory)))
+
+    _visrecognize_directory_ = partial(
+        _visrecognize_directory,
+        target_file_path=target_file_path,
+        start_end=start_end,
+        img_width=img_width,
+        volume_threshold=volume_threshold,
         volume_floor=volume_floor,
         vert_scaling=vert_scaling,
         horiz_scaling=horiz_scaling,
-        start_end=start_end,
+        calc_mse=calc_mse,
+        max_lags=max_lags,
+        use_multiprocessing=False,
+        num_processes=num_processes,
+        plot=plot,
         _file_audsegs=_file_audsegs,
     )
 
-    target_index_list = find_index_arr(
-        transposed_target_arr2d, volume_threshold, img_width
-    )
-
-    if type(against_directory) == str:
-        against_files = find_files(against_directory)
+    if use_multiprocessing == False:
+        results_list = []
+        for file_path in against_files:
+            results_list += [_visrecognize_directory_(file_path)]
     else:
-        against_files = zip(against_directory, ["_"] * len(against_directory))
-    file_match = {}
-
-    for file_path, _ in against_files:
-
-        if os.path.basename(file_path) == os.path.basename(target_file_path):
-            continue
         try:
-            against_arr2d, transposed_against_arr2d = get_arrays(
-                file_path,
-                volume_floor=volume_floor,
-                vert_scaling=vert_scaling,
-                horiz_scaling=horiz_scaling,
-                _file_audsegs=_file_audsegs,
+            nprocesses = num_processes or multiprocessing.cpu_count()
+        except NotImplementedError:
+            nprocesses = 1
+        else:
+            nprocesses = 1 if nprocesses <= 0 else nprocesses
+
+        with multiprocessing.Pool(nprocesses) as pool:
+            results_list = pool.map(
+                _visrecognize_directory_, tqdm.tqdm(list(against_files))
             )
-            results_list = _visrecognize(
-                transposed_target_arr2d=transposed_target_arr2d,
-                target_file_path=target_file_path,
-                target_index_list=target_index_list,
-                against_file_path=file_path,
-                transposed_against_arr2d=transposed_against_arr2d,
-                img_width=img_width,
-                volume_threshold=volume_threshold,
-                calc_mse=calc_mse,
-                use_multiprocessing=use_multiprocessing,
-                num_processes=num_processes,
-                max_lags=max_lags,
-            )
-            single_file_match = process_results(
-                results_list,
-                os.path.basename(file_path),
-                horiz_scaling=horiz_scaling,
-            )
-            if plot:
-                plot_two_images(
-                    target_arr2d,
-                    against_arr2d,
-                    imgA_title=os.path.basename(target_file_path),
-                    imgB_title=os.path.basename(file_path),
-                )
-            if single_file_match:
-                file_match = {**file_match, **single_file_match}
-        except CouldntDecodeError:
-            print(f'File "{file_path}" could not be decoded')
+            pool.close()
+            pool.join()
+
+    file_match = {}
+    for i in results_list:
+        file_match = {**file_match, **i}
 
     t = time.time() - t
 
@@ -208,7 +293,10 @@ def visrecognize_directory(
         result["match_time"] = t
         result["match_info"] = file_match
         if _include_filename:
-            result["filename"] = target_file_path
+            if type(target_file_path) == tuple:
+                result["filename"] = target_file_path[0]
+            else:
+                result["filename"] = target_file_path
         return result
 
     return None
@@ -271,8 +359,6 @@ def _visrecognize(
             nprocesses = 1
         else:
             nprocesses = 1 if nprocesses <= 0 else nprocesses
-
-        print(nprocesses)  # FIXME
 
         index_list = divy_index_list(
             index_list, transposed_target_arr2d, transposed_against_arr2d, nprocesses

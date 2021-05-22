@@ -228,7 +228,6 @@ def calc_alignments(
     if (
         ada_obj.multiprocessing == True
         and technique == "visual"
-        and sys.platform != "win32"
         and not target_aligning
     ):
 
