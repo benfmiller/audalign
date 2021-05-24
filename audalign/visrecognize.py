@@ -373,7 +373,7 @@ def _visrecognize(
             index_list, transposed_target_arr2d, transposed_against_arr2d, 1
         )
         results_list = []
-        for i in tqdm.tqdm(list(index_list)):
+        for i in list(index_list):
             results_list += [_calculate_comp_values(i)]
     new_results_list = []
     for i in results_list:
