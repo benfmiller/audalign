@@ -38,7 +38,17 @@ class TestAlign:
             volume_threshold=215,
             img_width=0.5,
         )
-        assert result
+        assert result is not None
+        self.ada.set_multiprocessing(False)
+        result = self.ada.align(
+            "test_audio/test_shifts",
+            tmpdir,
+            technique="visual",
+            volume_threshold=215,
+            img_width=0.5,
+        )
+        assert result is not None
+        self.ada.set_multiprocessing(True)
 
     def test_align_badish_options(self, tmpdir):
         result = self.ada.align(
@@ -69,7 +79,18 @@ class TestAlign:
             volume_threshold=215,
             img_width=0.5,
         )
-        assert result
+        assert result is not None
+        self.ada.set_multiprocessing(False)
+        result = self.ada.align_files(
+            "test_audio/test_shifts/Eigen-20sec.mp3",
+            "test_audio/test_shifts/Eigen-song-base.mp3",
+            destination_path=tmpdir,
+            technique="visual",
+            volume_threshold=215,
+            img_width=0.5,
+        )
+        assert result is not None
+        self.ada.set_multiprocessing(True)
 
     def test_align_files_cor(self, tmpdir):
         result = self.ada.align_files(
@@ -94,7 +115,18 @@ class TestTargetAlign:
             img_width=0.5,
             volume_threshold=215,
         )
-        assert result
+        assert result is not None
+        self.ada.set_multiprocessing(False)
+        result = self.ada.target_align(
+            "test_audio/test_shifts/Eigen-song-base.mp3",
+            "test_audio/test_shifts",
+            destination_path=tmpdir,
+            technique="visual",
+            img_width=0.5,
+            volume_threshold=215,
+        )
+        assert result is not None
+        self.ada.set_multiprocessing(True)
 
     def test_target_align_vis_mse(self, tmpdir):
         result = self.ada.target_align(
@@ -168,6 +200,16 @@ class TestFineAlign:
             img_width=0.5,
         )
         assert result is not None
+        self.ada.set_multiprocessing(False)
+        result = self.ada.fine_align(
+            self.align_fing_results,
+            technique="visual",
+            destination_path=tmpdir,
+            volume_threshold=214,
+            img_width=0.5,
+        )
+        assert result is not None
+        self.ada.set_multiprocessing(True)
 
     def test_fine_align_options(self, tmpdir):
         result = self.ada.fine_align(
