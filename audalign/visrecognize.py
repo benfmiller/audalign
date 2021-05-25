@@ -560,8 +560,9 @@ def process_results(results_list, filename, horiz_scaling: float = 1.0):
     match_offsets = sorted(
         match_offsets,
         reverse=True,
+        key=lambda x: (x[0][1], x[0][2]),
         # key=lambda x: (x[0][2], x[0][1]),
-        key=lambda x: (np.log2(x[0][2] + 1) * (np.log(x[0][1] + 100) / np.log(2.5))),
+        # key=lambda x: (np.log2(x[0][2] + 1) * (np.log(x[0][1] + 100) / np.log(2.5))),
     )  # sort by ssim must be reversed for ssim
     # match_offsets, reverse=True, key=lambda x: (x[0][2], x[0][1])
     # match_offsets, reverse=True, key=lambda x: x[0][2] sorts by num matches
