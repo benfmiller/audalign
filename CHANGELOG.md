@@ -1,8 +1,16 @@
 # Change Log
 
+## [0.4.2] 2021 - 05 - 24
+
+### Changed
+
+- Multiprocessing for visual recognition/alignment on Linux works
+- Multiprocessing for visual recognition/alignment optimized better for Windows
+
 ## [0.4.1] 2021 - 05 - 20
 
 ### Added
+
 - Lots more neat tests
 
 ### Changed 
