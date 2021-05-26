@@ -8,6 +8,9 @@ import os
 import scipy.signal as signal
 import matplotlib.pyplot as plt
 
+# For locality window overlaps
+OVERLAP_RATIO = 0.5
+
 
 def correcognize(
     target_file_path: str,
@@ -45,6 +48,12 @@ def correcognize(
 
     if filter_matches is None:
         filter_matches = 0.5
+    if locality is not None:
+        locality = locality * sample_rate
+    if locality_filter_prop is None or locality_filter_prop > 1.0:
+        locality_filter_prop = 1.0
+    elif locality_filter_prop < 0:
+        locality_filter_prop = 0.0
 
     print(
         f"Comparing {os.path.basename(target_file_path)} against {os.path.basename(against_file_path)}... "
@@ -66,7 +75,13 @@ def correcognize(
     against_array = signal.sosfilt(sos, against_array)
 
     print("Calculating correlation... ", end="")
-    correlation = calc_corrs(against_array, target_array, locality=locality)
+    correlation = calc_corrs(
+        against_array,
+        target_array,
+        locality=locality,
+        max_lags=max_lags,
+        sample_rate=sample_rate,
+    )
 
     results_list_tuple, scaling_factor = find_maxes(
         correlation=correlation,
@@ -129,6 +144,13 @@ def correcognize_directory(
 
     t = time.time()
 
+    if locality is not None:
+        locality = locality * sample_rate
+    if locality_filter_prop is None or locality_filter_prop > 1.0:
+        locality_filter_prop = 1.0
+    elif locality_filter_prop < 0:
+        locality_filter_prop = 0.0
+
     if _file_audsegs is not None:
         target_array = _file_audsegs[target_file_path]
         # target_array = get_shifted_file( # might want for multiprocessing in the future
@@ -172,9 +194,13 @@ def correcognize_directory(
             against_array = signal.sosfilt(sos, against_array)
 
             print("Calculating correlation... ", end="")
-            correlation = calc_corrs(against_array, target_array, locality=locality)
-            scaling_factor = max(correlation)
-            correlation /= np.max(np.abs(correlation), axis=0)
+            correlation = calc_corrs(
+                against_array,
+                target_array,
+                locality=locality,
+                max_lags=max_lags,
+                sample_rate=sample_rate,
+            )
 
             results_list_tuple, scaling_factor = find_maxes(
                 correlation=correlation,
@@ -221,9 +247,41 @@ def correcognize_directory(
     return None
 
 
-def calc_corrs(against_array, target_array, locality):
+def find_index_arr(against_array, target_array, locality, max_lags, sample_rate):
+    # index_list = []  # from vis
+    # for i in range(0, len(arr2d) - img_width):
+    #     if np.amax(arr2d[i : i + img_width]) >= threshold:
+    #         index_list += [i]
+    # return index_list
+    # index_list = []  # from vis
+    # for i in range(0, len(arr2d) - img_width):
+    #     if np.amax(arr2d[i : i + img_width]) >= threshold:
+    #         index_list += [i]
+    # return index_list
+    ...
+
+
+def calc_corrs(
+    against_array, target_array, locality: float, max_lags: float, sample_rate: int
+):
     # TODO Locality
-    correlation = signal.correlate(against_array, target_array)
+    if locality is None:
+        correlation = signal.correlate(against_array, target_array)
+    else:
+        locality_a = len(against_array) if locality > len(against_array) else locality
+        locality_b = len(target_array) if locality > len(target_array) else locality
+        indexes = find_index_arr(
+            against_array, target_array, locality, max_lags, sample_rate
+        )
+        correlation = []
+        for pair in indexes:
+            correlation += [
+                signal.correlate(
+                    against_array[pair[0] : pair[0] + locality_a],
+                    target_array[pair[1] : pair[1] + locality_b],
+                ),
+                pair,
+            ]
     return correlation
 
 
@@ -238,10 +296,30 @@ def find_maxes(
 ) -> list:
     """This is where kwargs go. returns zip of peak indices and their heights sorted by height"""
     print("Finding Local Maximums... ", end="")
+    # TODO handle localities
+    if type(correlation) != list:
+        return _find_peaks(
+            correlation=correlation,
+            filter_matches=filter_matches,
+            match_len_filter=match_len_filter,
+            max_lags=max_lags,
+            sample_rate=sample_rate,
+            **kwargs,
+        )
+    else:
+        ...
 
-    scaling_factor = max(correlation)  # TODO
+
+def _find_peaks(
+    correlation: list,
+    filter_matches: float,
+    match_len_filter: int,
+    max_lags: float,
+    sample_rate: int,
+    **kwargs,
+):
+    scaling_factor = max(correlation)
     correlation /= np.max(np.abs(correlation), axis=0)
-    # for more info
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.find_peaks.html
     if max_lags is not None:
         max_lags = max_lags * sample_rate / 2
@@ -262,9 +340,14 @@ def find_maxes(
 
 
 def process_results(
-    results_list: list, file_name: str, scaling_factor: float, sample_rate: int
+    results_list: list,
+    file_name: str,
+    scaling_factor: float,
+    sample_rate: int,
+    localities=None,
 ):
     """Processes peaks and stuff into our regular recognition dictionary"""
+    # TODO handle localities
 
     offset_samples = []
     offset_seconds = []
