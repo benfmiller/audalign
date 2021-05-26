@@ -92,11 +92,23 @@ def correcognize(
         **kwargs,
     )
 
-    if plot:
+    if plot and locality is None:
         plot_cor(
             array_a=target_array,
             array_b=against_array,
             corr_array=correlation,
+            sample_rate=sample_rate,
+            arr_a_title=target_file_path,
+            arr_b_title=against_file_path,
+            scaling_factor=scaling_factor,
+            peaks=results_list_tuple,
+        )
+    elif plot:
+        print("Correlation Plot not compatible with locality")
+        plot_cor(
+            array_a=target_array,
+            array_b=against_array,
+            corr_array=None,
             sample_rate=sample_rate,
             arr_a_title=target_file_path,
             arr_b_title=against_file_path,
@@ -209,11 +221,23 @@ def correcognize_directory(
                 **kwargs,
             )
 
-            if plot:
+            if plot and locality is None:
                 plot_cor(
                     array_a=target_array,
                     array_b=against_array,
                     corr_array=correlation,
+                    sample_rate=sample_rate,
+                    arr_a_title=target_file_path,
+                    arr_b_title=file_path,
+                    scaling_factor=scaling_factor,
+                    peaks=results_list_tuple,
+                )
+            elif plot:
+                print("Correlation Plot not compatible with locality")
+                plot_cor(
+                    array_a=target_array,
+                    array_b=against_array,
+                    corr_array=None,
                     sample_rate=sample_rate,
                     arr_a_title=target_file_path,
                     arr_b_title=file_path,
@@ -302,20 +326,34 @@ def find_maxes(
     locality_filter_prop: float,
     **kwargs,
 ) -> list:
-    """This is where kwargs go. returns zip of peak indices and their heights sorted by height"""
     print("Finding Local Maximums... ", end="")
-    # TODO handle localities
     if type(correlation) != list:
         return _find_peaks(
             correlation=correlation,
             filter_matches=filter_matches,
             match_len_filter=match_len_filter,
             max_lags=max_lags,
-            sample_rate=sample_rate,
             **kwargs,
         )
     else:
-        ...
+        total_peaks = []
+        for i in correlation:
+            total_peaks += [
+                _find_peaks(
+                    correlation=i[0],
+                    filter_matches=filter_matches,
+                    match_len_filter=match_len_filter,
+                    max_lags=None,
+                    index_pairs=i[1],
+                    **kwargs,
+                ),
+                i[1],
+            ]
+        return process_loc_peaks(total_peaks)
+
+
+def process_loc_peaks(total_peaks):
+    ...
 
 
 def _find_peaks(
@@ -323,13 +361,17 @@ def _find_peaks(
     filter_matches: float,
     match_len_filter: int,
     max_lags: float,
-    sample_rate: int,
+    index_pair: tuple = None,
     **kwargs,
 ):
+    """This is where kwargs go. returns zip of peak indices and their heights sorted by height"""
     scaling_factor = max(correlation)
     correlation /= np.max(np.abs(correlation), axis=0)
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.find_peaks.html
-    if max_lags is not None:
+    if max_lags is not None and index_pair is not None:
+        # if
+        ...
+    elif max_lags is not None:
         if len(correlation) > 2 * max_lags:
             correlation[: int(len(correlation) / 2 - max_lags)] = 0
             correlation[int(len(correlation) / 2 + max_lags) :] = 0
@@ -342,7 +384,7 @@ def _find_peaks(
     if match_len_filter is None:
         match_len_filter = 30
     if len(peaks_tuples) > match_len_filter:
-        peaks_tuples = peaks_tuples[0:match_len_filter]
+        peaks_tuples = peaks_tuples[:match_len_filter]
     return peaks_tuples, scaling_factor
 
 
@@ -433,18 +475,19 @@ def plot_cor(
     if arr_b_title:
         plt.title(arr_b_title)
 
-    fig.add_subplot(3, 2, 5)
-    plt.plot(corr_array)
-    if scaling_factor:
-        plt.title(f"Correlation - Scaling Factor: {scaling_factor}")
-    else:
-        plt.title(f"Correlation")
-    plt.xlabel("Sample Index")
-    plt.ylabel("correlation")
-    if peaks:
-        indexes = [x[0] + int(len(corr_array) / 2) for x in peaks]
-        heights = [x[1] for x in peaks]
-        plt.plot(indexes, heights, "x")
+    if corr_array is not None:
+        fig.add_subplot(3, 2, 5)
+        plt.plot(corr_array)
+        if scaling_factor:
+            plt.title(f"Correlation - Scaling Factor: {scaling_factor}")
+        else:
+            plt.title(f"Correlation")
+        plt.xlabel("Sample Index")
+        plt.ylabel("correlation")
+        if peaks:
+            indexes = [x[0] + int(len(corr_array) / 2) for x in peaks]
+            heights = [x[1] for x in peaks]
+            plt.plot(indexes, heights, "x")
 
     fig.tight_layout()
 
