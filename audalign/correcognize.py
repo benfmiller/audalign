@@ -322,7 +322,6 @@ def find_maxes(
     filter_matches: float,
     match_len_filter: int,
     max_lags: float,
-    sample_rate: int,
     locality_filter_prop: float,
     **kwargs,
 ) -> list:
@@ -349,10 +348,11 @@ def find_maxes(
                 ),
                 i[1],
             ]
-        return process_loc_peaks(total_peaks)
+        return process_loc_peaks(total_peaks, locality_filter_prop)
 
 
-def process_loc_peaks(total_peaks):
+def process_loc_peaks(total_peaks, locality_filter_prop):
+    # TODO: process loc peaks
     ...
 
 
@@ -369,8 +369,12 @@ def _find_peaks(
     correlation /= np.max(np.abs(correlation), axis=0)
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.find_peaks.html
     if max_lags is not None and index_pair is not None:
-        # if
-        ...
+        shift = index_pair[0] - index_pair[1]
+        # TODO See if calculations are correct
+        if (len(correlation) / 2) + shift > max_lags:
+            correlation[int(len(correlation) / 2 + max_lags - shift) :] = 0
+        if (len(correlation) / 2) - shift > max_lags:
+            correlation[: int(len(correlation) / 2 - max_lags - shift)] = 0
     elif max_lags is not None:
         if len(correlation) > 2 * max_lags:
             correlation[: int(len(correlation) / 2 - max_lags)] = 0
