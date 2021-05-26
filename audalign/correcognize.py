@@ -1,3 +1,4 @@
+from numpy.lib.function_base import append
 import audalign.fingerprint as fingerprint
 from audalign.filehandler import read, find_files, get_shifted_file
 import audalign
@@ -46,6 +47,8 @@ def correcognize(
         sample_rate < 200000
     )  # I accidentally used 441000 once... not good, big crash
 
+    if max_lags is not None:
+        max_lags = max_lags * sample_rate / 2
     if filter_matches is None:
         filter_matches = 0.5
     if locality is not None:
@@ -76,11 +79,7 @@ def correcognize(
 
     print("Calculating correlation... ", end="")
     correlation = calc_corrs(
-        against_array,
-        target_array,
-        locality=locality,
-        max_lags=max_lags,
-        sample_rate=sample_rate,
+        against_array, target_array, locality=locality, max_lags=max_lags
     )
 
     results_list_tuple, scaling_factor = find_maxes(
@@ -144,6 +143,8 @@ def correcognize_directory(
 
     t = time.time()
 
+    if max_lags is not None:
+        max_lags = max_lags * sample_rate / 2
     if locality is not None:
         locality = locality * sample_rate
     if locality_filter_prop is None or locality_filter_prop > 1.0:
@@ -195,11 +196,7 @@ def correcognize_directory(
 
             print("Calculating correlation... ", end="")
             correlation = calc_corrs(
-                against_array,
-                target_array,
-                locality=locality,
-                max_lags=max_lags,
-                sample_rate=sample_rate,
+                against_array, target_array, locality=locality, max_lags=max_lags
             )
 
             results_list_tuple, scaling_factor = find_maxes(
@@ -247,32 +244,43 @@ def correcognize_directory(
     return None
 
 
-def find_index_arr(against_array, target_array, locality, max_lags, sample_rate):
-    # index_list = []  # from vis
-    # for i in range(0, len(arr2d) - img_width):
-    #     if np.amax(arr2d[i : i + img_width]) >= threshold:
-    #         index_list += [i]
-    # return index_list
-    # index_list = []  # from vis
-    # for i in range(0, len(arr2d) - img_width):
-    #     if np.amax(arr2d[i : i + img_width]) >= threshold:
-    #         index_list += [i]
-    # return index_list
-    ...
+def calc_array_indexes(array, locality):
+    index_list = []
+    if locality > len(array):
+        index_list += [0]
+    else:
+        [
+            index_list.append(i)
+            for i in range(0, len(array) - int(locality), int(locality * OVERLAP_RATIO))
+        ]
+        if len(array) - int(locality) not in index_list:
+            index_list.append(len(array) - int(locality))
+    return index_list
 
 
-def calc_corrs(
-    against_array, target_array, locality: float, max_lags: float, sample_rate: int
-):
-    # TODO Locality
+def find_index_arr(against_array, target_array, locality, max_lags):
+    index_list_against = calc_array_indexes(against_array, locality)
+    index_list_target = calc_array_indexes(target_array, locality)
+    index_pairs = []
+    if max_lags is None:
+        for i in index_list_against:
+            for j in index_list_target:
+                index_pairs += [(i, j)]
+    else:
+        for i in index_list_against:
+            for j in index_list_target:
+                if abs(j - i) <= max_lags:
+                    index_pairs += [(i, j)]
+    return index_pairs
+
+
+def calc_corrs(against_array, target_array, locality: float, max_lags: float):
     if locality is None:
         correlation = signal.correlate(against_array, target_array)
     else:
         locality_a = len(against_array) if locality > len(against_array) else locality
         locality_b = len(target_array) if locality > len(target_array) else locality
-        indexes = find_index_arr(
-            against_array, target_array, locality, max_lags, sample_rate
-        )
+        indexes = find_index_arr(against_array, target_array, locality, max_lags)
         correlation = []
         for pair in indexes:
             correlation += [
@@ -322,7 +330,6 @@ def _find_peaks(
     correlation /= np.max(np.abs(correlation), axis=0)
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.find_peaks.html
     if max_lags is not None:
-        max_lags = max_lags * sample_rate / 2
         if len(correlation) > 2 * max_lags:
             correlation[: int(len(correlation) / 2 - max_lags)] = 0
             correlation[int(len(correlation) / 2 + max_lags) :] = 0
