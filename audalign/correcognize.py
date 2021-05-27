@@ -87,7 +87,6 @@ def correcognize(
         filter_matches=filter_matches,
         match_len_filter=match_len_filter,
         max_lags=max_lags,
-        sample_rate=sample_rate,
         locality_filter_prop=locality_filter_prop,
         **kwargs,
     )
@@ -216,7 +215,6 @@ def correcognize_directory(
                 filter_matches=filter_matches,
                 match_len_filter=match_len_filter,
                 max_lags=max_lags,
-                sample_rate=sample_rate,
                 locality_filter_prop=locality_filter_prop,
                 **kwargs,
             )
@@ -308,11 +306,13 @@ def calc_corrs(against_array, target_array, locality: float, max_lags: float):
         correlation = []
         for pair in indexes:
             correlation += [
-                signal.correlate(
-                    against_array[pair[0] : pair[0] + locality_a],
-                    target_array[pair[1] : pair[1] + locality_b],
-                ),
-                pair,
+                [
+                    signal.correlate(
+                        against_array[pair[0] : pair[0] + locality_a],
+                        target_array[pair[1] : pair[1] + locality_b],
+                    ),
+                    pair,
+                ]
             ]
     return correlation
 
@@ -335,7 +335,7 @@ def find_maxes(
             **kwargs,
         )
     else:
-        total_peaks = []
+        total_peaks, peak_indexes = [], []
         for i in correlation:
             total_peaks += [
                 _find_peaks(
@@ -343,17 +343,20 @@ def find_maxes(
                     filter_matches=filter_matches,
                     match_len_filter=match_len_filter,
                     max_lags=None,
-                    index_pairs=i[1],
+                    index_pair=i[1],
                     **kwargs,
                 ),
-                i[1],
             ]
-        return process_loc_peaks(total_peaks, locality_filter_prop)
+            peak_indexes += [i[1]]
+        return process_loc_peaks(total_peaks, peak_indexes, locality_filter_prop)
 
 
-def process_loc_peaks(total_peaks, locality_filter_prop):
+def process_loc_peaks(total_peaks, peak_indexes, locality_filter_prop):
+    # print(total_peaks)
     # TODO: process loc peaks
-    ...
+    # return peaks_tuples, scaling_factor
+    for i, peaks in enumerate(total_peaks):
+        ...
 
 
 def _find_peaks(
