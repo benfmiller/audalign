@@ -120,6 +120,7 @@ def correcognize(
         file_name=os.path.basename(against_file_path),
         scaling_factor=scaling_factor,
         sample_rate=sample_rate,
+        locality=locality,
     )
 
     t = time.time() - t
@@ -248,6 +249,7 @@ def correcognize_directory(
                 file_name=os.path.basename(file_path),
                 scaling_factor=scaling_factor,
                 sample_rate=sample_rate,
+                locality=locality,
             )
             if single_file_match:
                 file_match = {**file_match, **single_file_match}
@@ -340,7 +342,7 @@ def find_maxes(
             total_peaks += [
                 _find_peaks(
                     correlation=i[0],
-                    filter_matches=filter_matches,
+                    filter_matches=0.0,
                     match_len_filter=match_len_filter,
                     max_lags=None,
                     index_pair=i[1],
@@ -348,15 +350,73 @@ def find_maxes(
                 ),
             ]
             peak_indexes += [i[1]]
-        return process_loc_peaks(total_peaks, peak_indexes, locality_filter_prop)
+        return process_loc_peaks(
+            total_peaks,
+            peak_indexes,
+            locality_filter_prop,
+            match_len_filter,
+            filter_matches,
+        )
 
 
-def process_loc_peaks(total_peaks, peak_indexes, locality_filter_prop):
-    # print(total_peaks)
+def process_loc_peaks(
+    total_peaks, peak_indexes, locality_filter_prop, match_len_filter, filter_matches
+):
     # TODO: process loc peaks
-    # return peaks_tuples, scaling_factor
-    for i, peaks in enumerate(total_peaks):
-        ...
+    print("Processing Peaks... ", end="")
+    if match_len_filter is None:
+        match_len_filter = 30
+
+    new_big_list = []
+    max_scaling_factor = 0
+    for i, peaks in enumerate(
+        total_peaks
+    ):  # combining locality matches into list of peaks with info
+        shift = peak_indexes[i][0] - peak_indexes[i][1]
+        scaling_factor = peaks[1]  # sf of match
+        peaks = peaks[0]
+        for peak in peaks:
+            new_big_list.append(
+                [
+                    peak[0] + shift,
+                    peak_indexes[i][0],
+                    peak_indexes[i][1],
+                    peak[1] * scaling_factor,
+                ]
+            )
+        if scaling_factor > max_scaling_factor:
+            max_scaling_factor = scaling_factor
+    shift_dict = {}
+    for peak in new_big_list:  # turning list into dict by offsets
+        if peak[0] not in shift_dict:
+            shift_dict[peak[0]] = []
+        shift_dict[peak[0]].append(peak[1:])
+    peaks_tuples_tuples = []
+    for offset in shift_dict.keys():
+        temp_list = shift_dict[offset]
+        top_scaling_factor = max(temp_list, key=lambda x: x[2])[2]
+        if top_scaling_factor / max_scaling_factor < filter_matches:
+            continue
+        i = 0
+        while i < len(temp_list):
+            if temp_list[i][2] < top_scaling_factor * locality_filter_prop:
+                temp_list.pop(i)
+                continue
+            i += 1
+        temp_list = [(x[0], x[1], x[2] / max_scaling_factor) for x in temp_list]
+        temp_list = sorted(temp_list, key=lambda x: x[2], reverse=True)
+        if len(temp_list) > match_len_filter:
+            temp_list = temp_list[:match_len_filter]
+        peaks_tuples_tuples.append(
+            [[offset, top_scaling_factor / max_scaling_factor], temp_list]
+        )
+    peaks_tuples_tuples = sorted(
+        peaks_tuples_tuples, key=lambda x: x[0][1], reverse=True
+    )
+    if len(peaks_tuples_tuples) > match_len_filter:
+        peaks_tuples_tuples = peaks_tuples_tuples[:match_len_filter]
+
+    return peaks_tuples_tuples, max_scaling_factor
 
 
 def _find_peaks(
@@ -400,7 +460,7 @@ def process_results(
     file_name: str,
     scaling_factor: float,
     sample_rate: int,
-    localities=None,
+    locality=None,
 ):
     """Processes peaks and stuff into our regular recognition dictionary"""
     # TODO handle localities
@@ -408,14 +468,37 @@ def process_results(
     offset_samples = []
     offset_seconds = []
     peak_heights = []
-    for result_item in results_list:
-        offset_samples.append(result_item[0])
-        offset_seconds.append(result_item[0] / sample_rate * 2)
-        peak_heights.append(result_item[1])
+    locality_list = []
+    locality_seconds = []
+    if locality is None:
+        locality_list = [None] * len(results_list)
+        locality_seconds = [None] * len(results_list)
+        for result_item in results_list:
+            offset_samples.append(result_item[0])
+            offset_seconds.append(result_item[0] / sample_rate * 2)
+            peak_heights.append(result_item[1])
+    else:
+        for result_item in results_list:
+            offset_samples.append(result_item[0][0])
+            offset_seconds.append(result_item[0][0] / sample_rate * 2)
+            peak_heights.append(result_item[0][1])
+            locality_list.append(result_item[1])
+            locality_seconds.append(
+                [
+                    (
+                        x[1] / sample_rate * 2,
+                        x[0] / sample_rate * 2,
+                        x[2],
+                    )  # against target or target against???
+                    for x in result_item[1]
+                ]
+            )
 
     match = {}
     match[file_name] = {}
 
+    match[file_name]["locality_samples"] = locality_list
+    match[file_name][audalign.Audalign.LOCALITY_SECS] = locality_seconds
     match[file_name]["offset_samples"] = offset_samples
     match[file_name][audalign.Audalign.OFFSET_SECS] = offset_seconds
     match[file_name][audalign.Audalign.CONFIDENCE] = peak_heights
