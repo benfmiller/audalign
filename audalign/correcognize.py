@@ -10,6 +10,7 @@ import scipy.signal as signal
 import matplotlib.pyplot as plt
 
 # For locality window overlaps
+SCALING_16_BIT = 65536
 OVERLAP_RATIO = 0.5
 DEFAULT_LOCALITY_FILTER_PROP = 0.6
 
@@ -298,7 +299,7 @@ def find_index_arr(against_array, target_array, locality, max_lags):
     else:
         for i in index_list_against:
             for j in index_list_target:
-                if abs(j - i) <= max_lags:
+                if abs(j - i) <= max_lags + locality:
                     index_pairs += [(i, j)]
     return index_pairs
 
@@ -347,8 +348,8 @@ def find_maxes(
             total_peaks += [
                 _find_peaks(
                     correlation=i[0],
-                    filter_matches=filter_matches,  # TODO investigate filter matches
-                    # filter_matches=None,
+                    filter_matches=0,
+                    # filter_matches=filter_matches,
                     match_len_filter=match_len_filter,
                     max_lags=None,
                     index_pair=i[1],
@@ -374,7 +375,7 @@ def _find_peaks(
     **kwargs,
 ):
     """This is where kwargs go. returns zip of peak indices and their heights sorted by height"""
-    scaling_factor = max(correlation) / len(correlation)
+    scaling_factor = max(correlation) / len(correlation) / SCALING_16_BIT
     correlation /= np.max(np.abs(correlation), axis=0)
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.find_peaks.html
     if max_lags is not None and index_pair is not None:
@@ -405,7 +406,6 @@ def _find_peaks(
 def process_loc_peaks(
     total_peaks, peak_indexes, locality_filter_prop, match_len_filter, filter_matches
 ):
-    # TODO: process loc peaks
     print("Processing Peaks... ", end="")
     if match_len_filter is None:
         match_len_filter = 30
@@ -466,7 +466,6 @@ def process_results(
     locality=None,
 ):
     """Processes peaks and stuff into our regular recognition dictionary"""
-    # TODO handle localities
 
     offset_samples = []
     offset_seconds = []
