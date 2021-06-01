@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 
 # For locality window overlaps
 OVERLAP_RATIO = 0.5
+DEFAULT_LOCALITY_FILTER_PROP = 0.6
 
 
 def correcognize(
@@ -53,7 +54,9 @@ def correcognize(
         filter_matches = 0.5
     if locality is not None:
         locality = locality * sample_rate
-    if locality_filter_prop is None or locality_filter_prop > 1.0:
+    if locality_filter_prop is None:
+        locality_filter_prop = DEFAULT_LOCALITY_FILTER_PROP
+    elif locality_filter_prop > 1.0:
         locality_filter_prop = 1.0
     elif locality_filter_prop < 0:
         locality_filter_prop = 0.0
@@ -159,7 +162,9 @@ def correcognize_directory(
         max_lags = max_lags * sample_rate / 2
     if locality is not None:
         locality = locality * sample_rate
-    if locality_filter_prop is None or locality_filter_prop > 1.0:
+    if locality_filter_prop is None:
+        locality_filter_prop = DEFAULT_LOCALITY_FILTER_PROP
+    elif locality_filter_prop > 1.0:
         locality_filter_prop = 1.0
     elif locality_filter_prop < 0:
         locality_filter_prop = 0.0
@@ -342,7 +347,8 @@ def find_maxes(
             total_peaks += [
                 _find_peaks(
                     correlation=i[0],
-                    filter_matches=0.0,
+                    filter_matches=filter_matches,  # TODO investigate filter matches
+                    # filter_matches=None,
                     match_len_filter=match_len_filter,
                     max_lags=None,
                     index_pair=i[1],
@@ -351,12 +357,49 @@ def find_maxes(
             ]
             peak_indexes += [i[1]]
         return process_loc_peaks(
-            total_peaks,
-            peak_indexes,
-            locality_filter_prop,
-            match_len_filter,
-            filter_matches,
+            total_peaks=total_peaks,
+            peak_indexes=peak_indexes,
+            locality_filter_prop=locality_filter_prop,
+            match_len_filter=match_len_filter,
+            filter_matches=filter_matches,
         )
+
+
+def _find_peaks(
+    correlation: list,
+    filter_matches: float,
+    match_len_filter: int,
+    max_lags: float,
+    index_pair: tuple = None,
+    **kwargs,
+):
+    """This is where kwargs go. returns zip of peak indices and their heights sorted by height"""
+    scaling_factor = max(correlation) / len(correlation)
+    correlation /= np.max(np.abs(correlation), axis=0)
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.find_peaks.html
+    if max_lags is not None and index_pair is not None:
+        shift = index_pair[0] - index_pair[1]
+        # TODO See if calculations are correct
+        if (len(correlation) / 2) + shift > max_lags:
+            correlation[int(len(correlation) / 2 + max_lags - shift) :] = 0
+        if (len(correlation) / 2) - shift > max_lags:
+            correlation[: int(len(correlation) / 2 - max_lags - shift)] = 0
+    elif max_lags is not None:
+        if len(correlation) > 2 * max_lags:
+            correlation[: int(len(correlation) / 2 - max_lags)] = 0
+            correlation[int(len(correlation) / 2 + max_lags) :] = 0
+
+    peaks, properties = signal.find_peaks(correlation, height=filter_matches, **kwargs)
+    peaks -= int(len(correlation) / 2)
+    peaks *= 2
+    peaks_tuples = zip(peaks, properties["peak_heights"])
+    peaks_tuples = sorted(peaks_tuples, key=lambda x: x[1], reverse=True)
+
+    if match_len_filter is None:
+        match_len_filter = 30
+    if len(peaks_tuples) > match_len_filter:
+        peaks_tuples = peaks_tuples[:match_len_filter]
+    return peaks_tuples, scaling_factor
 
 
 def process_loc_peaks(
@@ -367,7 +410,7 @@ def process_loc_peaks(
     if match_len_filter is None:
         match_len_filter = 30
 
-    new_big_list = []
+    shift_dict = {}
     max_scaling_factor = 0
     for i, peaks in enumerate(
         total_peaks
@@ -376,9 +419,10 @@ def process_loc_peaks(
         scaling_factor = peaks[1]  # sf of match
         peaks = peaks[0]
         for peak in peaks:
-            new_big_list.append(
+            if peak[0] + shift not in shift_dict:
+                shift_dict[peak[0] + shift] = []
+            shift_dict[peak[0] + shift].append(
                 [
-                    peak[0] + shift,
                     peak_indexes[i][0],
                     peak_indexes[i][1],
                     peak[1] * scaling_factor,
@@ -386,11 +430,6 @@ def process_loc_peaks(
             )
         if scaling_factor > max_scaling_factor:
             max_scaling_factor = scaling_factor
-    shift_dict = {}
-    for peak in new_big_list:  # turning list into dict by offsets
-        if peak[0] not in shift_dict:
-            shift_dict[peak[0]] = []
-        shift_dict[peak[0]].append(peak[1:])
     peaks_tuples_tuples = []
     for offset in shift_dict.keys():
         temp_list = shift_dict[offset]
@@ -419,42 +458,6 @@ def process_loc_peaks(
     return peaks_tuples_tuples, max_scaling_factor
 
 
-def _find_peaks(
-    correlation: list,
-    filter_matches: float,
-    match_len_filter: int,
-    max_lags: float,
-    index_pair: tuple = None,
-    **kwargs,
-):
-    """This is where kwargs go. returns zip of peak indices and their heights sorted by height"""
-    scaling_factor = max(correlation)
-    correlation /= np.max(np.abs(correlation), axis=0)
-    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.find_peaks.html
-    if max_lags is not None and index_pair is not None:
-        shift = index_pair[0] - index_pair[1]
-        # TODO See if calculations are correct
-        if (len(correlation) / 2) + shift > max_lags:
-            correlation[int(len(correlation) / 2 + max_lags - shift) :] = 0
-        if (len(correlation) / 2) - shift > max_lags:
-            correlation[: int(len(correlation) / 2 - max_lags - shift)] = 0
-    elif max_lags is not None:
-        if len(correlation) > 2 * max_lags:
-            correlation[: int(len(correlation) / 2 - max_lags)] = 0
-            correlation[int(len(correlation) / 2 + max_lags) :] = 0
-
-    peaks, properties = signal.find_peaks(correlation, height=filter_matches, **kwargs)
-    peaks -= int(len(correlation) / 2)
-    peaks_tuples = zip(peaks, properties["peak_heights"])
-    peaks_tuples = sorted(peaks_tuples, key=lambda x: x[1], reverse=True)
-
-    if match_len_filter is None:
-        match_len_filter = 30
-    if len(peaks_tuples) > match_len_filter:
-        peaks_tuples = peaks_tuples[:match_len_filter]
-    return peaks_tuples, scaling_factor
-
-
 def process_results(
     results_list: list,
     file_name: str,
@@ -475,12 +478,12 @@ def process_results(
         locality_seconds = [None] * len(results_list)
         for result_item in results_list:
             offset_samples.append(result_item[0])
-            offset_seconds.append(result_item[0] / sample_rate * 2)
+            offset_seconds.append(result_item[0] / sample_rate)
             peak_heights.append(result_item[1])
     else:
         for result_item in results_list:
             offset_samples.append(result_item[0][0])
-            offset_seconds.append(result_item[0][0] / sample_rate * 2)
+            offset_seconds.append(result_item[0][0] / sample_rate)
             peak_heights.append(result_item[0][1])
             locality_list.append(result_item[1])
             locality_seconds.append(
