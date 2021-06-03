@@ -299,7 +299,7 @@ def find_index_arr(against_array, target_array, locality, max_lags):
     else:
         for i in index_list_against:
             for j in index_list_target:
-                if abs(j - i) <= max_lags + locality:
+                if abs(j - i) <= max_lags * 2 + locality:
                     index_pairs += [(i, j)]
     return index_pairs
 
@@ -351,7 +351,7 @@ def find_maxes(
                     filter_matches=0,
                     # filter_matches=filter_matches,
                     match_len_filter=match_len_filter,
-                    max_lags=None,
+                    max_lags=max_lags,
                     index_pair=i[1],
                     **kwargs,
                 ),
@@ -377,23 +377,39 @@ def _find_peaks(
     """This is where kwargs go. returns zip of peak indices and their heights sorted by height"""
     scaling_factor = max(correlation) / len(correlation) / SCALING_16_BIT
     correlation /= np.max(np.abs(correlation), axis=0)
-    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.find_peaks.html
-    if max_lags is not None and index_pair is not None:
-        shift = index_pair[0] - index_pair[1]
-        # TODO See if calculations are correct
-        if (len(correlation) / 2) + shift > max_lags:
-            correlation[int(len(correlation) / 2 + max_lags - shift) :] = 0
-        if (len(correlation) / 2) - shift > max_lags:
-            correlation[: int(len(correlation) / 2 - max_lags - shift)] = 0
-    elif max_lags is not None:
+    # This is quite a bit faster, but I couldn't get it to work. Just wasn't worth it.
+    # Fix this for speedup with locality and max_lags
+
+    # if max_lags is not None and index_pair is not None:
+    #     shift = index_pair[0] - index_pair[1]
+    #     # lag_indexes = [0, 0]
+    #     if len(correlation) + shift > 2 * max_lags:
+    #         correlation[int(len(correlation) / 2 + max_lags - (shift / 2)) + 1 :] = 0
+    #     if len(correlation) - shift > 2 * max_lags:
+    #         correlation[: int(len(correlation) / 2 - max_lags + (shift / 2))] = 0
+    #     # correlation = correlation[lag_indexes[0] : lag_indexes[1]]
+    if max_lags is not None and index_pair is None:
         if len(correlation) > 2 * max_lags:
             correlation[: int(len(correlation) / 2 - max_lags)] = 0
-            correlation[int(len(correlation) / 2 + max_lags) :] = 0
+            correlation[int(len(correlation) / 2 + max_lags) + 1 :] = 0
 
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.find_peaks.html
     peaks, properties = signal.find_peaks(correlation, height=filter_matches, **kwargs)
     peaks -= int(len(correlation) / 2)
     peaks *= 2
     peaks_tuples = zip(peaks, properties["peak_heights"])
+    if max_lags is not None and index_pair is not None:
+        peaks_tuples = sorted(peaks_tuples, key=lambda x: x[0])
+        lag_indexes = [0, len(peaks_tuples)]
+        shift = index_pair[0] - index_pair[1]
+        for i, peak in enumerate(peaks_tuples):
+            if peak[0] + shift < -max_lags * 2:
+                lag_indexes[0] = i
+            if peak[0] + shift > max_lags * 2:
+                lag_indexes[1] = i
+                break
+        peaks_tuples = peaks_tuples[lag_indexes[0] : lag_indexes[1]]
+
     peaks_tuples = sorted(peaks_tuples, key=lambda x: x[1], reverse=True)
 
     if match_len_filter is None:
