@@ -469,9 +469,6 @@ class Audalign:
             None : if no match
         """
 
-        if locality_filter_prop is None or locality_filter_prop > 1.0:
-            locality_filter_prop = 1.0
-
         return recognize.recognize(
             self,
             file_path=file_path,
@@ -492,6 +489,8 @@ class Audalign:
         start_end_against: tuple = None,
         filter_matches: float = 0.5,
         match_len_filter: int = None,
+        locality: float = None,
+        locality_filter_prop: float = None,
         sample_rate: int = fingerprint.DEFAULT_FS,
         max_lags: float = None,
         plot: bool = False,
@@ -509,6 +508,8 @@ class Audalign:
             start_end_against (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
             filter_matches (float, optional): Filters based on confidence. Ranges between 0 and 1. Defaults to 0.5.
             match_len_filter (int, optional): Limits number of matches returned. Defaults to 30.
+            locality (float): filters matches to only count within locality. In seconds
+            locality_filter_prop (int, float,optional): within each offset, filters locality tuples by proportion of highest confidence to tuple confidence
             sample_rate (int, optional): Decodes audio file to this sample rate. Defaults to fingerprint.DEFAULT_FS.
             plot (bool, optional): Plots. Defaults to False.
             max_lags (float, optional): Maximum lags in seconds.
@@ -524,6 +525,8 @@ class Audalign:
             start_end_against=start_end_against,
             filter_matches=filter_matches,
             match_len_filter=match_len_filter,
+            locality=locality,
+            locality_filter_prop=locality_filter_prop,
             sample_rate=sample_rate,
             plot=plot,
             max_lags=max_lags,
@@ -596,6 +599,8 @@ class Audalign:
         start_end: tuple = None,
         filter_matches: float = 0.5,
         match_len_filter: int = None,
+        locality: float = None,
+        locality_filter_prop: float = None,
         sample_rate: int = fingerprint.DEFAULT_FS,
         max_lags: float = None,
         plot: bool = False,
@@ -613,6 +618,8 @@ class Audalign:
             start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
             filter_matches (float, optional): Filters based on confidence. Ranges between 0 and 1. Defaults to 0.5.
             match_len_filter (int, optional): Limits number of matches returned. Defaults to 30.
+            locality (float): filters matches to only count within locality. In seconds
+            locality_filter_prop (int, float,optional): within each offset, filters locality tuples by proportion of highest confidence to tuple confidence
             sample_rate (int, optional): Decodes audio file to this sample rate. Defaults to fingerprint.DEFAULT_FS.
             plot (bool, optional): Plots. Defaults to False.
             max_lags (float, optional): Maximum lags in seconds.
@@ -628,6 +635,8 @@ class Audalign:
             start_end=start_end,
             filter_matches=filter_matches,
             match_len_filter=match_len_filter,
+            locality=locality,
+            locality_filter_prop=locality_filter_prop,
             sample_rate=sample_rate,
             plot=plot,
             max_lags=max_lags,
@@ -785,7 +794,7 @@ class Audalign:
             alternate_strength_stat (str, optional): confidence for fingerprints, ssim for visual, mse or count also work for visual. Defaults to None.
             filter_matches (int, float, optional): filter matches level for fingerprinting. Defaults to 1.
             locality (float, optional): In seconds for fingerprints, only matches files within given window sizes
-            locality_filter_prop (int, float,optional): within each offset, filters locality tuples by proportion of highest confidence to tuple confidence
+            locality_filter_prop (int, float, optional): within each offset, filters locality tuples by proportion of highest confidence to tuple confidence
             volume_threshold (float, optional): volume threshold for visual recognition. Defaults to 216.
             volume_floor (float): ignores volume levels below floow.
             vert_scaling (float): scales vertically to speed up calculations. Smaller numbers have smaller images.

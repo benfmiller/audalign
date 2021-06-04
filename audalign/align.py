@@ -294,6 +294,8 @@ def calc_alignments(
                         filter_matches=filter_matches,
                         sample_rate=cor_sample_rate,
                         _file_audsegs=fine_aud_file_dict,
+                        locality=locality,
+                        locality_filter_prop=locality_filter_prop,
                         max_lags=max_lags,
                         **kwargs,
                     )

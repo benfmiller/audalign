@@ -1,5 +1,16 @@
 # Change Log
 
+## [0.5.0] 2021 - 06 - 04
+
+### Changed
+
+- Scaling factor in correlation normalized for length and bit depth
+- Default locality_filter_prop lowered to include more results
+
+### Added
+
+- correlation locality
+
 ## [0.4.2] 2021 - 05 - 24
 
 ### Changed

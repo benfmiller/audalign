@@ -29,7 +29,9 @@ def recognize(
     """
     if filter_matches is None:
         filter_matches = 1
-    if locality_filter_prop is None or locality_filter_prop > 1.0:
+    if locality_filter_prop is None:
+        locality_filter_prop = 0.6
+    elif locality_filter_prop > 1.0:
         locality_filter_prop = 1.0
     if locality is not None:  # convert from seconds to samples
         locality = max(  # turns into frames
