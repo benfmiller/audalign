@@ -168,6 +168,15 @@ class TestRecognize:
         )
         assert results
 
+    def test_correcognize(self):
+        results = self.ada.correcognize(
+            test_file,
+            test_file,
+            locality=10,
+            filter_matches=None,  # sets to 0.5
+        )
+        assert results
+
     def test_correcognize_no_return(self):
         results = self.ada.correcognize(
             test_file,
@@ -175,6 +184,14 @@ class TestRecognize:
             filter_matches=2,
         )
         assert results is None
+
+    def test_correcognize_directory_locality(self):
+        results = self.ada.correcognize_directory(
+            test_file,
+            "test_audio/testers/",
+            locality=10,
+        )
+        assert results
 
     def test_correcognize_directory(self):
         results = self.ada.correcognize_directory(

@@ -19,14 +19,20 @@ class TestAlign:
 
     def test_align_cor(self, tmpdir):
         result = self.ada.align(
-            "test_audio/test_shifts", tmpdir, technique="correlation"
+            "test_audio/test_shifts",
+            tmpdir,
+            technique="correlation",
         )
         assert result
+
+    def test_align_cor_options(self, tmpdir):
         result = self.ada.align(
             "test_audio/test_shifts",
             tmpdir,
             technique="correlation",
+            cor_sample_rate=4000,
             filter_matches=0.3,  # might have to adjust this
+            locality=30,
         )
         assert result
 
@@ -178,6 +184,13 @@ class TestFineAlign:
     def test_fine_align(self):
         result = self.ada.fine_align(
             self.align_fing_results,
+        )
+        assert result is not None
+
+    def test_fine_align_locality(self):
+        result = self.ada.fine_align(
+            self.align_fing_results,
+            locality=10,
         )
         assert result is not None
 
