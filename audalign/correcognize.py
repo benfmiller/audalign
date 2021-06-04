@@ -376,7 +376,11 @@ def _find_peaks(
 ):
     """This is where kwargs go. returns zip of peak indices and their heights sorted by height"""
     scaling_factor = max(correlation) / len(correlation) / SCALING_16_BIT
-    correlation /= np.max(np.abs(correlation), axis=0)
+    correlation = (
+        correlation / np.max(np.abs(correlation), axis=0)
+        if max(correlation) > 0
+        else correlation
+    )
     # This is quite a bit faster, but I couldn't get it to work. Just wasn't worth it.
     # Fix this for speedup with locality and max_lags
 
