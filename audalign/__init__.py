@@ -469,9 +469,6 @@ class Audalign:
             None : if no match
         """
 
-        if locality_filter_prop is None or locality_filter_prop > 1.0:
-            locality_filter_prop = 1.0
-
         return recognize.recognize(
             self,
             file_path=file_path,
