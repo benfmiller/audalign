@@ -92,6 +92,7 @@ def correcognize(
         match_len_filter=match_len_filter,
         max_lags=max_lags,
         locality_filter_prop=locality_filter_prop,
+        locality=locality,
         **kwargs,
     )
 
@@ -223,6 +224,7 @@ def correcognize_directory(
                 match_len_filter=match_len_filter,
                 max_lags=max_lags,
                 locality_filter_prop=locality_filter_prop,
+                locality=locality,
                 **kwargs,
             )
 
@@ -306,23 +308,19 @@ def find_index_arr(against_array, target_array, locality, max_lags):
 
 def calc_corrs(against_array, target_array, locality: float, max_lags: float):
     if locality is None:
-        correlation = signal.correlate(against_array, target_array)
+        yield signal.correlate(against_array, target_array)
     else:
         locality_a = len(against_array) if locality > len(against_array) else locality
         locality_b = len(target_array) if locality > len(target_array) else locality
         indexes = find_index_arr(against_array, target_array, locality, max_lags)
-        correlation = []
         for pair in indexes:
-            correlation += [
-                [
-                    signal.correlate(
-                        against_array[pair[0] : pair[0] + locality_a],
-                        target_array[pair[1] : pair[1] + locality_b],
-                    ),
-                    pair,
-                ]
+            yield [
+                signal.correlate(
+                    against_array[pair[0] : pair[0] + locality_a],
+                    target_array[pair[1] : pair[1] + locality_b],
+                ),
+                pair,
             ]
-    return correlation
 
 
 def find_maxes(
@@ -331,10 +329,12 @@ def find_maxes(
     match_len_filter: int,
     max_lags: float,
     locality_filter_prop: float,
+    locality: float,
     **kwargs,
 ) -> list:
     print("Finding Local Maximums... ", end="")
-    if type(correlation) != list:
+    if locality is None:
+        correlation = list(correlation)[0]
         return _find_peaks(
             correlation=correlation,
             filter_matches=filter_matches,
