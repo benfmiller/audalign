@@ -55,11 +55,11 @@ def correcognize(
 
     # TODO recalculate max_lags and locality
     if max_lags is not None:
-        max_lags = max_lags * sample_rate / 2
+        max_lags = calc_spec_windows(max_lags, sample_rate, technique) / 2
     if filter_matches is None:
         filter_matches = 0.5
     if locality is not None:
-        locality = locality * sample_rate
+        locality = calc_spec_windows(locality, sample_rate, technique)
     if locality_filter_prop is None:
         locality_filter_prop = DEFAULT_LOCALITY_FILTER_PROP
     elif locality_filter_prop > 1.0:
@@ -184,11 +184,10 @@ def correcognize_directory(
 
     t = time.time()
 
-    # TODO recalculate max_lags and locality
     if max_lags is not None:
-        max_lags = max_lags * sample_rate / 2
+        max_lags = calc_spec_windows(max_lags, sample_rate, technique) / 2
     if locality is not None:
-        locality = locality * sample_rate
+        locality = calc_spec_windows(locality, sample_rate, technique)
     if locality_filter_prop is None:
         locality_filter_prop = DEFAULT_LOCALITY_FILTER_PROP
     elif locality_filter_prop > 1.0:
@@ -328,6 +327,23 @@ def calc_array_indexes(array, locality):
         if len(array) - int(locality) not in index_list:
             index_list.append(len(array) - int(locality))
     return index_list
+
+
+def calc_spec_windows(seconds, frame_rate, technique):
+    if technique == "correlation":
+        return seconds * frame_rate
+    elif technique == "correlation_spectrogram":
+        return max(
+            int(
+                seconds
+                // (
+                    fingerprint.DEFAULT_WINDOW_SIZE
+                    / frame_rate
+                    * fingerprint.DEFAULT_OVERLAP_RATIO
+                )
+            ),
+            1,
+        )
 
 
 def find_index_arr(against_array, target_array, locality, max_lags):
@@ -552,7 +568,7 @@ def process_results(
             offset_seconds.append(result_item[0][0] / sample_rate)
             peak_heights.append(result_item[0][1])
             locality_list.append(result_item[1])
-            locality_seconds.append(
+            locality_seconds.append(  # TODO rework for spec
                 [
                     (
                         x[1] / sample_rate * 2,
