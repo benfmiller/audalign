@@ -53,7 +53,6 @@ def correcognize(
             "technique must be either 'correlation' or 'correlation_spectrogram"
         )
 
-    # TODO recalculate max_lags and locality
     if max_lags is not None:
         max_lags = calc_spec_windows(max_lags, sample_rate, technique) / 2
     if filter_matches is None:
@@ -111,6 +110,7 @@ def correcognize(
         max_lags=max_lags,
         locality_filter_prop=locality_filter_prop,
         locality=locality,
+        technique=technique,
         **kwargs,
     )
 
@@ -263,6 +263,7 @@ def correcognize_directory(
                 max_lags=max_lags,
                 locality_filter_prop=locality_filter_prop,
                 locality=locality,
+                technique=technique,
                 **kwargs,
             )
 
@@ -365,25 +366,42 @@ def find_index_arr(against_array, target_array, locality, max_lags):
 def calc_corrs(
     against_array, target_array, locality: float, max_lags: float, technique: str
 ):
-    # TODO calc_corrs
     if locality is None:
         if technique == "correlation":
             yield signal.correlate(against_array, target_array)
         elif technique == "correlation_spectrogram":
-            ...
-
+            against_array = against_array.T
+            target_array = target_array.T
+            yield _calc_corrs_spec(against_array, target_array)
     else:
         locality_a = len(against_array) if locality > len(against_array) else locality
         locality_b = len(target_array) if locality > len(target_array) else locality
         indexes = find_index_arr(against_array, target_array, locality, max_lags)
-        for pair in indexes:
-            yield [
-                signal.correlate(
-                    against_array[pair[0] : pair[0] + locality_a],
-                    target_array[pair[1] : pair[1] + locality_b],
-                ),
-                pair,
-            ]
+        if technique == "correlation":
+            for pair in indexes:
+                yield [
+                    signal.correlate(
+                        against_array[pair[0] : pair[0] + locality_a],
+                        target_array[pair[1] : pair[1] + locality_b],
+                    ),
+                    pair,
+                ]
+        elif technique == "correlation_spectrogram":
+            for pair in indexes:
+                yield [
+                    _calc_corrs_spec(
+                        against_array[pair[0] : pair[0] + locality_a].T,
+                        target_array[pair[1] : pair[1] + locality_b].T,
+                    ),
+                    pair,
+                ]
+
+
+def _calc_corrs_spec(against, target):
+    corr_result = signal.correlate(against[0], target[0])
+    for i in range(1, len(against)):
+        corr_result += signal.correlate(against[i], target[i])
+    return corr_result
 
 
 def find_maxes(
@@ -393,6 +411,7 @@ def find_maxes(
     max_lags: float,
     locality_filter_prop: float,
     locality: float,
+    technique: str,
     **kwargs,
 ) -> list:
     print("Finding Local Maximums... ", end="")
@@ -403,6 +422,7 @@ def find_maxes(
             filter_matches=filter_matches,
             match_len_filter=match_len_filter,
             max_lags=max_lags,
+            technique=technique,
             **kwargs,
         )
     else:
@@ -416,6 +436,7 @@ def find_maxes(
                     match_len_filter=match_len_filter,
                     max_lags=max_lags,
                     index_pair=i[1],
+                    technique=technique,
                     **kwargs,
                 ),
             ]
@@ -435,16 +456,21 @@ def _find_peaks(
     match_len_filter: int,
     max_lags: float,
     index_pair: tuple = None,
+    technique: str = "correlation",
     **kwargs,
 ):
     """This is where kwargs go. returns zip of peak indices and their heights sorted by height"""
-    scaling_factor = max(correlation) / len(correlation) / SCALING_16_BIT
+    if technique == "correlation":
+        scaling_factor = max(correlation) / len(correlation) / SCALING_16_BIT
+    elif technique == "correlation_spectrogram":
+        scaling_factor = max(correlation) / len(correlation)
+        # TODO Test scaling factor
     correlation = (
         correlation / np.max(np.abs(correlation), axis=0)
         if max(correlation) > 0
         else correlation
     )
-    # This is quite a bit faster, but I couldn't get it to work. Just wasn't worth it.
+    # This is quite a bit faster, but I couldn't get it to work in a timely manner.
     # Fix this for speedup with locality and max_lags
 
     # if max_lags is not None and index_pair is not None:
