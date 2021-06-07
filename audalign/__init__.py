@@ -481,6 +481,38 @@ class Audalign:
             **kwargs,
         )
 
+    def correcognize_spectrogram(
+        self,
+        target_file_path: str,
+        against_file_path: str,
+        start_end_target: tuple = None,
+        start_end_against: tuple = None,
+        filter_matches: float = 0.5,
+        match_len_filter: int = None,
+        locality: float = None,
+        locality_filter_prop: float = None,
+        sample_rate: int = fingerprint.DEFAULT_FS,
+        max_lags: float = None,
+        plot: bool = False,
+        **kwargs,
+    ):
+        # TODO Docs
+        return correcognize.correcognize(
+            target_file_path,
+            against_file_path,
+            start_end_target=start_end_target,
+            start_end_against=start_end_against,
+            filter_matches=filter_matches,
+            match_len_filter=match_len_filter,
+            locality=locality,
+            locality_filter_prop=locality_filter_prop,
+            sample_rate=sample_rate,
+            plot=plot,
+            max_lags=max_lags,
+            technique="correlation_spectrogram",
+            **kwargs,
+        )
+
     def correcognize(
         self,
         target_file_path: str,
@@ -644,6 +676,38 @@ class Audalign:
             **kwargs,
         )
 
+    def correcognize_spectrogram_directory(
+        self,
+        target_file_path: str,
+        against_directory: str,
+        start_end: tuple = None,
+        filter_matches: float = 0.5,
+        match_len_filter: int = None,
+        locality: float = None,
+        locality_filter_prop: float = None,
+        sample_rate: int = fingerprint.DEFAULT_FS,
+        max_lags: float = None,
+        plot: bool = False,
+        _file_audsegs: dict = None,
+        **kwargs,
+    ):
+        # TODO Docs
+        return correcognize.correcognize_directory(
+            target_file_path,
+            against_directory,
+            start_end=start_end,
+            filter_matches=filter_matches,
+            match_len_filter=match_len_filter,
+            locality=locality,
+            locality_filter_prop=locality_filter_prop,
+            sample_rate=sample_rate,
+            plot=plot,
+            max_lags=max_lags,
+            _file_audsegs=_file_audsegs,
+            technique="correlation_spectrogram",
+            **kwargs,
+        )
+
     def visrecognize_directory(
         self,
         target_file_path: str,
@@ -791,7 +855,7 @@ class Audalign:
             start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
             write_extension (str, optional): audio file format to write to. Defaults to None.
             technique (str, optional): options are "fingerprints", "visual", "correlation"
-            alternate_strength_stat (str, optional): confidence for fingerprints, ssim for visual, mse or count also work for visual. Defaults to None.
+            strength_stat (str, optional): confidence for fingerprints, ssim for visual, mse or count also work for visual. Defaults to None.
             filter_matches (int, float, optional): filter matches level for fingerprinting. Defaults to 1.
             locality (float, optional): In seconds for fingerprints, only matches files within given window sizes
             locality_filter_prop (int, float, optional): within each offset, filters locality tuples by proportion of highest confidence to tuple confidence
@@ -864,12 +928,19 @@ class Audalign:
             *filenames (strs): strings of paths for alignment
             destination_path (str): String of path to write alignments to
             write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
-            technique (str): either "fingerprints" or "correlation"
+            technique (str): either "fingerprints", "visual", or "correlation"
             filter_matches (float): filters based on confidence.
             locality (float): Only recognizes against fingerprints in given width. In seconds
             locality_filter_prop (int, float,optional): within each offset, filters locality tuples by proportion of highest confidence to tuple confidence
             cor_sample_rate (int): Sampling rate for correlation
             max_lags (float, optional): Maximum lags in seconds for correlation.
+            strength_stat (str, optional): confidence for fingerprints, ssim for visual, mse or count also work for visual. Defaults to None.
+            volume_threshold (float, optional): volume threshold for visual recognition. Defaults to 216.
+            volume_floor (float): ignores volume levels below floow.
+            vert_scaling (float): scales vertically to speed up calculations. Smaller numbers have smaller images.
+            horiz_scaling (float): scales horizontally to speed up calculations. Smaller numbers have smaller images. Affects alignment granularity.
+            img_width (float, optional): width of image comparison for visual recognition
+            calc_mse (bool): also calculates mse for each shift if true. If false, uses default mse 20000000
             **kwargs: Additional arguments for finding peaks in correlation
 
         Returns
@@ -931,6 +1002,14 @@ class Audalign:
             locality (float): Only recognizes against fingerprints in given width. In seconds
             locality_filter_prop (int, float,optional): within each offset, filters locality tuples by proportion of highest confidence to tuple confidence
             cor_sample_rate (int): Sampling rate for correlation
+            max_lags (float, optional): Maximum lags in seconds for correlation.
+            strength_stat (str, optional): confidence for fingerprints, ssim for visual, mse or count also work for visual. Defaults to None.
+            volume_threshold (float, optional): volume threshold for visual recognition. Defaults to 216.
+            volume_floor (float): ignores volume levels below floow.
+            vert_scaling (float): scales vertically to speed up calculations. Smaller numbers have smaller images.
+            horiz_scaling (float): scales horizontally to speed up calculations. Smaller numbers have smaller images. Affects alignment granularity.
+            img_width (float, optional): width of image comparison for visual recognition
+            calc_mse (bool): also calculates mse for each shift if true. If false, uses default mse 20000000
             **kwargs: Additional arguments for finding peaks in correlation
 
         Returns
@@ -990,12 +1069,18 @@ class Audalign:
             write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
             technique (str): either "fingerprints" or "correlation"
             filter_matches (float): filters based on confidence.
+            max_lags (float, optional): Maximum lags in seconds for correlation.
             locality (float): Only recognizes against fingerprints in given width. In seconds
             locality_filter_prop (int, float,optional): within each offset, filters locality tuples by proportion of highest confidence to tuple confidence
             cor_sample_rate (int): Sampling rate for correlation
             match_index (int): reorders the input results to the given match index.
             strength_stat (str): strength stat for finding proper alignments. Defaults to confidence.
-            # TODO Docs
+            volume_threshold (float, optional): volume threshold for visual recognition. Defaults to 216.
+            volume_floor (float): ignores volume levels below floow.
+            vert_scaling (float): scales vertically to speed up calculations. Smaller numbers have smaller images.
+            horiz_scaling (float): scales horizontally to speed up calculations. Smaller numbers have smaller images. Affects alignment granularity.
+            img_width (float, optional): width of image comparison for visual recognition
+            calc_mse (bool): also calculates mse for each shift if true. If false, uses default mse 20000000
             **kwargs: Additional arguments for finding peaks in correlation
 
         Returns
