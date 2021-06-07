@@ -1,4 +1,3 @@
-from numpy.lib.function_base import append
 import audalign.fingerprint as fingerprint
 from audalign.filehandler import read, find_files, get_shifted_file
 import audalign
@@ -27,6 +26,7 @@ def correcognize(
     sample_rate: int = fingerprint.DEFAULT_FS,
     max_lags: float = None,
     plot: bool = False,
+    technique: str = "correlation",
     **kwargs,
 ):
     """Called from audalign correcognize
@@ -48,7 +48,12 @@ def correcognize(
     assert (
         sample_rate < 200000
     )  # I accidentally used 441000 once... not good, big crash
+    if technique not in ["correlation", "correlation_spectrogram"]:
+        raise ValueError(
+            "technique must be either 'correlation' or 'correlation_spectrogram"
+        )
 
+    # TODO recalculate max_lags and locality
     if max_lags is not None:
         max_lags = max_lags * sample_rate / 2
     if filter_matches is None:
@@ -80,10 +85,21 @@ def correcognize(
     # sos = signal.butter(10, 0.125, "hp", fs=sample_rate, output="sos")
     target_array = signal.sosfilt(sos, target_array)
     against_array = signal.sosfilt(sos, against_array)
+    if technique == "correlation_spectrogram":
+        target_array = fingerprint.fingerprint(
+            target_array, fs=sample_rate, retspec=True
+        )
+        against_array = fingerprint.fingerprint(
+            against_array, fs=sample_rate, retspec=True
+        )
 
     print("Calculating correlation... ", end="")
     correlation = calc_corrs(
-        against_array, target_array, locality=locality, max_lags=max_lags
+        against_array,
+        target_array,
+        locality=locality,
+        max_lags=max_lags,
+        technique=technique,
     )
 
     results_list_tuple, scaling_factor = find_maxes(
@@ -106,6 +122,7 @@ def correcognize(
             arr_b_title=against_file_path,
             scaling_factor=scaling_factor,
             peaks=results_list_tuple,
+            technique=technique,
         )
     elif plot:
         print("Correlation Plot not compatible with locality")
@@ -151,15 +168,21 @@ def correcognize_directory(
     plot: bool = False,
     max_lags: float = None,
     _file_audsegs: dict = None,
+    technique: str = "correlation",
     **kwargs,
 ):
     """Called from audalign correcognize_directory"""
     assert (
         sample_rate < 200000
     )  # I accidentally used 441000 once... not good, big crash
+    if technique not in ["correlation", "correlation_spectrogram"]:
+        raise ValueError(
+            "technique must be either 'correlation' or 'correlation_spectrogram"
+        )
 
     t = time.time()
 
+    # TODO recalculate max_lags and locality
     if max_lags is not None:
         max_lags = max_lags * sample_rate / 2
     if locality is not None:
@@ -190,6 +213,10 @@ def correcognize_directory(
         10, fingerprint.threshold, "highpass", fs=sample_rate, output="sos"
     )
     target_array = signal.sosfilt(sos, target_array)
+    if technique == "correlation_spectrogram":
+        target_array = fingerprint.fingerprint(
+            target_array, fs=sample_rate, retspec=True
+        )
 
     if type(against_directory) == str:
         against_files = find_files(against_directory)
@@ -212,10 +239,18 @@ def correcognize_directory(
             else:
                 against_array = read(file_path, sample_rate=sample_rate)[0]
             against_array = signal.sosfilt(sos, against_array)
+            if technique == "correlation_spectrogram":
+                against_array = fingerprint.fingerprint(
+                    against_array, fs=sample_rate, retspec=True
+                )
 
             print("Calculating correlation... ", end="")
             correlation = calc_corrs(
-                against_array, target_array, locality=locality, max_lags=max_lags
+                against_array,
+                target_array,
+                locality=locality,
+                max_lags=max_lags,
+                technique=technique,
             )
 
             results_list_tuple, scaling_factor = find_maxes(
@@ -238,6 +273,7 @@ def correcognize_directory(
                     arr_b_title=file_path,
                     scaling_factor=scaling_factor,
                     peaks=results_list_tuple,
+                    technique=technique,
                 )
             elif plot:
                 print("Correlation Plot not compatible with locality")
@@ -306,7 +342,10 @@ def find_index_arr(against_array, target_array, locality, max_lags):
     return index_pairs
 
 
-def calc_corrs(against_array, target_array, locality: float, max_lags: float):
+def calc_corrs(
+    against_array, target_array, locality: float, max_lags: float, technique: str
+):
+    # TODO calc_corrs
     if locality is None:
         yield signal.correlate(against_array, target_array)
     else:
@@ -547,6 +586,7 @@ def plot_cor(
     arr_b_title=None,
     peaks=None,
     scaling_factor=None,
+    technique=None,
 ):
     """
     Really nifty plotter, lots of good information here.
@@ -562,14 +602,15 @@ def plot_cor(
     if arr_a_title:
         plt.title(arr_a_title)
 
-    arr2d_a = fingerprint.fingerprint(
-        array_a, fs=sample_rate, wsize=new_vis_wsize, retspec=True
-    )
-    fig.add_subplot(3, 2, 2)
-    plt.imshow(arr2d_a)  # , cmap=plt.cm.gray)
-    plt.gca().invert_yaxis()
-    if arr_a_title:
-        plt.title(arr_a_title)
+    if technique == "correlation":
+        arr2d_a = fingerprint.fingerprint(
+            array_a, fs=sample_rate, wsize=new_vis_wsize, retspec=True
+        )
+        fig.add_subplot(3, 2, 2)
+        plt.imshow(arr2d_a)  # , cmap=plt.cm.gray)
+        plt.gca().invert_yaxis()
+        if arr_a_title:
+            plt.title(arr_a_title)
 
     fig.add_subplot(3, 2, 3)
     plt.plot(array_b)
@@ -578,14 +619,15 @@ def plot_cor(
     if arr_b_title:
         plt.title(arr_b_title)
 
-    arr2d_b = fingerprint.fingerprint(
-        array_b, fs=sample_rate, wsize=new_vis_wsize, retspec=True
-    )
-    fig.add_subplot(3, 2, 4)
-    plt.imshow(arr2d_b)
-    plt.gca().invert_yaxis()
-    if arr_b_title:
-        plt.title(arr_b_title)
+    if technique == "correlation":
+        arr2d_b = fingerprint.fingerprint(
+            array_b, fs=sample_rate, wsize=new_vis_wsize, retspec=True
+        )
+        fig.add_subplot(3, 2, 4)
+        plt.imshow(arr2d_b)
+        plt.gca().invert_yaxis()
+        if arr_b_title:
+            plt.title(arr_b_title)
 
     if corr_array is not None:
         fig.add_subplot(3, 2, 5)
