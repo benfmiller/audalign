@@ -88,10 +88,12 @@ def correcognize(
     if technique == "correlation_spectrogram":
         target_array = fingerprint.fingerprint(
             target_array, fs=sample_rate, retspec=True
-        )
+        ).T
+        target_array = np.clip(target_array, 0, 500)  # never louder than 500
         against_array = fingerprint.fingerprint(
             against_array, fs=sample_rate, retspec=True
-        )
+        ).T
+        against_array = np.clip(against_array, 0, 500)  # never louder than 500
 
     print("Calculating correlation... ", end="")
     correlation = calc_corrs(
@@ -216,7 +218,8 @@ def correcognize_directory(
     if technique == "correlation_spectrogram":
         target_array = fingerprint.fingerprint(
             target_array, fs=sample_rate, retspec=True
-        )
+        ).T
+        target_array = np.clip(target_array, 0, 500)  # never louder than 500
 
     if type(against_directory) == str:
         against_files = find_files(against_directory)
@@ -242,7 +245,8 @@ def correcognize_directory(
             if technique == "correlation_spectrogram":
                 against_array = fingerprint.fingerprint(
                     against_array, fs=sample_rate, retspec=True
-                )
+                ).T
+                against_array = np.clip(against_array, 0, 500)  # never louder than 500
 
             print("Calculating correlation... ", end="")
             correlation = calc_corrs(
@@ -347,7 +351,11 @@ def calc_corrs(
 ):
     # TODO calc_corrs
     if locality is None:
-        yield signal.correlate(against_array, target_array)
+        if technique == "correlation":
+            yield signal.correlate(against_array, target_array)
+        elif technique == "correlation_spectrogram":
+            ...
+
     else:
         locality_a = len(against_array) if locality > len(against_array) else locality
         locality_b = len(target_array) if locality > len(target_array) else locality
