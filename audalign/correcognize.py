@@ -54,7 +54,7 @@ def correcognize(
         )
 
     if max_lags is not None:
-        max_lags = calc_spec_windows(max_lags, sample_rate, technique) / 2
+        max_lags = int(calc_spec_windows(max_lags, sample_rate, technique) / 2)
     if filter_matches is None:
         filter_matches = 0.5
     if locality is not None:
@@ -186,7 +186,7 @@ def correcognize_directory(
     t = time.time()
 
     if max_lags is not None:
-        max_lags = calc_spec_windows(max_lags, sample_rate, technique) / 2
+        max_lags = int(calc_spec_windows(max_lags, sample_rate, technique) / 2)
     if locality is not None:
         locality = calc_spec_windows(locality, sample_rate, technique)
     if locality_filter_prop is None:
