@@ -145,6 +145,7 @@ def correcognize(
         scaling_factor=scaling_factor,
         sample_rate=sample_rate,
         locality=locality,
+        technique=technique,
     )
 
     t = time.time() - t
@@ -298,6 +299,7 @@ def correcognize_directory(
                 scaling_factor=scaling_factor,
                 sample_rate=sample_rate,
                 locality=locality,
+                technique=technique,
             )
             if single_file_match:
                 file_match = {**file_match, **single_file_match}
@@ -330,16 +332,26 @@ def calc_array_indexes(array, locality):
     return index_list
 
 
-def calc_spec_windows(seconds, frame_rate, technique):
+def frames_to_sec(frames, sample_rate):
+    return round(
+        float(frames)
+        / sample_rate
+        * fingerprint.DEFAULT_WINDOW_SIZE
+        * fingerprint.DEFAULT_OVERLAP_RATIO,
+        5,
+    )
+
+
+def calc_spec_windows(seconds, sample_rate, technique):
     if technique == "correlation":
-        return seconds * frame_rate
+        return seconds * sample_rate
     elif technique == "correlation_spectrogram":
         return max(
             int(
                 seconds
                 // (
                     fingerprint.DEFAULT_WINDOW_SIZE
-                    / frame_rate
+                    / sample_rate
                     * fingerprint.DEFAULT_OVERLAP_RATIO
                 )
             ),
@@ -463,7 +475,9 @@ def _find_peaks(
     if technique == "correlation":
         scaling_factor = max(correlation) / len(correlation) / SCALING_16_BIT
     elif technique == "correlation_spectrogram":
-        scaling_factor = max(correlation) / len(correlation)
+        scaling_factor = (
+            max(correlation) / len(correlation) / (fingerprint.DEFAULT_WINDOW_SIZE / 2)
+        )
         # TODO Test scaling factor
     correlation = (
         correlation / np.max(np.abs(correlation), axis=0)
@@ -572,7 +586,8 @@ def process_results(
     file_name: str,
     scaling_factor: float,
     sample_rate: int,
-    locality=None,
+    locality: float = None,
+    technique: str = "correlation",
 ):
     """Processes peaks and stuff into our regular recognition dictionary"""
 
@@ -581,36 +596,52 @@ def process_results(
     peak_heights = []
     locality_list = []
     locality_seconds = []
+    for result_item in results_list:
+        offset_samples.append(result_item[0])
+        peak_heights.append(result_item[1])
+        if technique == "correlation":
+            offset_seconds.append(result_item[0] / sample_rate)
+        elif technique == "correlation_spectrogram":
+            offset_seconds.append(frames_to_sec(result_item[0], sample_rate))
     if locality is None:
         locality_list = [None] * len(results_list)
         locality_seconds = [None] * len(results_list)
-        for result_item in results_list:
-            offset_samples.append(result_item[0])
-            offset_seconds.append(result_item[0] / sample_rate)
-            peak_heights.append(result_item[1])
     else:
         for result_item in results_list:
-            offset_samples.append(result_item[0][0])
-            offset_seconds.append(result_item[0][0] / sample_rate)
-            peak_heights.append(result_item[0][1])
             locality_list.append(result_item[1])
-            locality_seconds.append(  # TODO rework for spec
-                [
-                    (
-                        x[1] / sample_rate * 2,
-                        x[0] / sample_rate * 2,
-                        x[2],
-                    )  # against target or target against???
-                    for x in result_item[1]
-                ]
-            )
+            if technique == "correlation":
+                locality_seconds.append(
+                    [
+                        (
+                            x[1] / sample_rate * 2,  # TODO *2???
+                            x[0] / sample_rate * 2,
+                            x[2],
+                        )  # target, against, scaling
+                        for x in result_item[1]
+                    ]
+                )
+            elif technique == "correlation_spectrogram":
+                locality_seconds.append(
+                    [
+                        (
+                            frames_to_sec(x[1], sample_rate * 2),
+                            frames_to_sec(x[0], sample_rate * 2),
+                            x[2],
+                        )  # target, against, scaling
+                        for x in result_item[1]
+                    ]
+                )
 
     match = {}
     match[file_name] = {}
 
-    match[file_name]["locality_samples"] = locality_list
+    if technique == "correlation":
+        match[file_name]["locality_samples"] = locality_list
+        match[file_name]["offset_samples"] = offset_samples
+    elif technique == "correlation_spectrogram":
+        match[file_name][audalign.Audalign.LOCALITY] = locality_list
+        match[file_name][audalign.Audalign.OFFSET_SAMPLES] = offset_samples
     match[file_name][audalign.Audalign.LOCALITY_SECS] = locality_seconds
-    match[file_name]["offset_samples"] = offset_samples
     match[file_name][audalign.Audalign.OFFSET_SECS] = offset_seconds
     match[file_name][audalign.Audalign.CONFIDENCE] = peak_heights
     match[file_name]["sample_rate"] = sample_rate
