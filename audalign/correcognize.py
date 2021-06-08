@@ -472,16 +472,17 @@ def _find_peaks(
     **kwargs,
 ):
     """This is where kwargs go. returns zip of peak indices and their heights sorted by height"""
+    max_corr = np.max(correlation)
     if technique == "correlation":
-        scaling_factor = max(correlation) / len(correlation) / SCALING_16_BIT
+        scaling_factor = max_corr / len(correlation) / SCALING_16_BIT
     elif technique == "correlation_spectrogram":
         scaling_factor = (
-            max(correlation) / len(correlation) / (fingerprint.DEFAULT_WINDOW_SIZE / 2)
+            max_corr / len(correlation) / (fingerprint.DEFAULT_WINDOW_SIZE / 2)
         )
         # TODO Test scaling factor
     correlation = (
         correlation / np.max(np.abs(correlation), axis=0)
-        if max(correlation) > 0
+        if max_corr > 0
         else correlation
     )
     # This is quite a bit faster, but I couldn't get it to work in a timely manner.
@@ -596,18 +597,24 @@ def process_results(
     peak_heights = []
     locality_list = []
     locality_seconds = []
-    for result_item in results_list:
-        offset_samples.append(result_item[0])
-        peak_heights.append(result_item[1])
-        if technique == "correlation":
-            offset_seconds.append(result_item[0] / sample_rate)
-        elif technique == "correlation_spectrogram":
-            offset_seconds.append(frames_to_sec(result_item[0], sample_rate))
     if locality is None:
+        for result_item in results_list:
+            offset_samples.append(result_item[0])
+            peak_heights.append(result_item[1])
+            if technique == "correlation":
+                offset_seconds.append(result_item[0] / sample_rate)
+            elif technique == "correlation_spectrogram":
+                offset_seconds.append(frames_to_sec(result_item[0], sample_rate))
         locality_list = [None] * len(results_list)
         locality_seconds = [None] * len(results_list)
     else:
         for result_item in results_list:
+            offset_samples.append(result_item[0][0])
+            if technique == "correlation":
+                offset_seconds.append(result_item[0][0] / sample_rate)
+            elif technique == "correlation_spectrogram":
+                offset_seconds.append(frames_to_sec(result_item[0][0], sample_rate))
+            peak_heights.append(result_item[0][1])
             locality_list.append(result_item[1])
             if technique == "correlation":
                 locality_seconds.append(
