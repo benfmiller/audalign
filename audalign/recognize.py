@@ -246,7 +246,8 @@ def locality_align_matches(matches: list, locality: int, locality_filter_prop: i
                     continue
                 index += 1
 
-        sample_difference_counter[name] = temp_file_dict
+        if len(temp_file_dict) > 0:
+            sample_difference_counter[name] = temp_file_dict
 
     # return {filename: {offset: [confidence, [loc_tups]]}}
     return sample_difference_counter
