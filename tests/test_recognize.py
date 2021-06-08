@@ -1,8 +1,12 @@
 import audalign as ad
+import os
 import pytest
 
 test_file = "test_audio/testers/test.mp3"
 test_file2 = "test_audio/testers/pink_noise.mp3"
+test_file_eig = "test_audio/test_shifts/Eigen-20sec.mp3"
+test_file_eig2 = "test_audio/test_shifts/Eigen-song-base.mp3"
+test_folder_eig = "test_audio/test_shifts/"
 
 
 class TestFingerprinting:
@@ -106,6 +110,16 @@ class TestRecognize:
         result = ada2.recognize(test_file2)
         assert result
 
+    def test_recognize_max_lags(self):
+        _max_lags = 4
+        results = self.ada.recognize(test_file_eig, max_lags=4)
+
+        offset_seconds = results["match_info"][os.path.basename(test_file_eig2)][
+            "offset_seconds"
+        ]
+        assert min(offset_seconds) < _max_lags
+        assert max(offset_seconds) < _max_lags
+
     @pytest.mark.smoke
     def test_recognize_locality(self):
         assert self.ada.total_fingerprints > 0
@@ -113,6 +127,17 @@ class TestRecognize:
 
         result = self.ada.recognize(test_file, locality=10)
         assert len(result) > 1
+
+    # @pytest.mark.skip(reason="not working for some reason")
+    def test_recognize_locality_max_lags(self):
+        _max_lags = 4
+        results = self.ada.recognize(test_file_eig, max_lags=4, locality=10)
+
+        offset_seconds = results["match_info"][os.path.basename(test_file_eig2)][
+            "offset_seconds"
+        ]
+        assert min(offset_seconds) < _max_lags
+        assert max(offset_seconds) < _max_lags
 
     @pytest.mark.smoke
     def test_visrecognize(self):
@@ -200,9 +225,93 @@ class TestRecognize:
         )
         assert results
 
+    def test_correcognize_max_lags(self):
+        _max_lags = 4
+        results = self.ada.correcognize(
+            test_file_eig,
+            test_file_eig2,
+            max_lags=_max_lags,
+            filter_matches=0,
+        )
+        assert results
+        offset_seconds = results["match_info"][os.path.basename(test_file_eig2)][
+            "offset_seconds"
+        ]
+        assert min(offset_seconds) < _max_lags
+        assert max(offset_seconds) < _max_lags
+
+    def test_correcognize_locality_max_lags(self):
+        _max_lags = 4
+        results = self.ada.correcognize(
+            test_file_eig,
+            test_file_eig2,
+            max_lags=_max_lags,
+            locality=10,
+            filter_matches=0,
+        )
+        assert results
+        offset_seconds = results["match_info"][os.path.basename(test_file_eig2)][
+            "offset_seconds"
+        ]
+        assert min(offset_seconds) < _max_lags
+        assert max(offset_seconds) < _max_lags
+
     def test_correcognize_directory_no_return(self):
         results = self.ada.correcognize_directory(
             test_file,
             "tests/",
         )
         assert results is None
+
+    def test_correcognize_spectrogram(self):
+        results = self.ada.correcognize_spectrogram(
+            test_file_eig,
+            test_folder_eig,
+        )
+        assert results
+
+    def test_correcognize_spectrogram_locality(self):
+        results = self.ada.correcognize_spectrogram(
+            test_file_eig,
+            test_folder_eig,
+            locality=10,
+        )
+        assert results
+
+    def test_correcognize_spectrogram_directory(self):
+        results = self.ada.correcognize_spectrogram_directory(
+            test_file_eig,
+            test_folder_eig,
+        )
+        assert results
+
+    def test_correcognize_spectrogram_max_lags(self):
+        _max_lags = 4
+        results = self.ada.correcognize_spectrogram(
+            test_file_eig,
+            test_file_eig2,
+            max_lags=_max_lags,
+            filter_matches=0,
+        )
+        assert results
+        offset_seconds = results["match_info"][os.path.basename(test_file_eig2)][
+            "offset_seconds"
+        ]
+        assert min(offset_seconds) < _max_lags
+        assert max(offset_seconds) < _max_lags
+
+    def test_correcognize_spectrogram_locality_max_lags(self):
+        _max_lags = 4
+        results = self.ada.correcognize_spectrogram(
+            test_file_eig,
+            test_file_eig2,
+            max_lags=_max_lags,
+            filter_matches=0,
+            locality=10,
+        )
+        assert results
+        offset_seconds = results["match_info"][os.path.basename(test_file_eig2)][
+            "offset_seconds"
+        ]
+        assert min(offset_seconds) < _max_lags
+        assert max(offset_seconds) < _max_lags
