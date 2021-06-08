@@ -156,7 +156,7 @@ def set_ada_file_names(
                 filename_list,
                 _file_audsegs=fine_aud_file_dict,
             )
-    elif technique in ["correlation", "visual"]:
+    elif technique in ["correlation", "visual", "correlation_spectrogram"]:
         if target_aligning:
             ada_obj.file_names = [os.path.basename(x) for x in filename_list]
         elif file_dir:
@@ -167,7 +167,7 @@ def set_ada_file_names(
             ada_obj.file_names = [
                 os.path.basename(x) for x in fine_aud_file_dict.keys()
             ]
-            if technique == "correlation":
+            if technique in ["correlation", "correlation_spectrogram"]:
                 # could remove for multiprocessing in the future
                 for path in fine_aud_file_dict.keys():
                     fine_aud_file_dict[path] = audalign.filehandler.get_shifted_file(
@@ -186,7 +186,7 @@ def set_ada_file_names(
 
     else:
         raise ValueError(
-            f'Technique parameter must be fingerprints, visual, or correlation, not "{technique}"'
+            f'Technique parameter must be fingerprints, visual, correlation_spectrogram, or correlation, not "{technique}"'
         )
 
 
@@ -286,8 +286,8 @@ def calc_alignments(
                         locality_filter_prop=locality_filter_prop,
                         max_lags=max_lags,
                     )
-                elif technique == "correlation":
-                    alignment = ada_obj.correcognize_directory(
+                elif technique in ["correlation", "correlation_spectrogram"]:
+                    alignment = audalign.correcognize.correcognize_directory(
                         file_path,
                         dir_or_list,
                         start_end=target_start_end,
@@ -297,6 +297,7 @@ def calc_alignments(
                         locality=locality,
                         locality_filter_prop=locality_filter_prop,
                         max_lags=max_lags,
+                        technique=technique,
                         **kwargs,
                     )
                 elif technique == "visual":
