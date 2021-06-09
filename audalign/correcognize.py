@@ -621,8 +621,8 @@ def process_results(
                 locality_seconds.append(
                     [
                         (
-                            x[1] / sample_rate * 2,  # TODO *2???
-                            x[0] / sample_rate * 2,
+                            x[1] / sample_rate,
+                            x[0] / sample_rate,
                             x[2],
                         )  # target, against, scaling
                         for x in result_item[1]
@@ -632,8 +632,8 @@ def process_results(
                 locality_seconds.append(
                     [
                         (
-                            frames_to_sec(x[1], sample_rate * 2),
-                            frames_to_sec(x[0], sample_rate * 2),
+                            frames_to_sec(x[1], sample_rate),
+                            frames_to_sec(x[0], sample_rate),
                             x[2],
                         )  # target, against, scaling
                         for x in result_item[1]
