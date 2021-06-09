@@ -496,7 +496,25 @@ class Audalign:
         plot: bool = False,
         **kwargs,
     ):
-        # TODO Docs
+        """Uses cross correlation on spectrograms to find alignment
+
+        Args:
+            target_file_path (str): File to recognize
+            against_file_path (str): File to recognize against
+            start_end_target (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
+            start_end_against (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
+            filter_matches (float, optional): Filters based on confidence. Ranges between 0 and 1. Defaults to 0.5.
+            match_len_filter (int, optional): Limits number of matches returned. Defaults to 30.
+            locality (float): filters matches to only count within locality. In seconds
+            locality_filter_prop (int, float,optional): within each offset, filters locality tuples by proportion of highest confidence to tuple confidence
+            sample_rate (int, optional): Decodes audio file to this sample rate. Defaults to fingerprint.DEFAULT_FS.
+            max_lags (float, optional): Maximum lags in seconds.
+            plot (bool, optional): Plots. Defaults to False.
+            kwargs: additional arguments for scipy.signal.find_peaks.
+
+        Returns:
+            dict: dictionary of recognition information
+        """
         return correcognize.correcognize(
             target_file_path,
             against_file_path,
@@ -543,8 +561,8 @@ class Audalign:
             locality (float): filters matches to only count within locality. In seconds
             locality_filter_prop (int, float,optional): within each offset, filters locality tuples by proportion of highest confidence to tuple confidence
             sample_rate (int, optional): Decodes audio file to this sample rate. Defaults to fingerprint.DEFAULT_FS.
-            plot (bool, optional): Plots. Defaults to False.
             max_lags (float, optional): Maximum lags in seconds.
+            plot (bool, optional): Plots. Defaults to False.
             kwargs: additional arguments for scipy.signal.find_peaks.
 
         Returns:
@@ -596,6 +614,7 @@ class Audalign:
             vert_scaling (float): scales vertically to speed up calculations. Smaller numbers have smaller images.
             horiz_scaling (float): scales horizontally to speed up calculations. Smaller numbers have smaller images. Affects alignment granularity.
             calc_mse (bool): also calculates mse for each shift if true. If false, uses default mse 20000000
+            max_lags (float, optional): Maximum lags in seconds.
             plot (bool): plot the spectrogram of each audio file.
 
         Returns
@@ -653,8 +672,8 @@ class Audalign:
             locality (float): filters matches to only count within locality. In seconds
             locality_filter_prop (int, float,optional): within each offset, filters locality tuples by proportion of highest confidence to tuple confidence
             sample_rate (int, optional): Decodes audio file to this sample rate. Defaults to fingerprint.DEFAULT_FS.
-            plot (bool, optional): Plots. Defaults to False.
             max_lags (float, optional): Maximum lags in seconds.
+            plot (bool, optional): Plots. Defaults to False.
             _file_audsegs (dict, optional): For use with align.
             kwargs: additional arguments for scipy.signal.find_peaks.
 
@@ -691,7 +710,25 @@ class Audalign:
         _file_audsegs: dict = None,
         **kwargs,
     ):
-        # TODO Docs
+        """Uses cross correlation on spectrogram to find alignment
+
+        Args:
+            target_file_path (str): File to recognize
+            against_directory (str): Directory to recognize against
+            start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
+            filter_matches (float, optional): Filters based on confidence. Ranges between 0 and 1. Defaults to 0.5.
+            match_len_filter (int, optional): Limits number of matches returned. Defaults to 30.
+            locality (float): filters matches to only count within locality. In seconds
+            locality_filter_prop (int, float,optional): within each offset, filters locality tuples by proportion of highest confidence to tuple confidence
+            sample_rate (int, optional): Decodes audio file to this sample rate. Defaults to fingerprint.DEFAULT_FS.
+            max_lags (float, optional): Maximum lags in seconds.
+            plot (bool, optional): Plots. Defaults to False.
+            _file_audsegs (dict, optional): For use with align.
+            kwargs: additional arguments for scipy.signal.find_peaks.
+
+        Returns:
+            dict: dictionary of recognition information
+        """
         return correcognize.correcognize_directory(
             target_file_path,
             against_directory,
@@ -737,6 +774,7 @@ class Audalign:
             volume_floor (float): ignores volume levels below floow.
             vert_scaling (float): scales vertically to speed up calculations. Smaller numbers have smaller images.
             horiz_scaling (float): scales horizontally to speed up calculations. Smaller numbers have smaller images. Affects alignment granularity.
+            max_lags (float, optional): Maximum lags in seconds.
             calc_mse (bool): also calculates mse for each shift if true. If false, uses default mse 20000000
             plot (bool): plot the spectrogram of each audio file.
 
@@ -854,7 +892,7 @@ class Audalign:
             destination_path (str, optional): Directory to write alignments to
             start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
             write_extension (str, optional): audio file format to write to. Defaults to None.
-            technique (str, optional): options are "fingerprints", "visual", "correlation"
+            technique (str, optional): options are "fingerprints", "visual", "correlation_spectrogram", "correlation"
             strength_stat (str, optional): confidence for fingerprints, ssim for visual, mse or count also work for visual. Defaults to None.
             filter_matches (int, float, optional): filter matches level for fingerprinting. Defaults to 1.
             locality (float, optional): In seconds for fingerprints, only matches files within given window sizes
@@ -928,7 +966,7 @@ class Audalign:
             *filenames (strs): strings of paths for alignment
             destination_path (str): String of path to write alignments to
             write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
-            technique (str): either "fingerprints", "visual", or "correlation"
+            technique (str): either "fingerprints", "visual", "correlation_spectrogram", or "correlation"
             filter_matches (float): filters based on confidence.
             locality (float): Only recognizes against fingerprints in given width. In seconds
             locality_filter_prop (int, float,optional): within each offset, filters locality tuples by proportion of highest confidence to tuple confidence
@@ -997,7 +1035,7 @@ class Audalign:
             directory_path (str): String of directory for alignment
             destination_path (str): String of path to write alignments to
             write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
-            technique (str): either "fingerprints" or "correlation"
+            technique (str): either "fingerprints", "visual", "correlation_spectrogram", or "correlation"
             filter_matches (float): filters based on confidence.
             locality (float): Only recognizes against fingerprints in given width. In seconds
             locality_filter_prop (int, float,optional): within each offset, filters locality tuples by proportion of highest confidence to tuple confidence
@@ -1067,7 +1105,7 @@ class Audalign:
             directory_path (str): String of directory for alignment
             destination_path (str): String of path to write alignments to
             write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
-            technique (str): either "fingerprints" or "correlation"
+            technique (str): either "fingerprints", "visual", "correlation_spectrogram", or "correlation"
             filter_matches (float): filters based on confidence.
             max_lags (float, optional): Maximum lags in seconds for correlation.
             locality (float): Only recognizes against fingerprints in given width. In seconds
