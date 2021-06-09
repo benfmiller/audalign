@@ -266,14 +266,14 @@ class TestRecognize:
     def test_correcognize_spectrogram(self):
         results = self.ada.correcognize_spectrogram(
             test_file_eig,
-            test_folder_eig,
+            test_file_eig2,
         )
         assert results
 
     def test_correcognize_spectrogram_locality(self):
         results = self.ada.correcognize_spectrogram(
             test_file_eig,
-            test_folder_eig,
+            test_file_eig2,
             locality=10,
         )
         assert results
