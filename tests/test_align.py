@@ -2,6 +2,10 @@ import audalign as ad
 import pytest
 import pickle
 
+test_file_eig = "test_audio/test_shifts/Eigen-20sec.mp3"
+test_file_eig2 = "test_audio/test_shifts/Eigen-song-base.mp3"
+test_folder_eig = "test_audio/test_shifts/"
+
 
 class TestAlign:
     ada = ad.Audalign(num_processors=4)
@@ -33,6 +37,26 @@ class TestAlign:
             cor_sample_rate=4000,
             filter_matches=0.3,  # might have to adjust this
             locality=30,
+        )
+        assert result
+
+    def test_align_cor_spec(self, tmpdir):
+        result = self.ada.align(
+            "test_audio/test_shifts",
+            tmpdir,
+            technique="correlation_spectrogram",
+        )
+        assert result
+
+    def test_align_cor_spec_options(self, tmpdir):
+        result = self.ada.align(
+            "test_audio/test_shifts",
+            tmpdir,
+            technique="correlation_spectrogram",
+            cor_sample_rate=4000,
+            filter_matches=0.3,  # might have to adjust this
+            locality=30,
+            max_lags=10,
         )
         assert result
 
@@ -164,6 +188,15 @@ class TestTargetAlign:
         )
         assert result
 
+    def test_target_align_cor_spec(self, tmpdir):
+        result = self.ada.target_align(
+            "test_audio/test_shifts/Eigen-song-base.mp3",
+            "test_audio/test_shifts",
+            destination_path=tmpdir,
+            technique="correlation_spectrogram",
+        )
+        assert result
+
     def test_target_align_fingerprints(self, tmpdir):
         result = self.ada.target_align(
             "test_audio/test_shifts/Eigen-song-base.mp3",
@@ -184,6 +217,13 @@ class TestFineAlign:
     def test_fine_align(self):
         result = self.ada.fine_align(
             self.align_fing_results,
+        )
+        assert result is not None
+
+    def test_fine_align_spec(self):
+        result = self.ada.fine_align(
+            self.align_fing_results,
+            technique="correlation_spectrogram",
         )
         assert result is not None
 
