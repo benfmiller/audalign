@@ -477,9 +477,9 @@ def _find_peaks(
         scaling_factor = max_corr / len(correlation) / SCALING_16_BIT
     elif technique == "correlation_spectrogram":
         scaling_factor = (
-            max_corr / len(correlation) / (fingerprint.DEFAULT_WINDOW_SIZE / 2)
-        )
-        # TODO Test scaling factor
+            max_corr / len(correlation) / (fingerprint.DEFAULT_WINDOW_SIZE / 2) / 50
+        )  # 200 is about the max of spectrogram
+        # *4 because most frequency bands are quite low, especially with butter filter
     correlation = (
         correlation / np.max(np.abs(correlation), axis=0)
         if max_corr > 0
@@ -496,6 +496,7 @@ def _find_peaks(
     #     if len(correlation) - shift > 2 * max_lags:
     #         correlation[: int(len(correlation) / 2 - max_lags + (shift / 2))] = 0
     #     # correlation = correlation[lag_indexes[0] : lag_indexes[1]]
+    # FIXME Not working
     if max_lags is not None and index_pair is None:
         if len(correlation) > 2 * max_lags:
             correlation[: int(len(correlation) / 2 - max_lags)] = 0
