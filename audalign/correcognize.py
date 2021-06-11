@@ -103,6 +103,8 @@ def correcognize(
         technique=technique,
     )
 
+    if locality is None:
+        correlation = list(correlation)[0]
     results_list_tuple, scaling_factor = find_maxes(
         correlation=correlation,
         filter_matches=filter_matches,
@@ -127,7 +129,7 @@ def correcognize(
             technique=technique,
         )
     elif plot:
-        print("Correlation Plot not compatible with locality")
+        print("\nCorrelation Plot not compatible with locality")
         plot_cor(
             array_a=target_array,
             array_b=against_array,
@@ -257,6 +259,8 @@ def correcognize_directory(
                 technique=technique,
             )
 
+            if locality is None:
+                correlation = list(correlation)[0]
             results_list_tuple, scaling_factor = find_maxes(
                 correlation=correlation,
                 filter_matches=filter_matches,
@@ -281,7 +285,7 @@ def correcognize_directory(
                     technique=technique,
                 )
             elif plot:
-                print("Correlation Plot not compatible with locality")
+                print("\nCorrelation Plot not compatible with locality")
                 plot_cor(
                     array_a=target_array,
                     array_b=against_array,
@@ -428,7 +432,6 @@ def find_maxes(
 ) -> list:
     print("Finding Local Maximums... ", end="")
     if locality is None:
-        correlation = list(correlation)[0]
         return _find_peaks(
             correlation=correlation,
             filter_matches=filter_matches,
@@ -684,14 +687,14 @@ def plot_cor(
     new_vis_wsize = int(fingerprint.DEFAULT_WINDOW_SIZE / 44100 * sample_rate)
     fig = plt.figure(title)
 
-    fig.add_subplot(3, 2, 1)
-    plt.plot(array_a)
-    plt.xlabel("Sample Index")
-    plt.ylabel("Amplitude")
-    if arr_a_title:
-        plt.title(arr_a_title)
-
     if technique == "correlation":
+        fig.add_subplot(3, 2, 1)
+        plt.plot(array_a)
+        plt.xlabel("Sample Index")
+        plt.ylabel("Amplitude")
+        if arr_a_title:
+            plt.title(arr_a_title)
+
         arr2d_a = fingerprint.fingerprint(
             array_a, fs=sample_rate, wsize=new_vis_wsize, retspec=True
         )
@@ -701,24 +704,37 @@ def plot_cor(
         if arr_a_title:
             plt.title(arr_a_title)
 
-    fig.add_subplot(3, 2, 3)
-    plt.plot(array_b)
-    plt.xlabel("Sample Index")
-    plt.ylabel("Amplitude")
-    if arr_b_title:
-        plt.title(arr_b_title)
+        fig.add_subplot(3, 2, 3)
+        plt.plot(array_b)
+        plt.xlabel("Sample Index")
+        plt.ylabel("Amplitude")
+        if arr_b_title:
+            plt.title(arr_b_title)
 
-    if technique == "correlation":
-        arr2d_b = fingerprint.fingerprint(
-            array_b, fs=sample_rate, wsize=new_vis_wsize, retspec=True
-        )
-        fig.add_subplot(3, 2, 4)
-        plt.imshow(arr2d_b)
+            arr2d_b = fingerprint.fingerprint(
+                array_b, fs=sample_rate, wsize=new_vis_wsize, retspec=True
+            )
+            fig.add_subplot(3, 2, 4)
+            plt.imshow(arr2d_b)
+            plt.gca().invert_yaxis()
+            if arr_b_title:
+                plt.title(arr_b_title)
+    elif technique == "correlation_spectrogram":
+        fig.add_subplot(3, 2, 1)
+        plt.imshow(array_a)  # , cmap=plt.cm.gray)
+        plt.gca().invert_yaxis()
+        if arr_a_title:
+            plt.title(arr_a_title)
+
+        fig.add_subplot(3, 2, 3)
+        plt.imshow(array_b)
         plt.gca().invert_yaxis()
         if arr_b_title:
             plt.title(arr_b_title)
 
     if corr_array is not None:
+        max_cor = np.max(corr_array)
+
         fig.add_subplot(3, 2, 5)
         plt.plot(corr_array)
         if scaling_factor:
@@ -728,8 +744,8 @@ def plot_cor(
         plt.xlabel("Sample Index")
         plt.ylabel("correlation")
         if peaks:
-            indexes = [x[0] + int(len(corr_array) / 2) for x in peaks]
-            heights = [x[1] for x in peaks]
+            indexes = [x[0] / 2 + int(len(corr_array) / 2) for x in peaks]
+            heights = [x[1] * max_cor for x in peaks]
             plt.plot(indexes, heights, "x")
 
     fig.tight_layout()
