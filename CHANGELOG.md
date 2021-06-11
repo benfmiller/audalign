@@ -14,6 +14,7 @@
 ### Fixed
 
 - Plotter for correlations
+- Recognize max_lags locality bug
 
 ## [0.5.0] 2021 - 06 - 04
 
