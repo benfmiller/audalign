@@ -1,5 +1,20 @@
 # Change Log
 
+## [0.5.1] 2021 - 06 - 11
+
+### Changed
+
+- Sped up correlation max finding
+
+### Added
+
+- Correlation_Spectrogram: correlation technique, but with the spectrogram
+- Better docs for align functions
+
+### Fixed
+
+- Plotter for correlations
+
 ## [0.5.0] 2021 - 06 - 04
 
 ### Changed
