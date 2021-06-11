@@ -499,7 +499,6 @@ def _find_peaks(
     #     if len(correlation) - shift > 2 * max_lags:
     #         correlation[: int(len(correlation) / 2 - max_lags + (shift / 2))] = 0
     #     # correlation = correlation[lag_indexes[0] : lag_indexes[1]]
-    # FIXME Not working
     if max_lags is not None and index_pair is None:
         if len(correlation) > 2 * max_lags:
             correlation[: int(len(correlation) / 2 - max_lags)] = 0
@@ -516,11 +515,11 @@ def _find_peaks(
         shift = index_pair[0] - index_pair[1]
         for i, peak in enumerate(peaks_tuples):
             if peak[0] + shift < -max_lags * 2:
-                lag_indexes[0] = i
+                lag_indexes[0] = i + 1
             if peak[0] + shift > max_lags * 2:
                 lag_indexes[1] = i
                 break
-        peaks_tuples = peaks_tuples[lag_indexes[0] : lag_indexes[1]]
+        peaks_tuples = peaks_tuples[lag_indexes[0] + 1 : lag_indexes[1]]
 
     peaks_tuples = sorted(peaks_tuples, key=lambda x: x[1], reverse=True)
 
