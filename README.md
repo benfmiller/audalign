@@ -1,8 +1,8 @@
 # Audalign
 
-Python package for aligning audio files using audio fingerprinting, cross-correlation, or visual alignment techniques.
+Python package for aligning audio files using audio fingerprinting, cross-correlation, cross-correlation with spectrograms, or visual alignment techniques.
 
-This package offers tools to align many recordings of the same event. This is primarily accomplished with fingerprinting, though where fingerprinting fails, correlation and visual alignment techniques can be used to get a closer result. After an initial alignment is found, that alignment can be passed to "fine_align," which will find smaller, relative alignments to the main one.
+This package offers tools to align many recordings of the same event. This is primarily accomplished with fingerprinting, though where fingerprinting fails, correlation, correlation with spectrograms, and visual alignment techniques can be used to get a closer result. After an initial alignment is found, that alignment can be passed to "fine_align," which will find smaller, relative alignments to the main one.
 
 Alignment consists of a dictionary containing alignment data for all files in a given directory. If an output directory is given, silence is placed before all files in the target directory so that all will automatically be aligned and writen to the output directory along with an audio file containing the sum of all audio.
 
@@ -72,7 +72,7 @@ print(ada.target_align(
     "target/files",
     "target/folder/",
     destination_path="write/alignments/to/folder",
-    technique="correlation",
+    technique="correlation", # or "correlation_spectrogram"
     ))
 ```
 
@@ -147,6 +147,11 @@ print(ada.visrecognize(
 
 # For Correlation
 print(ada.correcognize(
+    target_file_path="target_file.mp3", against_file_path="against_file.mp3"
+    ))
+
+# For Correlation with spectrogram
+print(ada.correcognize_spectrogram(
     target_file_path="target_file.mp3", against_file_path="against_file.mp3"
     ))
 ```
