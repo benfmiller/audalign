@@ -610,7 +610,7 @@ class Audalign:
             start_end_against (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
             img_width (float): width of spectrogram image for recognition.
             volume_threshold (float): doesn't find stats for sections with max volume below threshold.
-            volume_floor (float): ignores volume levels below floow.
+            volume_floor (float): ignores volume levels below floor.
             vert_scaling (float): scales vertically to speed up calculations. Smaller numbers have smaller images.
             horiz_scaling (float): scales horizontally to speed up calculations. Smaller numbers have smaller images. Affects alignment granularity.
             calc_mse (bool): also calculates mse for each shift if true. If false, uses default mse 20000000
@@ -771,7 +771,7 @@ class Audalign:
             start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
             img_width (float): width of spectrogram image for recognition.
             volume_threshold (int): doesn't find stats for sections with max volume below threshold.
-            volume_floor (float): ignores volume levels below floow.
+            volume_floor (float): ignores volume levels below floor.
             vert_scaling (float): scales vertically to speed up calculations. Smaller numbers have smaller images.
             horiz_scaling (float): scales horizontally to speed up calculations. Smaller numbers have smaller images. Affects alignment granularity.
             max_lags (float, optional): Maximum lags in seconds.
@@ -880,6 +880,7 @@ class Audalign:
         img_width: float = 1.0,
         calc_mse: bool = False,
         cor_sample_rate: int = fingerprint.DEFAULT_FS,
+        max_lags: float = None,
         **kwargs,
     ):
         """matches and relative offsets for all files in directory_path using only target file,
@@ -898,12 +899,13 @@ class Audalign:
             locality (float, optional): In seconds for fingerprints, only matches files within given window sizes
             locality_filter_prop (int, float, optional): within each offset, filters locality tuples by proportion of highest confidence to tuple confidence
             volume_threshold (float, optional): volume threshold for visual recognition. Defaults to 216.
-            volume_floor (float): ignores volume levels below floow.
+            volume_floor (float): ignores volume levels below floor.
             vert_scaling (float): scales vertically to speed up calculations. Smaller numbers have smaller images.
             horiz_scaling (float): scales horizontally to speed up calculations. Smaller numbers have smaller images. Affects alignment granularity.
             img_width (float, optional): width of image comparison for visual recognition
             calc_mse (bool): also calculates mse for each shift if true. If false, uses default mse 20000000
             cor_sample_rate (int): optionally change the sample rate if using correlation
+            max_lags (float, optional): Maximum lags in seconds for correlation.
             kwargs: additional arguments for scipy.signal.find_peaks
 
         Returns:
@@ -930,6 +932,7 @@ class Audalign:
             img_width=img_width,
             calc_mse=calc_mse,
             cor_sample_rate=cor_sample_rate,
+            max_lags=max_lags,
             **kwargs,
         )
 
@@ -974,7 +977,7 @@ class Audalign:
             max_lags (float, optional): Maximum lags in seconds for correlation.
             strength_stat (str, optional): confidence for fingerprints, ssim for visual, mse or count also work for visual. Defaults to None.
             volume_threshold (float, optional): volume threshold for visual recognition. Defaults to 216.
-            volume_floor (float): ignores volume levels below floow.
+            volume_floor (float): ignores volume levels below floor.
             vert_scaling (float): scales vertically to speed up calculations. Smaller numbers have smaller images.
             horiz_scaling (float): scales horizontally to speed up calculations. Smaller numbers have smaller images. Affects alignment granularity.
             img_width (float, optional): width of image comparison for visual recognition
@@ -1043,7 +1046,7 @@ class Audalign:
             max_lags (float, optional): Maximum lags in seconds for correlation.
             strength_stat (str, optional): confidence for fingerprints, ssim for visual, mse or count also work for visual. Defaults to None.
             volume_threshold (float, optional): volume threshold for visual recognition. Defaults to 216.
-            volume_floor (float): ignores volume levels below floow.
+            volume_floor (float): ignores volume levels below floor.
             vert_scaling (float): scales vertically to speed up calculations. Smaller numbers have smaller images.
             horiz_scaling (float): scales horizontally to speed up calculations. Smaller numbers have smaller images. Affects alignment granularity.
             img_width (float, optional): width of image comparison for visual recognition
@@ -1114,7 +1117,7 @@ class Audalign:
             match_index (int): reorders the input results to the given match index.
             strength_stat (str): strength stat for finding proper alignments. Defaults to confidence.
             volume_threshold (float, optional): volume threshold for visual recognition. Defaults to 216.
-            volume_floor (float): ignores volume levels below floow.
+            volume_floor (float): ignores volume levels below floor.
             vert_scaling (float): scales vertically to speed up calculations. Smaller numbers have smaller images.
             horiz_scaling (float): scales horizontally to speed up calculations. Smaller numbers have smaller images. Affects alignment granularity.
             img_width (float, optional): width of image comparison for visual recognition

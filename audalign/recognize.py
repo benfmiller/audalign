@@ -352,7 +352,7 @@ def process_results(
         match_offsets = sorted(match_offsets, reverse=True, key=lambda x: x[0][0])
         if match_offsets[0][0][0] <= filter_matches:
             continue
-        if max_lags is not None:  # TDDO Verify working gingerprints max_lags
+        if max_lags is not None:
             i = 0
             while i < len(match_offsets):
                 if abs(match_offsets[i][1]) > max_lags:
