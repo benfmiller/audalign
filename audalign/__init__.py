@@ -94,6 +94,10 @@ class Audalign:
             return
         self.hash_style = hash_style
 
+    def get_hash_style(self) -> str:
+        """Gets the hash style. Is one of ["base", "panako", "panako_mod", "base_three"]"""
+        return self.hash_style
+
     def set_accuracy(self, accuracy: int) -> None:
         """
         Sets the accuracy level of audalign object
@@ -160,6 +164,7 @@ class Audalign:
 
     @staticmethod
     def _set_freq_threshold(freq_threshold: int) -> None:
+        """Sets the lower frequency threshold. Every frequency below this is ignored. Not in hertz. matplotlib.mlab.specgram units"""
         fingerprint.threshold = freq_threshold
 
     def get_freq_threshold(self):
@@ -178,6 +183,10 @@ class Audalign:
         """
         self.multiprocessing = true_or_false
 
+    def get_multiprocessing(self) -> bool:
+        """returns true if using multiprocessing, false if single threaded"""
+        return self.multiprocessing
+
     def set_num_processors(self, num_processors: int) -> None:
         """Set to none to use all processors by default if multiprocessing is true
 
@@ -185,6 +194,10 @@ class Audalign:
             num_processors (int): number of processors to use or None for all of them
         """
         self.num_processors = num_processors
+
+    def get_num_processors(self) -> int:
+        """Returns number of processors used. Defaults to None, in which case uses all system processors"""
+        return self.num_processors
 
     def save_fingerprinted_files(self, filename: str) -> None:
         """
