@@ -583,7 +583,7 @@ def process_results(results_list, filename, horiz_scaling: float = 1.0):
     match[filename] = {}
 
     match[filename]["num_matches"] = offset_count
-    match[filename]["offset_samples"] = offset_diff
+    match[filename]["offset_frames"] = offset_diff
     match[filename]["ssim"] = offset_ssim
     match[filename]["mse"] = offset_mse
 
