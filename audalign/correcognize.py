@@ -7,6 +7,8 @@ import time
 import os
 import scipy.signal as signal
 import matplotlib.pyplot as plt
+import multiprocessing
+from functools import partial
 
 # For locality window overlaps
 SCALING_16_BIT = 65536
@@ -174,6 +176,8 @@ def correcognize_directory(
     max_lags: float = None,
     _file_audsegs: dict = None,
     technique: str = "correlation",
+    use_multiprocessing: bool = True,
+    num_processes: int = None,
     **kwargs,
 ):
     """Called from audalign correcognize_directory"""
@@ -197,119 +201,45 @@ def correcognize_directory(
         locality_filter_prop = 1.0
     elif locality_filter_prop < 0:
         locality_filter_prop = 0.0
-
-    if _file_audsegs is not None:
-        target_array = _file_audsegs[target_file_path]
-        # target_array = get_shifted_file( # might want for multiprocessing in the future
-        #     target_file_path, _file_audsegs[target_file_path], sample_rate=sample_rate
-        # )
-        if filter_matches is None:
-            filter_matches = 0
-    else:
-        target_array = read(
-            target_file_path, start_end=start_end, sample_rate=sample_rate
-        )[0]
-
-    if filter_matches is None:
+    if _file_audsegs is not None and filter_matches is None:
+        filter_matches = 0.0
+    elif filter_matches is None:
         filter_matches = 0.5
 
     sos = signal.butter(
         10, fingerprint.threshold, "highpass", fs=sample_rate, output="sos"
     )
-    target_array = signal.sosfilt(sos, target_array)
-    if technique == "correlation_spectrogram":
-        target_array = fingerprint.fingerprint(
-            target_array, fs=sample_rate, retspec=True
-        ).T
-        target_array = np.clip(target_array, 0, 500)  # never louder than 500
+
+    if multiprocessing is False:
+        if _file_audsegs is not None:
+            target_array = _file_audsegs[target_file_path]
+            # target_array = get_shifted_file( # might want for multiprocessing in the future
+            #     target_file_path, _file_audsegs[target_file_path], sample_rate=sample_rate
+            # )
+        else:
+            target_array = read(
+                target_file_path, start_end=start_end, sample_rate=sample_rate
+            )[0]
+        target_array = signal.sosfilt(sos, target_array)
+        if technique == "correlation_spectrogram":
+            target_array = fingerprint.fingerprint(
+                target_array, fs=sample_rate, retspec=True
+            ).T
+            target_array = np.clip(target_array, 0, 500)  # never louder than 500
 
     if type(against_directory) == str:
         against_files = find_files(against_directory)
     else:
         against_files = zip(against_directory, ["_"] * len(against_directory))
     file_match = {}
-    for file_path, _ in against_files:
+    for against_file_path, _ in against_files:
 
-        if os.path.basename(file_path) == os.path.basename(target_file_path):
-            continue
-        try:
-            print(
-                f"Comparing {os.path.basename(target_file_path)} against {os.path.basename(file_path)}... "
-            )
-            if _file_audsegs is not None:
-                against_array = _file_audsegs[file_path]
-                # against_array = get_shifted_file( # might want for multiprocessing in the future
-                #     file_path, _file_audsegs[file_path], sample_rate=sample_rate
-                # )
-            else:
-                against_array = read(file_path, sample_rate=sample_rate)[0]
-            against_array = signal.sosfilt(sos, against_array)
-            if technique == "correlation_spectrogram":
-                against_array = fingerprint.fingerprint(
-                    against_array, fs=sample_rate, retspec=True
-                ).T
-                against_array = np.clip(against_array, 0, 500)  # never louder than 500
-
-            print("Calculating correlation... ", end="")
-            correlation = calc_corrs(
-                against_array,
-                target_array,
-                locality=locality,
-                max_lags=max_lags,
-                technique=technique,
-            )
-
-            if locality is None:
-                correlation = list(correlation)[0]
-            results_list_tuple, scaling_factor = find_maxes(
-                correlation=correlation,
-                filter_matches=filter_matches,
-                match_len_filter=match_len_filter,
-                max_lags=max_lags,
-                locality_filter_prop=locality_filter_prop,
-                locality=locality,
-                technique=technique,
-                **kwargs,
-            )
-
-            if plot and locality is None:
-                plot_cor(
-                    array_a=target_array,
-                    array_b=against_array,
-                    corr_array=correlation,
-                    sample_rate=sample_rate,
-                    arr_a_title=target_file_path,
-                    arr_b_title=file_path,
-                    scaling_factor=scaling_factor,
-                    peaks=results_list_tuple,
-                    technique=technique,
-                )
-            elif plot:
-                print("\nCorrelation Plot not compatible with locality")
-                plot_cor(
-                    array_a=target_array,
-                    array_b=against_array,
-                    corr_array=None,
-                    sample_rate=sample_rate,
-                    arr_a_title=target_file_path,
-                    arr_b_title=file_path,
-                    scaling_factor=scaling_factor,
-                    peaks=results_list_tuple,
-                )
-
-            single_file_match = process_results(
-                results_list=results_list_tuple,
-                file_name=os.path.basename(file_path),
-                scaling_factor=scaling_factor,
-                sample_rate=sample_rate,
-                locality=locality,
-                technique=technique,
-            )
-            if single_file_match:
-                file_match = {**file_match, **single_file_match}
-
-        except CouldntDecodeError:
-            print(f'File "{file_path}" could not be decoded')
+        single_file_match = _correcognize_dir(
+            target_array=target_array,
+            against_file_path=against_file_path,
+        )
+        if single_file_match:
+            file_match = {**file_match, **single_file_match}
 
     t = time.time() - t
 
@@ -320,6 +250,92 @@ def correcognize_directory(
         return result
 
     return None
+
+
+def _correcognize_dir(
+    against_file_path,
+    target_array,
+):
+    if type(target_array) == str:
+
+        if os.path.basename(file_path) == os.path.basename(target_file_path):
+            continue
+
+    try:
+        print(
+            f"Comparing {os.path.basename(target_file_path)} against {os.path.basename(file_path)}... "
+        )
+        if _file_audsegs is not None:
+            against_array = _file_audsegs[file_path]
+            # against_array = get_shifted_file( # might want for multiprocessing in the future
+            #     file_path, _file_audsegs[file_path], sample_rate=sample_rate
+            # )
+        else:
+            against_array = read(file_path, sample_rate=sample_rate)[0]
+        against_array = signal.sosfilt(sos, against_array)
+        if technique == "correlation_spectrogram":
+            against_array = fingerprint.fingerprint(
+                against_array, fs=sample_rate, retspec=True
+            ).T
+            against_array = np.clip(against_array, 0, 500)  # never louder than 500
+
+        print("Calculating correlation... ", end="")
+        correlation = calc_corrs(
+            against_array,
+            target_array,
+            locality=locality,
+            max_lags=max_lags,
+            technique=technique,
+        )
+
+        if locality is None:
+            correlation = list(correlation)[0]
+        results_list_tuple, scaling_factor = find_maxes(
+            correlation=correlation,
+            filter_matches=filter_matches,
+            match_len_filter=match_len_filter,
+            max_lags=max_lags,
+            locality_filter_prop=locality_filter_prop,
+            locality=locality,
+            technique=technique,
+            **kwargs,
+        )
+
+        if plot and locality is None:
+            plot_cor(
+                array_a=target_array,
+                array_b=against_array,
+                corr_array=correlation,
+                sample_rate=sample_rate,
+                arr_a_title=target_file_path,
+                arr_b_title=file_path,
+                scaling_factor=scaling_factor,
+                peaks=results_list_tuple,
+                technique=technique,
+            )
+        elif plot:
+            print("\nCorrelation Plot not compatible with locality")
+            plot_cor(
+                array_a=target_array,
+                array_b=against_array,
+                corr_array=None,
+                sample_rate=sample_rate,
+                arr_a_title=target_file_path,
+                arr_b_title=file_path,
+                scaling_factor=scaling_factor,
+                peaks=results_list_tuple,
+            )
+
+        single_file_match = process_results(
+            results_list=results_list_tuple,
+            file_name=os.path.basename(file_path),
+            scaling_factor=scaling_factor,
+            sample_rate=sample_rate,
+            locality=locality,
+            technique=technique,
+        )
+    except CouldntDecodeError:
+        print(f'File "{file_path}" could not be decoded')
 
 
 def calc_array_indexes(array, locality):

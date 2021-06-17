@@ -705,6 +705,8 @@ class Audalign:
             plot=plot,
             max_lags=max_lags,
             _file_audsegs=_file_audsegs,
+            use_multiprocessing=self.multiprocessing,
+            num_processes=self.num_processors,
             **kwargs,
         )
 

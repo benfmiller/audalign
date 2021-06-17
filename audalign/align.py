@@ -298,6 +298,8 @@ def calc_alignments(
                         locality_filter_prop=locality_filter_prop,
                         max_lags=max_lags,
                         technique=technique,
+                        use_multiprocessing=ada_obj.get_multiprocessing(),
+                        num_processes=ada_obj.get_num_processors(),
                         **kwargs,
                     )
                 elif technique == "visual":
