@@ -384,11 +384,17 @@ def calc_corrs(
 ):
     if locality is None:
         if technique == "correlation":
-            yield signal.correlate(against_array, target_array)
+            yield (
+                signal.correlate(against_array, target_array),
+                (against_array.size, target_array.size),
+            )
         elif technique == "correlation_spectrogram":
             against_array = against_array.T
             target_array = target_array.T
-            yield _calc_corrs_spec(against_array, target_array)
+            yield (
+                _calc_corrs_spec(against_array, target_array),
+                (against_array.shape[1], target_array.shape[1]),
+            )
     else:
         locality_a = len(against_array) if locality > len(against_array) else locality
         locality_b = len(target_array) if locality > len(target_array) else locality
@@ -396,18 +402,24 @@ def calc_corrs(
         if technique == "correlation":
             for pair in indexes:
                 yield [
-                    signal.correlate(
-                        against_array[pair[0] : pair[0] + locality_a],
-                        target_array[pair[1] : pair[1] + locality_b],
+                    (
+                        signal.correlate(
+                            against_array[pair[0] : pair[0] + locality_a],
+                            target_array[pair[1] : pair[1] + locality_b],
+                        ),
+                        (against_array.size, target_array.size),
                     ),
                     pair,
                 ]
         elif technique == "correlation_spectrogram":
             for pair in indexes:
                 yield [
-                    _calc_corrs_spec(
-                        against_array[pair[0] : pair[0] + locality_a].T,
-                        target_array[pair[1] : pair[1] + locality_b].T,
+                    (
+                        _calc_corrs_spec(
+                            against_array[pair[0] : pair[0] + locality_a].T,
+                            target_array[pair[1] : pair[1] + locality_b].T,
+                        ),
+                        (locality_a, locality_b),
                     ),
                     pair,
                 ]
@@ -433,7 +445,8 @@ def find_maxes(
     print("Finding Local Maximums... ", end="")
     if locality is None:
         return _find_peaks(
-            correlation=correlation,
+            correlation=correlation[0],
+            len_tups=correlation[1],
             filter_matches=filter_matches,
             match_len_filter=match_len_filter,
             max_lags=max_lags,
@@ -445,7 +458,8 @@ def find_maxes(
         for i in correlation:
             total_peaks += [
                 _find_peaks(
-                    correlation=i[0],
+                    correlation=i[0][0],
+                    len_tups=i[0][1],
                     filter_matches=0,
                     # filter_matches=filter_matches,
                     match_len_filter=match_len_filter,
@@ -467,6 +481,7 @@ def find_maxes(
 
 def _find_peaks(
     correlation: list,
+    len_tups: tuple,
     filter_matches: float,
     match_len_filter: int,
     max_lags: float,
@@ -499,10 +514,13 @@ def _find_peaks(
     #     if len(correlation) - shift > 2 * max_lags:
     #         correlation[: int(len(correlation) / 2 - max_lags + (shift / 2))] = 0
     #     # correlation = correlation[lag_indexes[0] : lag_indexes[1]]
+    # TODO len_tuples
     if max_lags is not None and index_pair is None:
         if len(correlation) > 2 * max_lags:
             correlation[: int(len(correlation) / 2 - max_lags)] = 0
             correlation[int(len(correlation) / 2 + max_lags) + 1 :] = 0
+
+    signal.correlation_lags
 
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.find_peaks.html
     peaks, properties = signal.find_peaks(correlation, height=filter_matches, **kwargs)
