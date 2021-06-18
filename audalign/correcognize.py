@@ -54,7 +54,7 @@ def correcognize(
         )
 
     if max_lags is not None:
-        max_lags = int(calc_spec_windows(max_lags, sample_rate, technique) / 2)
+        max_lags = int(calc_spec_windows(max_lags, sample_rate, technique))
     if filter_matches is None:
         filter_matches = 0.5
     if locality is not None:
@@ -188,7 +188,7 @@ def correcognize_directory(
     t = time.time()
 
     if max_lags is not None:
-        max_lags = int(calc_spec_windows(max_lags, sample_rate, technique) / 2)
+        max_lags = int(calc_spec_windows(max_lags, sample_rate, technique))
     if locality is not None:
         locality = calc_spec_windows(locality, sample_rate, technique)
     if locality_filter_prop is None:
@@ -331,7 +331,10 @@ def calc_array_indexes(array, locality):
             index_list.append(i)
             for i in range(0, len(array) - int(locality), int(locality * OVERLAP_RATIO))
         ]
-        if len(array) - int(locality) not in index_list:
+        if (
+            len(array) - int(locality) not in index_list
+            and len(array) - int(locality) > 0
+        ):
             index_list.append(len(array) - int(locality))
     return index_list
 
@@ -374,7 +377,7 @@ def find_index_arr(against_array, target_array, locality, max_lags):
     else:
         for i in index_list_against:
             for j in index_list_target:
-                if abs(j - i) <= max_lags * 2 + locality:
+                if abs(j - i) <= max_lags + locality: # TODO check out
                     index_pairs += [(i, j)]
     return index_pairs
 
@@ -506,26 +509,27 @@ def _find_peaks(
     # This is quite a bit faster, but I couldn't get it to work in a timely manner.
     # Fix this for speedup with locality and max_lags
 
-    # if max_lags is not None and index_pair is not None:
-    #     shift = index_pair[0] - index_pair[1]
-    #     # lag_indexes = [0, 0]
-    #     if len(correlation) + shift > 2 * max_lags:
-    #         correlation[int(len(correlation) / 2 + max_lags - (shift / 2)) + 1 :] = 0
-    #     if len(correlation) - shift > 2 * max_lags:
-    #         correlation[: int(len(correlation) / 2 - max_lags + (shift / 2))] = 0
-    #     # correlation = correlation[lag_indexes[0] : lag_indexes[1]]
     # TODO len_tuples
+    lag_array = signal.correlation_lags(len_tups[0], len_tups[1], mode="full")
     if max_lags is not None and index_pair is None:
-        if len(correlation) > 2 * max_lags:
-            correlation[: int(len(correlation) / 2 - max_lags)] = 0
-            correlation[int(len(correlation) / 2 + max_lags) + 1 :] = 0
-
-    signal.correlation_lags
+        shift = 0
+        if index_pair is not None:
+            shift = index_pair[1] - index_pair[0]
+        new_max_lags = max_lags - shift
+        if np.max(lag_array) > max_lags - shift:
+            correlation[np.where(lag_array == max_lags - shift)[0][0] + 1 :] = 0
+        if np.min(lag_array) < -max_lags - shift:
+            correlation[: np.where(lag_array == -max_lags - shift)[0][0]] = 0
+        # if len(correlation) + shift > 2 * max_lags:
+        #     correlation[int(len(correlation) / 2 + max_lags - (shift / 2)) + 1 :] = 0
+        # if len(correlation) - shift > 2 * max_lags:
+        #     correlation[: int(len(correlation) / 2 - max_lags + (shift / 2))] = 0
 
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.find_peaks.html
     peaks, properties = signal.find_peaks(correlation, height=filter_matches, **kwargs)
-    peaks -= int(len(correlation) / 2)
-    peaks *= 2
+    peaks = [lag_array[x] for x in peaks]
+    # peaks -= int(len(correlation) / 2)
+    # peaks *= 2
     peaks_tuples = zip(peaks, properties["peak_heights"])
     if max_lags is not None and index_pair is not None:
         peaks_tuples = sorted(peaks_tuples, key=lambda x: x[0])
