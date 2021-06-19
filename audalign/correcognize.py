@@ -3,6 +3,7 @@ from audalign.filehandler import read, find_files, get_shifted_file
 import audalign
 from pydub.exceptions import CouldntDecodeError
 import numpy as np
+import tqdm
 import time
 import os
 import scipy.signal as signal
@@ -58,7 +59,7 @@ def correcognize(
     if filter_matches is None:
         filter_matches = 0.5
     if locality is not None:
-        locality = calc_spec_windows(locality, sample_rate, technique)
+        locality = int(calc_spec_windows(locality, sample_rate, technique))
     if locality_filter_prop is None:
         locality_filter_prop = DEFAULT_LOCALITY_FILTER_PROP
     elif locality_filter_prop > 1.0:
@@ -190,7 +191,7 @@ def correcognize_directory(
     if max_lags is not None:
         max_lags = int(calc_spec_windows(max_lags, sample_rate, technique))
     if locality is not None:
-        locality = calc_spec_windows(locality, sample_rate, technique)
+        locality = int(calc_spec_windows(locality, sample_rate, technique))
     if locality_filter_prop is None:
         locality_filter_prop = DEFAULT_LOCALITY_FILTER_PROP
     elif locality_filter_prop > 1.0:
@@ -370,15 +371,15 @@ def find_index_arr(against_array, target_array, locality, max_lags):
     index_list_against = calc_array_indexes(against_array, locality)
     index_list_target = calc_array_indexes(target_array, locality)
     index_pairs = []
-    if max_lags is None:
-        for i in index_list_against:
-            for j in index_list_target:
-                index_pairs += [(i, j)]
-    else:
-        for i in index_list_against:
-            for j in index_list_target:
-                if abs(j - i) <= max_lags + locality: # TODO check out
-                    index_pairs += [(i, j)]
+    # if max_lags is None:
+    for i in index_list_against:
+        for j in index_list_target:
+            index_pairs += [(i, j)]
+    # else:
+    #     for i in index_list_against:
+    #         for j in index_list_target:
+    #             if abs(i - j) <= max_lags + locality:  # TODO check out
+    #                 index_pairs += [(i, j)]
     return index_pairs
 
 
@@ -410,7 +411,7 @@ def calc_corrs(
                             against_array[pair[0] : pair[0] + locality_a],
                             target_array[pair[1] : pair[1] + locality_b],
                         ),
-                        (against_array.size, target_array.size),
+                        (locality_a, locality_b),
                     ),
                     pair,
                 ]
@@ -458,7 +459,7 @@ def find_maxes(
         )
     else:
         total_peaks, peak_indexes = [], []
-        for i in correlation:
+        for i in tqdm.tqdm(correlation):
             total_peaks += [
                 _find_peaks(
                     correlation=i[0][0],
@@ -511,7 +512,7 @@ def _find_peaks(
 
     # TODO len_tuples
     lag_array = signal.correlation_lags(len_tups[0], len_tups[1], mode="full")
-    if max_lags is not None and index_pair is None:
+    if max_lags is not None:
         shift = 0
         if index_pair is not None:
             shift = index_pair[1] - index_pair[0]
@@ -531,17 +532,17 @@ def _find_peaks(
     # peaks -= int(len(correlation) / 2)
     # peaks *= 2
     peaks_tuples = zip(peaks, properties["peak_heights"])
-    if max_lags is not None and index_pair is not None:
-        peaks_tuples = sorted(peaks_tuples, key=lambda x: x[0])
-        lag_indexes = [0, len(peaks_tuples)]
-        shift = index_pair[0] - index_pair[1]
-        for i, peak in enumerate(peaks_tuples):
-            if peak[0] + shift < -max_lags * 2:
-                lag_indexes[0] = i + 1
-            if peak[0] + shift > max_lags * 2:
-                lag_indexes[1] = i
-                break
-        peaks_tuples = peaks_tuples[lag_indexes[0] + 1 : lag_indexes[1]]
+    # if max_lags is not None and index_pair is not None:
+    #     peaks_tuples = sorted(peaks_tuples, key=lambda x: x[0])
+    #     lag_indexes = [0, len(peaks_tuples)]
+    #     shift = index_pair[0] - index_pair[1]
+    #     for i, peak in enumerate(peaks_tuples):
+    #         if peak[0] + shift < -max_lags * 2:
+    #             lag_indexes[0] = i + 1
+    #         if peak[0] + shift > max_lags * 2:
+    #             lag_indexes[1] = i
+    #             break
+    #     peaks_tuples = peaks_tuples[lag_indexes[0] + 1 : lag_indexes[1]]
 
     peaks_tuples = sorted(peaks_tuples, key=lambda x: x[1], reverse=True)
 
