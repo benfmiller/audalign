@@ -95,13 +95,18 @@ def correcognize(
         ).T
         against_array = np.clip(against_array, 0, 500)  # never louder than 500
 
-    print("Calculating correlation... ", end="")
+    print("Calculating correlation... ", end="")  # TODO
+    indexes = (
+        find_index_arr(against_array, target_array, locality, max_lags)
+        if locality is not None
+        else None
+    )
     correlation = calc_corrs(
         against_array,
         target_array,
         locality=locality,
-        max_lags=max_lags,
         technique=technique,
+        indexes=indexes,
     )
 
     if locality is None:
@@ -114,6 +119,7 @@ def correcognize(
         locality_filter_prop=locality_filter_prop,
         locality=locality,
         technique=technique,
+        indexes_len=len(indexes),
         **kwargs,
     )
 
@@ -251,13 +257,18 @@ def correcognize_directory(
                 ).T
                 against_array = np.clip(against_array, 0, 500)  # never louder than 500
 
-            print("Calculating correlation... ", end="")
+            print("Calculating correlation... ", end="")  # TODO
+            indexes = (
+                find_index_arr(against_array, target_array, locality, max_lags)
+                if locality is not None
+                else None
+            )
             correlation = calc_corrs(
                 against_array,
                 target_array,
                 locality=locality,
-                max_lags=max_lags,
                 technique=technique,
+                indexes=indexes,
             )
 
             if locality is None:
@@ -270,6 +281,7 @@ def correcognize_directory(
                 locality_filter_prop=locality_filter_prop,
                 locality=locality,
                 technique=technique,
+                indexes_len=len(indexes),
                 **kwargs,
             )
 
@@ -384,7 +396,11 @@ def find_index_arr(against_array, target_array, locality, max_lags):
 
 
 def calc_corrs(
-    against_array, target_array, locality: float, max_lags: float, technique: str
+    against_array,
+    target_array,
+    locality: float,
+    technique: str,
+    indexes: list,
 ):
     if locality is None:
         if technique == "correlation":
@@ -402,7 +418,6 @@ def calc_corrs(
     else:
         locality_a = len(against_array) if locality > len(against_array) else locality
         locality_b = len(target_array) if locality > len(target_array) else locality
-        indexes = find_index_arr(against_array, target_array, locality, max_lags)
         if technique == "correlation":
             for pair in indexes:
                 yield [
@@ -444,6 +459,7 @@ def find_maxes(
     locality_filter_prop: float,
     locality: float,
     technique: str,
+    indexes_len: int,
     **kwargs,
 ) -> list:
     print("Finding Local Maximums... ", end="")
@@ -459,7 +475,7 @@ def find_maxes(
         )
     else:
         total_peaks, peak_indexes = [], []
-        for i in tqdm.tqdm(correlation):
+        for i in tqdm.tqdm(correlation, total=indexes_len):
             total_peaks += [
                 _find_peaks(
                     correlation=i[0][0],
