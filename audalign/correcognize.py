@@ -95,11 +95,11 @@ def correcognize(
         ).T
         against_array = np.clip(against_array, 0, 500)  # never louder than 500
 
-    print("Calculating correlation... ", end="")  # TODO
+    print("Calculating correlation... ", end="")
     indexes = (
         find_index_arr(against_array, target_array, locality, max_lags)
         if locality is not None
-        else None
+        else []
     )
     correlation = calc_corrs(
         against_array,
@@ -257,11 +257,11 @@ def correcognize_directory(
                 ).T
                 against_array = np.clip(against_array, 0, 500)  # never louder than 500
 
-            print("Calculating correlation... ", end="")  # TODO
+            print("Calculating correlation... ", end="")
             indexes = (
                 find_index_arr(against_array, target_array, locality, max_lags)
                 if locality is not None
-                else None
+                else []
             )
             correlation = calc_corrs(
                 against_array,
@@ -383,15 +383,15 @@ def find_index_arr(against_array, target_array, locality, max_lags):
     index_list_against = calc_array_indexes(against_array, locality)
     index_list_target = calc_array_indexes(target_array, locality)
     index_pairs = []
-    # if max_lags is None:
-    for i in index_list_against:
-        for j in index_list_target:
-            index_pairs += [(i, j)]
-    # else:
-    #     for i in index_list_against:
-    #         for j in index_list_target:
-    #             if abs(i - j) <= max_lags + locality:  # TODO check out
-    #                 index_pairs += [(i, j)]
+    if max_lags is None:
+        for i in index_list_against:
+            for j in index_list_target:
+                index_pairs += [(i, j)]
+    else:
+        for i in index_list_against:
+            for j in index_list_target:
+                if abs(i - j) <= max_lags + locality:  # TODO check out
+                    index_pairs += [(i, j)]
     return index_pairs
 
 
@@ -532,7 +532,6 @@ def _find_peaks(
         shift = 0
         if index_pair is not None:
             shift = index_pair[1] - index_pair[0]
-        new_max_lags = max_lags - shift
         if np.max(lag_array) > max_lags - shift:
             correlation[np.where(lag_array == max_lags - shift)[0][0] + 1 :] = 0
         if np.min(lag_array) < -max_lags - shift:
