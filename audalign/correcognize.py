@@ -69,24 +69,71 @@ def correcognize(
     elif locality_filter_prop < 0:
         locality_filter_prop = 0.0
 
-    print(
-        f"Comparing {os.path.basename(target_file_path)} against {os.path.basename(against_file_path)}... "
-    )
-    t = time.time()
-
     target_array = read(
         target_file_path, start_end=start_end_target, sample_rate=sample_rate
     )[0]
     against_array = read(
         against_file_path, start_end=start_end_against, sample_rate=sample_rate
     )[0]
-
     sos = signal.butter(
         10, fingerprint.threshold, "highpass", fs=sample_rate, output="sos"
     )
     # sos = signal.butter(10, 0.125, "hp", fs=sample_rate, output="sos")
     target_array = signal.sosfilt(sos, target_array)
-    against_array = signal.sosfilt(sos, against_array)
+
+    t = time.time()
+    file_match = _correcognize(
+        target_file_array=(target_array, target_file_path),
+        against_file_array=(against_array, against_file_path),
+        filter_matches=filter_matches,
+        match_len_filter=match_len_filter,
+        locality=locality,
+        locality_filter_prop=locality_filter_prop,
+        sample_rate=sample_rate,
+        max_lags=max_lags,
+        plot=plot,
+        technique=technique,
+        sos_filter=sos,
+        **kwargs,
+    )
+    t = time.time() - t
+
+    result = {}
+    if file_match:
+        result["match_time"] = t
+        result["match_info"] = file_match
+        return result
+
+    return None
+
+
+def _correcognize(
+    target_file_array_path: list,
+    against_file_array_path: list,
+    start_end_target: tuple = None,
+    start_end_against: tuple = None,
+    filter_matches: float = None,
+    match_len_filter: int = None,
+    locality: float = None,
+    locality_filter_prop: float = None,
+    sample_rate: int = fingerprint.DEFAULT_FS,
+    max_lags: float = None,
+    plot: bool = False,
+    technique: str = "correlation",
+    sos_filter: tuple = None,
+    filter_target: bool = False,
+    **kwargs,
+):
+    target_array, target_file_path = target_file_array_path
+    against_array, against_file_path = against_file_array_path
+
+    print(
+        f"Comparing {os.path.basename(target_file_path)} against {os.path.basename(against_file_path)}... "
+    )
+
+    if filter_target is True:
+        target_array = signal.sosfilt(sos_filter, target_array)
+    against_array = signal.sosfilt(sos_filter, against_array)
     if technique == "correlation_spectrogram":
         target_array = fingerprint.fingerprint(
             target_array, fs=sample_rate, retspec=True
@@ -150,7 +197,7 @@ def correcognize(
             peaks=results_list_tuple,
         )
 
-    file_match = process_results(
+    return process_results(
         results_list=results_list_tuple,
         file_name=os.path.basename(against_file_path),
         scaling_factor=scaling_factor,
@@ -158,16 +205,6 @@ def correcognize(
         locality=locality,
         technique=technique,
     )
-
-    t = time.time() - t
-
-    result = {}
-    if file_match:
-        result["match_time"] = t
-        result["match_info"] = file_match
-        return result
-
-    return None
 
 
 def correcognize_directory(
@@ -217,7 +254,7 @@ def correcognize_directory(
         10, fingerprint.threshold, "highpass", fs=sample_rate, output="sos"
     )
 
-    if multiprocessing is False:
+    if use_multiprocessing is False:
         if _file_audsegs is not None:
             target_array = (
                 get_shifted_file(  # might want for multiprocessing in the future
@@ -243,6 +280,44 @@ def correcognize_directory(
     else:
         against_files = zip(against_directory, ["_"] * len(against_directory))
     file_match = {}
+
+    if use_multiprocessing == False:
+        results_list = []
+        for file_path in against_files:
+            results_list += [_visrecognize_directory_(file_path)]
+    else:
+        try:
+            nprocesses = num_processes or multiprocessing.cpu_count()
+        except NotImplementedError:
+            nprocesses = 1
+        else:
+            nprocesses = 1 if nprocesses <= 0 else nprocesses
+
+        with multiprocessing.Pool(nprocesses) as pool:
+            results_list = pool.map(
+                _visrecognize_directory_, tqdm.tqdm(list(against_files))
+            )
+            pool.close()
+            pool.join()
+
+    file_match = {}
+    for i in results_list:
+        file_match = {**file_match, **i}
+
+    t = time.time() - t
+
+    result = {}
+    if file_match:
+        result["match_time"] = t
+        result["match_info"] = file_match
+        if _include_filename:
+            if type(target_file_path) == tuple:
+                result["filename"] = target_file_path[0]
+            else:
+                result["filename"] = target_file_path
+        return result
+
+    return None
     for against_file_path, _ in against_files:
 
         if os.path.basename(file_path) == os.path.basename(target_file_path):
