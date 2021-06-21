@@ -3,6 +3,7 @@ from audalign.filehandler import read, find_files, get_shifted_file
 import audalign
 from pydub.exceptions import CouldntDecodeError
 import numpy as np
+import tqdm
 import time
 import os
 import scipy.signal as signal
@@ -56,11 +57,11 @@ def correcognize(
         )
 
     if max_lags is not None:
-        max_lags = int(calc_spec_windows(max_lags, sample_rate, technique) / 2)
+        max_lags = int(calc_spec_windows(max_lags, sample_rate, technique))
     if filter_matches is None:
         filter_matches = 0.5
     if locality is not None:
-        locality = calc_spec_windows(locality, sample_rate, technique)
+        locality = int(calc_spec_windows(locality, sample_rate, technique))
     if locality_filter_prop is None:
         locality_filter_prop = DEFAULT_LOCALITY_FILTER_PROP
     elif locality_filter_prop > 1.0:
@@ -97,12 +98,17 @@ def correcognize(
         against_array = np.clip(against_array, 0, 500)  # never louder than 500
 
     print("Calculating correlation... ", end="")
+    indexes = (
+        find_index_arr(against_array, target_array, locality, max_lags)
+        if locality is not None
+        else []
+    )
     correlation = calc_corrs(
         against_array,
         target_array,
         locality=locality,
-        max_lags=max_lags,
         technique=technique,
+        indexes=indexes,
     )
 
     if locality is None:
@@ -115,6 +121,7 @@ def correcognize(
         locality_filter_prop=locality_filter_prop,
         locality=locality,
         technique=technique,
+        indexes_len=len(indexes),
         **kwargs,
     )
 
@@ -192,9 +199,9 @@ def correcognize_directory(
     t = time.time()
 
     if max_lags is not None:
-        max_lags = int(calc_spec_windows(max_lags, sample_rate, technique) / 2)
+        max_lags = int(calc_spec_windows(max_lags, sample_rate, technique))
     if locality is not None:
-        locality = calc_spec_windows(locality, sample_rate, technique)
+        locality = int(calc_spec_windows(locality, sample_rate, technique))
     if locality_filter_prop is None:
         locality_filter_prop = DEFAULT_LOCALITY_FILTER_PROP
     elif locality_filter_prop > 1.0:
@@ -212,10 +219,14 @@ def correcognize_directory(
 
     if multiprocessing is False:
         if _file_audsegs is not None:
-            target_array = _file_audsegs[target_file_path]
-            # target_array = get_shifted_file( # might want for multiprocessing in the future
-            #     target_file_path, _file_audsegs[target_file_path], sample_rate=sample_rate
-            # )
+            target_array = (
+                get_shifted_file(  # might want for multiprocessing in the future
+                    target_file_path,
+                    _file_audsegs[target_file_path],
+                    sample_rate=sample_rate,
+                )
+            )
+            # target_array = _file_audsegs[target_file_path]
         else:
             target_array = read(
                 target_file_path, start_end=start_end, sample_rate=sample_rate
@@ -234,12 +245,94 @@ def correcognize_directory(
     file_match = {}
     for against_file_path, _ in against_files:
 
-        single_file_match = _correcognize_dir(
-            target_array=target_array,
-            against_file_path=against_file_path,
-        )
-        if single_file_match:
-            file_match = {**file_match, **single_file_match}
+        if os.path.basename(file_path) == os.path.basename(target_file_path):
+            continue
+        try:
+            print(
+                f"Comparing {os.path.basename(target_file_path)} against {os.path.basename(file_path)}... "
+            )
+            if _file_audsegs is not None:
+                against_array = (
+                    get_shifted_file(  # might want for multiprocessing in the future
+                        file_path, _file_audsegs[file_path], sample_rate=sample_rate
+                    )
+                )
+                # against_array = _file_audsegs[file_path]
+            else:
+                against_array = read(file_path, sample_rate=sample_rate)[0]
+            against_array = signal.sosfilt(sos, against_array)
+            if technique == "correlation_spectrogram":
+                against_array = fingerprint.fingerprint(
+                    against_array, fs=sample_rate, retspec=True
+                ).T
+                against_array = np.clip(against_array, 0, 500)  # never louder than 500
+
+            print("Calculating correlation... ", end="")
+            indexes = (
+                find_index_arr(against_array, target_array, locality, max_lags)
+                if locality is not None
+                else []
+            )
+            correlation = calc_corrs(
+                against_array,
+                target_array,
+                locality=locality,
+                technique=technique,
+                indexes=indexes,
+            )
+
+            if locality is None:
+                correlation = list(correlation)[0]
+            results_list_tuple, scaling_factor = find_maxes(
+                correlation=correlation,
+                filter_matches=filter_matches,
+                match_len_filter=match_len_filter,
+                max_lags=max_lags,
+                locality_filter_prop=locality_filter_prop,
+                locality=locality,
+                technique=technique,
+                indexes_len=len(indexes),
+                **kwargs,
+            )
+
+            if plot and locality is None:
+                plot_cor(
+                    array_a=target_array,
+                    array_b=against_array,
+                    corr_array=correlation,
+                    sample_rate=sample_rate,
+                    arr_a_title=target_file_path,
+                    arr_b_title=file_path,
+                    scaling_factor=scaling_factor,
+                    peaks=results_list_tuple,
+                    technique=technique,
+                )
+            elif plot:
+                print("\nCorrelation Plot not compatible with locality")
+                plot_cor(
+                    array_a=target_array,
+                    array_b=against_array,
+                    corr_array=None,
+                    sample_rate=sample_rate,
+                    arr_a_title=target_file_path,
+                    arr_b_title=file_path,
+                    scaling_factor=scaling_factor,
+                    peaks=results_list_tuple,
+                )
+
+            single_file_match = process_results(
+                results_list=results_list_tuple,
+                file_name=os.path.basename(file_path),
+                scaling_factor=scaling_factor,
+                sample_rate=sample_rate,
+                locality=locality,
+                technique=technique,
+            )
+            if single_file_match:
+                file_match = {**file_match, **single_file_match}
+
+        except CouldntDecodeError:
+            print(f'File "{file_path}" could not be decoded')
 
     t = time.time() - t
 
@@ -347,7 +440,10 @@ def calc_array_indexes(array, locality):
             index_list.append(i)
             for i in range(0, len(array) - int(locality), int(locality * OVERLAP_RATIO))
         ]
-        if len(array) - int(locality) not in index_list:
+        if (
+            len(array) - int(locality) not in index_list
+            and len(array) - int(locality) > 0
+        ):
             index_list.append(len(array) - int(locality))
     return index_list
 
@@ -390,40 +486,55 @@ def find_index_arr(against_array, target_array, locality, max_lags):
     else:
         for i in index_list_against:
             for j in index_list_target:
-                if abs(j - i) <= max_lags * 2 + locality:
+                if abs(j - i) <= max_lags + locality - 1:
                     index_pairs += [(i, j)]
     return index_pairs
 
 
 def calc_corrs(
-    against_array, target_array, locality: float, max_lags: float, technique: str
+    against_array,
+    target_array,
+    locality: float,
+    technique: str,
+    indexes: list,
 ):
     if locality is None:
         if technique == "correlation":
-            yield signal.correlate(against_array, target_array)
+            yield (
+                signal.correlate(against_array, target_array),
+                (against_array.size, target_array.size),
+            )
         elif technique == "correlation_spectrogram":
             against_array = against_array.T
             target_array = target_array.T
-            yield _calc_corrs_spec(against_array, target_array)
+            yield (
+                _calc_corrs_spec(against_array, target_array),
+                (against_array.shape[1], target_array.shape[1]),
+            )
     else:
         locality_a = len(against_array) if locality > len(against_array) else locality
         locality_b = len(target_array) if locality > len(target_array) else locality
-        indexes = find_index_arr(against_array, target_array, locality, max_lags)
         if technique == "correlation":
             for pair in indexes:
                 yield [
-                    signal.correlate(
-                        against_array[pair[0] : pair[0] + locality_a],
-                        target_array[pair[1] : pair[1] + locality_b],
+                    (
+                        signal.correlate(
+                            against_array[pair[0] : pair[0] + locality_a],
+                            target_array[pair[1] : pair[1] + locality_b],
+                        ),
+                        (locality_a, locality_b),
                     ),
                     pair,
                 ]
         elif technique == "correlation_spectrogram":
             for pair in indexes:
                 yield [
-                    _calc_corrs_spec(
-                        against_array[pair[0] : pair[0] + locality_a].T,
-                        target_array[pair[1] : pair[1] + locality_b].T,
+                    (
+                        _calc_corrs_spec(
+                            against_array[pair[0] : pair[0] + locality_a].T,
+                            target_array[pair[1] : pair[1] + locality_b].T,
+                        ),
+                        (locality_a, locality_b),
                     ),
                     pair,
                 ]
@@ -444,12 +555,14 @@ def find_maxes(
     locality_filter_prop: float,
     locality: float,
     technique: str,
+    indexes_len: int,
     **kwargs,
 ) -> list:
     print("Finding Local Maximums... ", end="")
     if locality is None:
         return _find_peaks(
-            correlation=correlation,
+            correlation=correlation[0],
+            len_tups=correlation[1],
             filter_matches=filter_matches,
             match_len_filter=match_len_filter,
             max_lags=max_lags,
@@ -458,10 +571,11 @@ def find_maxes(
         )
     else:
         total_peaks, peak_indexes = [], []
-        for i in correlation:
+        for i in tqdm.tqdm(correlation, total=indexes_len):
             total_peaks += [
                 _find_peaks(
-                    correlation=i[0],
+                    correlation=i[0][0],
+                    len_tups=i[0][1],
                     filter_matches=0,
                     # filter_matches=filter_matches,
                     match_len_filter=match_len_filter,
@@ -483,6 +597,7 @@ def find_maxes(
 
 def _find_peaks(
     correlation: list,
+    len_tups: tuple,
     filter_matches: float,
     match_len_filter: int,
     max_lags: float,
@@ -504,39 +619,20 @@ def _find_peaks(
         if max_corr > 0
         else correlation
     )
-    # This is quite a bit faster, but I couldn't get it to work in a timely manner.
-    # Fix this for speedup with locality and max_lags
-
-    # if max_lags is not None and index_pair is not None:
-    #     shift = index_pair[0] - index_pair[1]
-    #     # lag_indexes = [0, 0]
-    #     if len(correlation) + shift > 2 * max_lags:
-    #         correlation[int(len(correlation) / 2 + max_lags - (shift / 2)) + 1 :] = 0
-    #     if len(correlation) - shift > 2 * max_lags:
-    #         correlation[: int(len(correlation) / 2 - max_lags + (shift / 2))] = 0
-    #     # correlation = correlation[lag_indexes[0] : lag_indexes[1]]
-    if max_lags is not None and index_pair is None:
-        if len(correlation) > 2 * max_lags:
-            correlation[: int(len(correlation) / 2 - max_lags)] = 0
-            correlation[int(len(correlation) / 2 + max_lags) + 1 :] = 0
+    lag_array = signal.correlation_lags(len_tups[0], len_tups[1], mode="full")
+    if max_lags is not None:
+        shift = 0
+        if index_pair is not None:
+            shift = index_pair[0] - index_pair[1]
+        if np.max(lag_array) > max_lags - shift:
+            correlation[np.where(lag_array == (max_lags - shift))[0][0] + 1 :] = 0
+        if np.min(lag_array) < -max_lags - shift:
+            correlation[: np.where(lag_array == (-max_lags - shift))[0][0]] = 0
 
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.find_peaks.html
     peaks, properties = signal.find_peaks(correlation, height=filter_matches, **kwargs)
-    peaks -= int(len(correlation) / 2)
-    peaks *= 2
+    peaks = [lag_array[x] for x in peaks]
     peaks_tuples = zip(peaks, properties["peak_heights"])
-    if max_lags is not None and index_pair is not None:
-        peaks_tuples = sorted(peaks_tuples, key=lambda x: x[0])
-        lag_indexes = [0, len(peaks_tuples)]
-        shift = index_pair[0] - index_pair[1]
-        for i, peak in enumerate(peaks_tuples):
-            if peak[0] + shift < -max_lags * 2:
-                lag_indexes[0] = i + 1
-            if peak[0] + shift > max_lags * 2:
-                lag_indexes[1] = i
-                break
-        peaks_tuples = peaks_tuples[lag_indexes[0] + 1 : lag_indexes[1]]
-
     peaks_tuples = sorted(peaks_tuples, key=lambda x: x[1], reverse=True)
 
     if match_len_filter is None:
