@@ -192,7 +192,7 @@ ada.get_metadata("file.wav") # Returns metadata from ffmpeg/ avlib
 ## Audalign Functions
 
 ```python
-ada.set_multiprocessing(False) # If you want single threaded fingerprinting
+ada.set_multiprocessing(False) # If you want single threaded
 ada.set_num_processors(4) # However many processors you have.
 ada.set_accuracy(1) # from 1-4, sets fingerprinting variables for different levels of accuracy
 ada.set_hash_style("base") #you can use "base" "base_three" "panako" "panako_mod"
