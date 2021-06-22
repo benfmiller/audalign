@@ -324,26 +324,69 @@ def _correcognize(
 def _correcognize_dir(
     against_file_path,
     target_array,
+    target_start_end,
+    _file_audsegs,
+    target_file_path,
+    sample_rate,
+    technique,
+    sos_filter,
+    **kwargs,
 ):
-    if type(target_array) == str:
-
-        if os.path.basename(file_path) == os.path.basename(target_file_path):
-            return {}
-
-    try:
-        print(
-            f"Comparing {os.path.basename(target_file_path)} against {os.path.basename(file_path)}... "
+    if type(target_file_path) == str:
+        target_array = get_arrays(
+            target_file_path,
+            target_start_end,
+            sample_rate=sample_rate,
+            _file_audsegs=_file_audsegs,
+            technique=technique,
+            sos=sos_filter,
         )
+    else:
+        target_file_path, target_array = target_file_path
+
+    against_file_path, _ = against_file_path
+
+    if os.path.basename(against_file_path) == os.path.basename(target_file_path):
+        return {}
+    try:
         if _file_audsegs is not None:
             against_array = (
                 get_shifted_file(  # might want for multiprocessing in the future
-                    file_path, _file_audsegs[file_path], sample_rate=sample_rate
+                    against_file_path,
+                    _file_audsegs[against_file_path],
+                    sample_rate=sample_rate,
                 )
             )
             # against_array = _file_audsegs[file_path]
 
     except CouldntDecodeError:
-        print(f'File "{file_path}" could not be decoded')
+        print(f'File "{against_file_path}" could not be decoded')
+
+
+def get_arrays(
+    file_path,
+    start_end,
+    sample_rate,
+    _file_audsegs,
+    technique,
+    sos,
+):
+    if _file_audsegs is not None:
+        target_array = get_shifted_file(  # might want for multiprocessing in the future
+            file_path,
+            _file_audsegs[file_path],
+            sample_rate=sample_rate,
+        )
+    else:
+        target_array = read(file_path, start_end=start_end, sample_rate=sample_rate)[0]
+    if sos is not None:
+        target_array = signal.sosfilt(sos, target_array)
+    if technique == "correlation_spectrogram":
+        target_array = fingerprint.fingerprint(
+            target_array, fs=sample_rate, retspec=True
+        ).T
+        target_array = np.clip(target_array, 0, 500)  # never louder than 500
+    return target_array
 
 
 def calc_array_indexes(array, locality):
