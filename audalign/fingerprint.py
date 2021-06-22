@@ -157,6 +157,7 @@ def fingerprint(
         hashes (dict{str: [int]}): hashes of the form dict{hash: location}
     """
     # FFT the signal and extract frequency components
+    # To get the frequencies of each row, get the second returned component
     arr2D = mlab.specgram(
         channel_samples,
         NFFT=wsize,
