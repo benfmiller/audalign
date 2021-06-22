@@ -104,7 +104,6 @@ def correcognize(
         max_lags=max_lags,
         plot=plot,
         technique=technique,
-        sos_filter=sos,
         **kwargs,
     )
     t = time.time() - t
@@ -237,8 +236,6 @@ def _correcognize(
     target_file_path: str,
     against_array: list,
     against_file_path: str,
-    start_end_target: tuple = None,
-    start_end_against: tuple = None,
     filter_matches: float = None,
     match_len_filter: int = None,
     locality: float = None,
@@ -247,9 +244,6 @@ def _correcognize(
     max_lags: float = None,
     plot: bool = False,
     technique: str = "correlation",
-    sos_filter: tuple = None,
-    filter_target: bool = False,
-    fine_aud_file_segs: dict = None,
     **kwargs,
 ):
     print(
@@ -321,19 +315,24 @@ def _correcognize(
 
 def _correcognize_dir(
     against_file_path,
-    target_array,
-    target_start_end,
-    _file_audsegs,
     target_file_path,
+    start_end,
+    _file_audsegs,
     sample_rate,
     technique,
     sos_filter,
+    filter_matches,
+    match_len_filter,
+    locality,
+    locality_filter_prop,
+    max_lags,
+    plot,
     **kwargs,
 ):
     if type(target_file_path) == str:
         target_array = get_array(
             target_file_path,
-            target_start_end,
+            start_end,
             sample_rate=sample_rate,
             _file_audsegs=_file_audsegs,
             technique=technique,
@@ -347,15 +346,31 @@ def _correcognize_dir(
     if os.path.basename(against_file_path) == os.path.basename(target_file_path):
         return {}
     try:
-        if _file_audsegs is not None:
-            against_array = (
-                get_shifted_file(  # might want for multiprocessing in the future
-                    against_file_path,
-                    _file_audsegs[against_file_path],
-                    sample_rate=sample_rate,
-                )
+        against_array = get_array(
+            target_array=get_array(
+                against_file_path,
+                start_end=None,
+                sample_rate=sample_rate,
+                _file_audsegs=_file_audsegs,
+                technique=technique,
+                sos=sos_filter,
             )
-            # against_array = _file_audsegs[file_path]
+        )
+        return _correcognize(
+            target_array=target_array,
+            target_file_path=target_file_path,
+            against_array=against_array,
+            against_file_path=against_file_path,
+            filter_matches=filter_matches,
+            match_len_filter=match_len_filter,
+            locality=locality,
+            locality_filter_prop=locality_filter_prop,
+            sample_rate=sample_rate,
+            max_lags=max_lags,
+            plot=plot,
+            technique=technique,
+            **kwargs,
+        )
 
     except CouldntDecodeError:
         print(f'File "{against_file_path}" could not be decoded')

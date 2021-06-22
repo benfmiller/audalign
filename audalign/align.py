@@ -272,6 +272,7 @@ def calc_alignments(
                 _file_audsegs=fine_aud_file_dict,
                 _include_filename=True,
                 technique=technique,
+                plot=False,
                 use_multiprocessing=False,
                 num_processes=1,
                 **kwargs,
