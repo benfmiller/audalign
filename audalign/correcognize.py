@@ -119,6 +119,7 @@ def correcognize_directory(
     plot: bool = False,
     max_lags: float = None,
     _file_audsegs: dict = None,
+    _include_filename: bool = False,
     technique: str = "correlation",
     use_multiprocessing: bool = True,
     num_processes: int = None,
@@ -179,12 +180,15 @@ def correcognize_directory(
         against_files = find_files(against_directory)
     else:
         against_files = zip(against_directory, ["_"] * len(against_directory))
-    file_match = {}
+
+    _correcognize_dir_ = partial(  # TODO
+        _correcognize_dir,
+    )
 
     if use_multiprocessing == False:
         results_list = []
         for file_path in against_files:
-            results_list += [_visrecognize_directory_(file_path)]
+            results_list += [_correcognize_dir_(file_path)]
     else:
         try:
             nprocesses = num_processes or multiprocessing.cpu_count()
@@ -194,9 +198,7 @@ def correcognize_directory(
             nprocesses = 1 if nprocesses <= 0 else nprocesses
 
         with multiprocessing.Pool(nprocesses) as pool:
-            results_list = pool.map(
-                _visrecognize_directory_, tqdm.tqdm(list(against_files))
-            )
+            results_list = pool.map(_correcognize_dir_, tqdm.tqdm(list(against_files)))
             pool.close()
             pool.join()
 
@@ -216,90 +218,6 @@ def correcognize_directory(
             else:
                 result["filename"] = target_file_path
         return result
-
-    return None
-    for against_file_path, _ in against_files:
-
-        if os.path.basename(file_path) == os.path.basename(target_file_path):
-            continue
-        try:
-            print(
-                f"Comparing {os.path.basename(target_file_path)} against {os.path.basename(file_path)}... "
-            )
-            indexes = (
-                find_index_arr(against_array, target_array, locality, max_lags)
-                if locality is not None
-                else []
-            )
-            correlation = calc_corrs(
-                against_array,
-                target_array,
-                locality=locality,
-                technique=technique,
-                indexes=indexes,
-            )
-
-            if locality is None:
-                correlation = list(correlation)[0]
-            results_list_tuple, scaling_factor = find_maxes(
-                correlation=correlation,
-                filter_matches=filter_matches,
-                match_len_filter=match_len_filter,
-                max_lags=max_lags,
-                locality_filter_prop=locality_filter_prop,
-                locality=locality,
-                technique=technique,
-                indexes_len=len(indexes),
-                **kwargs,
-            )
-
-            if plot and locality is None:
-                plot_cor(
-                    array_a=target_array,
-                    array_b=against_array,
-                    corr_array=correlation,
-                    sample_rate=sample_rate,
-                    arr_a_title=target_file_path,
-                    arr_b_title=file_path,
-                    scaling_factor=scaling_factor,
-                    peaks=results_list_tuple,
-                    technique=technique,
-                )
-            elif plot:
-                print("\nCorrelation Plot not compatible with locality")
-                plot_cor(
-                    array_a=target_array,
-                    array_b=against_array,
-                    corr_array=None,
-                    sample_rate=sample_rate,
-                    arr_a_title=target_file_path,
-                    arr_b_title=file_path,
-                    scaling_factor=scaling_factor,
-                    peaks=results_list_tuple,
-                )
-
-            single_file_match = process_results(
-                results_list=results_list_tuple,
-                file_name=os.path.basename(file_path),
-                scaling_factor=scaling_factor,
-                sample_rate=sample_rate,
-                locality=locality,
-                technique=technique,
-            )
-            if single_file_match:
-                file_match = {**file_match, **single_file_match}
-
-        except CouldntDecodeError:
-            print(f'File "{file_path}" could not be decoded')
-
-    t = time.time() - t
-
-    result = {}
-    if file_match:
-        result["match_time"] = t
-        result["match_info"] = file_match
-        return result
-
     return None
 
 
@@ -410,7 +328,7 @@ def _correcognize_dir(
     if type(target_array) == str:
 
         if os.path.basename(file_path) == os.path.basename(target_file_path):
-            continue
+            return {}
 
     try:
         print(
