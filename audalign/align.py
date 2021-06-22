@@ -167,14 +167,14 @@ def set_ada_file_names(
             ada_obj.file_names = [
                 os.path.basename(x) for x in fine_aud_file_dict.keys()
             ]
-            if technique in ["correlation", "correlation_spectrogram"]:
-                # could remove for multiprocessing in the future
-                for path in fine_aud_file_dict.keys():
-                    fine_aud_file_dict[path] = audalign.filehandler.get_shifted_file(
-                        path,
-                        fine_aud_file_dict[path],
-                        sample_rate=cor_sample_rate,
-                    )
+            # if technique in ["correlation", "correlation_spectrogram"]:
+            # TODO could remove for multiprocessing in the future
+            # for path in fine_aud_file_dict.keys():
+            #     fine_aud_file_dict[path] = audalign.filehandler.get_shifted_file(
+            #         path,
+            #         fine_aud_file_dict[path],
+            #         sample_rate=cor_sample_rate,
+            #     )
         else:
             ada_obj.file_names = [os.path.basename(x) for x in filename_list]
 
@@ -237,27 +237,45 @@ def calc_alignments(
 
     if (
         ada_obj.multiprocessing == True
-        and technique == "visual"
+        and technique != "fingerprints"
         and not target_aligning
     ):
 
-        _calc_alignments = partial(
-            audalign.visrecognize.visrecognize_directory,
-            against_directory=dir_or_list,
-            start_end=target_start_end,
-            img_width=img_width,
-            volume_threshold=volume_threshold,
-            volume_floor=volume_floor,
-            vert_scaling=vert_scaling,
-            horiz_scaling=horiz_scaling,
-            calc_mse=ada_obj.calc_mse,
-            max_lags=max_lags,
-            use_multiprocessing=False,
-            num_processes=1,
-            plot=False,
-            _file_audsegs=fine_aud_file_dict,
-            _include_filename=True,
-        )
+        if technique == "visual":
+            _calc_alignments = partial(
+                audalign.visrecognize.visrecognize_directory,
+                against_directory=dir_or_list,
+                start_end=target_start_end,
+                img_width=img_width,
+                volume_threshold=volume_threshold,
+                volume_floor=volume_floor,
+                vert_scaling=vert_scaling,
+                horiz_scaling=horiz_scaling,
+                calc_mse=ada_obj.calc_mse,
+                max_lags=max_lags,
+                use_multiprocessing=False,
+                num_processes=1,
+                plot=False,
+                _file_audsegs=fine_aud_file_dict,
+                _include_filename=True,
+            )
+        else:
+            _calc_alignments = partial(
+                audalign.correcognize.correcognize_directory,
+                against_directory=dir_or_list,
+                start_end=target_start_end,
+                filter_matches=filter_matches,
+                sample_rate=cor_sample_rate,
+                locality=locality,
+                locality_filter_prop=locality_filter_prop,
+                max_lags=max_lags,
+                _file_audsegs=fine_aud_file_dict,
+                _include_filename=True,
+                technique=technique,
+                use_multiprocessing=False,
+                num_processes=1,
+                **kwargs,
+            )
         temp_file_list = []
         for file_path, _ in file_list:
             if os.path.basename(file_path) in ada_obj.file_names:
