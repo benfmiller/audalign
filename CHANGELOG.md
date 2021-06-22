@@ -1,5 +1,17 @@
 # Change Log
 
+## [0.5.2] 2021 - 06 - 22
+
+### Fixed
+
+- Correcognize offsets
+- Correcognize_spectrogram offsets
+
+### Changed
+
+- Added multiprocessing to correcognize
+- Added multiprocessing to correcognize_spectrogram
+
 ## [0.5.1] 2021 - 06 - 11
 
 ### Changed
