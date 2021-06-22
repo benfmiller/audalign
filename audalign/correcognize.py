@@ -69,22 +69,33 @@ def correcognize(
     elif locality_filter_prop < 0:
         locality_filter_prop = 0.0
 
-    target_array = read(
-        target_file_path, start_end=start_end_target, sample_rate=sample_rate
-    )[0]
-    against_array = read(
-        against_file_path, start_end=start_end_against, sample_rate=sample_rate
-    )[0]
     sos = signal.butter(
         10, fingerprint.threshold, "highpass", fs=sample_rate, output="sos"
     )
     # sos = signal.butter(10, 0.125, "hp", fs=sample_rate, output="sos")
-    target_array = signal.sosfilt(sos, target_array)
+    target_array = get_array(
+        target_file_path,
+        start_end=start_end_target,
+        sample_rate=sample_rate,
+        _file_audsegs=None,
+        technique=technique,
+        sos=sos,
+    )
+    against_array = get_array(
+        against_file_path,
+        start_end=start_end_against,
+        sample_rate=sample_rate,
+        _file_audsegs=None,
+        technique=technique,
+        sos=sos,
+    )
 
     t = time.time()
     file_match = _correcognize(
-        target_file_array=(target_array, target_file_path),
-        against_file_array=(against_array, against_file_path),
+        target_array=target_array,
+        target_file_path=target_file_path,
+        against_array=against_array,
+        against_file_path=against_file_path,
         filter_matches=filter_matches,
         match_len_filter=match_len_filter,
         locality=locality,
@@ -245,19 +256,6 @@ def _correcognize(
         f"Comparing {os.path.basename(target_file_path)} against {os.path.basename(against_file_path)}... "
     )
 
-    if filter_target is True:
-        target_array = signal.sosfilt(sos_filter, target_array)
-    against_array = signal.sosfilt(sos_filter, against_array)
-    if technique == "correlation_spectrogram":
-        target_array = fingerprint.fingerprint(
-            target_array, fs=sample_rate, retspec=True
-        ).T
-        target_array = np.clip(target_array, 0, 500)  # never louder than 500
-        against_array = fingerprint.fingerprint(
-            against_array, fs=sample_rate, retspec=True
-        ).T
-        against_array = np.clip(against_array, 0, 500)  # never louder than 500
-
     print("Calculating correlation... ", end="")
     indexes = (
         find_index_arr(against_array, target_array, locality, max_lags)
@@ -333,7 +331,7 @@ def _correcognize_dir(
     **kwargs,
 ):
     if type(target_file_path) == str:
-        target_array = get_arrays(
+        target_array = get_array(
             target_file_path,
             target_start_end,
             sample_rate=sample_rate,
@@ -363,7 +361,7 @@ def _correcognize_dir(
         print(f'File "{against_file_path}" could not be decoded')
 
 
-def get_arrays(
+def get_array(
     file_path,
     start_end,
     sample_rate,
