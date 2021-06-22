@@ -225,6 +225,15 @@ class TestRecognize:
         )
         assert results
 
+    def test_correcognize_directory_single_threaded(self):
+        self.ada.set_multiprocessing(False)
+        results = self.ada.correcognize_directory(
+            test_file,
+            "test_audio/testers/",
+        )
+        self.ada.set_multiprocessing(True)
+        assert results
+
     def test_correcognize_max_lags(self):
         _max_lags = 4
         results = self.ada.correcognize(
@@ -274,7 +283,7 @@ class TestRecognize:
         results = self.ada.correcognize_spectrogram(
             test_file_eig,
             test_file_eig2,
-            locality=10,
+            locality=20,
         )
         assert results
 

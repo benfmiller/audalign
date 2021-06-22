@@ -59,6 +59,19 @@ class TestAlign:
             max_lags=10,
         )
         assert result
+        self.ada.set_multiprocessing(False)
+        result = self.ada.align(
+            "test_audio/test_shifts",
+            destination_path=tmpdir,
+            technique="correlation_spectrogram",
+            write_extension=".wav",
+            cor_sample_rate=4000,
+            filter_matches=0.3,  # might have to adjust this
+            locality=30,
+            max_lags=10,
+        )
+        assert result is not None
+        self.ada.set_multiprocessing(True)
 
     def test_align_vis(self, tmpdir):
         result = self.ada.align(
@@ -130,7 +143,17 @@ class TestAlign:
             write_extension=".wav",
             technique="correlation",
         )
-        assert result
+        assert result is not None
+        self.ada.set_multiprocessing(False)
+        result = self.ada.align_files(
+            "test_audio/test_shifts/Eigen-20sec.mp3",
+            "test_audio/test_shifts/Eigen-song-base.mp3",
+            destination_path=tmpdir,
+            write_extension=".wav",
+            technique="correlation",
+        )
+        assert result is not None
+        self.ada.set_multiprocessing(True)
 
 
 class TestTargetAlign:
@@ -225,6 +248,13 @@ class TestFineAlign:
             self.align_fing_results,
             technique="correlation_spectrogram",
         )
+        assert result is not None
+        self.ada.set_multiprocessing(False)
+        result = self.ada.fine_align(
+            self.align_fing_results,
+            technique="correlation_spectrogram",
+        )
+        self.ada.set_multiprocessing(True)
         assert result is not None
 
     def test_fine_align_locality(self):
