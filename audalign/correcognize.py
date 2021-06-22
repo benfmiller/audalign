@@ -166,33 +166,36 @@ def correcognize_directory(
     )
 
     if use_multiprocessing is False:
-        if _file_audsegs is not None:
-            target_array = (
-                get_shifted_file(  # might want for multiprocessing in the future
-                    target_file_path,
-                    _file_audsegs[target_file_path],
-                    sample_rate=sample_rate,
-                )
-            )
-            # target_array = _file_audsegs[target_file_path]
-        else:
-            target_array = read(
-                target_file_path, start_end=start_end, sample_rate=sample_rate
-            )[0]
-        target_array = signal.sosfilt(sos, target_array)
-        if technique == "correlation_spectrogram":
-            target_array = fingerprint.fingerprint(
-                target_array, fs=sample_rate, retspec=True
-            ).T
-            target_array = np.clip(target_array, 0, 500)  # never louder than 500
+        target_array = get_array(
+            target_file_path,
+            start_end,
+            sample_rate=sample_rate,
+            _file_audsegs=_file_audsegs,
+            technique=technique,
+            sos=sos,
+        )
+        target_file_path = (target_file_path, target_array)
 
     if type(against_directory) == str:
         against_files = find_files(against_directory)
     else:
         against_files = zip(against_directory, ["_"] * len(against_directory))
 
-    _correcognize_dir_ = partial(  # TODO
+    _correcognize_dir_ = partial(
         _correcognize_dir,
+        target_file_path=target_file_path,
+        start_end=start_end,
+        _file_audsegs=_file_audsegs,
+        sample_rate=sample_rate,
+        technique=technique,
+        sos_filter=sos,
+        filter_matches=filter_matches,
+        match_len_filter=match_len_filter,
+        locality=locality,
+        locality_filter_prop=locality_filter_prop,
+        max_lags=max_lags,
+        plot=plot,
+        **kwargs,
     )
 
     if use_multiprocessing == False:
@@ -347,14 +350,12 @@ def _correcognize_dir(
         return {}
     try:
         against_array = get_array(
-            target_array=get_array(
-                against_file_path,
-                start_end=None,
-                sample_rate=sample_rate,
-                _file_audsegs=_file_audsegs,
-                technique=technique,
-                sos=sos_filter,
-            )
+            against_file_path,
+            start_end=None,
+            sample_rate=sample_rate,
+            _file_audsegs=_file_audsegs,
+            technique=technique,
+            sos=sos_filter,
         )
         return _correcognize(
             target_array=target_array,
@@ -374,6 +375,7 @@ def _correcognize_dir(
 
     except CouldntDecodeError:
         print(f'File "{against_file_path}" could not be decoded')
+        return {}
 
 
 def get_array(
@@ -385,7 +387,7 @@ def get_array(
     sos,
 ):
     if _file_audsegs is not None:
-        target_array = get_shifted_file(  # might want for multiprocessing in the future
+        target_array = get_shifted_file(
             file_path,
             _file_audsegs[file_path],
             sample_rate=sample_rate,
@@ -548,7 +550,6 @@ def find_maxes(
                     correlation=i[0][0],
                     len_tups=i[0][1],
                     filter_matches=0,
-                    # filter_matches=filter_matches,
                     match_len_filter=match_len_filter,
                     max_lags=max_lags,
                     index_pair=i[1],
