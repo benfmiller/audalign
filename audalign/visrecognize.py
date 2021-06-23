@@ -98,7 +98,7 @@ def visrecognize(
 
     result = {}
 
-    if file_match:
+    if len(file_match) > 0:
         result["match_time"] = t
         result["match_info"] = file_match
         return result
@@ -289,7 +289,7 @@ def visrecognize_directory(
     t = time.time() - t
 
     result = {}
-    if file_match:
+    if len(file_match) > 0:
         result["match_time"] = t
         result["match_info"] = file_match
         if _include_filename:
@@ -604,7 +604,7 @@ def process_results(results_list, filename, horiz_scaling: float = 1.0):
 
     if len(match[filename]["offset_seconds"]) > 0:
         return match
-    return None
+    return {}
 
 
 # ------------------------------------------------------------------------------------------
