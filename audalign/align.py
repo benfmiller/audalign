@@ -30,7 +30,8 @@ def _align(
     calc_mse: bool = False,
     **kwargs,
 ):
-
+    if destination_path is not None and not os.path.exists(destination_path):
+        raise ValueError(f'destination_path "{destination_path}" does not exist')
     ada_obj.file_names, temp_file_names = [], ada_obj.file_names
     ada_obj.fingerprinted_files, temp_fingerprinted_files = (
         [],
