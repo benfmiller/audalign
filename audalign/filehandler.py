@@ -160,6 +160,7 @@ def noise_remove(
     noise_start,
     noise_end,
     destination,
+    write_extension: str = None,
     alt_noise_filepath=None,
     prop_decrease=1,
     use_tensorflow=False,
@@ -179,6 +180,7 @@ def noise_remove(
             (noise_start * DEFAULT_FS) : (noise_end * DEFAULT_FS)
         ]
 
+    print("Reducing Noise")
     reduced_noise_data = noisereduce.reduce_noise(
         new_data,
         noisy_part,
@@ -190,8 +192,22 @@ def noise_remove(
 
     reduced_noise_data = _int16ify_data(reduced_noise_data)
     audiofile._data = reduced_noise_data.astype(np.int16)
-    with open(destination, "wb") as file_place:
-        audiofile.export(file_place, format=os.path.splitext(destination)[1][1:])
+    # if you pass in a folder for destination
+    if len(os.path.basename(destination)) == 0:
+        destination = os.path.join(destination, os.path.basename(filepath))
+    if write_extension is not None:
+        if write_extension[0] != ".":
+            write_extension = "." + write_extension
+        destination_name = os.path.splitext(destination)[0] + write_extension
+        print(f"Writing {destination_name}")
+        with open(destination_name, "wb") as file_place:
+            audiofile.export(
+                file_place, format=os.path.splitext(destination_name)[1][1:]
+            )
+    else:
+        print(f"Writing {destination}")
+        with open(destination, "wb") as file_place:
+            audiofile.export(file_place, format=os.path.splitext(destination)[1][1:])
 
 
 def noise_remove_directory(
@@ -200,6 +216,7 @@ def noise_remove_directory(
     noise_start,
     noise_end,
     destination_directory,
+    write_extension: str = None,
     prop_decrease=1,
     use_tensorflow=False,
     verbose=False,
@@ -247,6 +264,7 @@ def noise_remove_directory(
 def _remove_noise(
     file_path,
     noise_section=[],
+    write_extension: str = None,
     destination_directory="",
     prop_decrease=1,
     use_tensorflow=False,
@@ -259,6 +277,7 @@ def _remove_noise(
         audiofile = create_audiosegment(file_path)
         new_data = _floatify_data(audiofile)
 
+        print("Reducing Noise")
         reduced_noise_data = noisereduce.reduce_noise(
             new_data,
             noise_section,
@@ -278,10 +297,21 @@ def _remove_noise(
 
         print(f'Noise reduced for "{file_path}" writing to "{destination_name}"')
 
-        with open(destination_name, "wb") as file_place:
-            audiofile.export(
-                file_place, format=os.path.splitext(destination_name)[1][1:]
-            )
+        if write_extension is not None:
+            if write_extension[0] != ".":
+                write_extension = "." + write_extension
+            destination_name = os.path.splitext(destination_name)[0] + write_extension
+            print(f"Writing {destination_name}")
+            with open(destination_name, "wb") as file_place:
+                audiofile.export(
+                    file_place, format=os.path.splitext(destination_name)[1][1:]
+                )
+        else:
+            print(f"Writing {destination_name}")
+            with open(destination_name, "wb") as file_place:
+                audiofile.export(
+                    file_place, format=os.path.splitext(destination_name)[1][1:]
+                )
 
     except CouldntDecodeError:
         print(f"    Coudn't Decode {file_path}")

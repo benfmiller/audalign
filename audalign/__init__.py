@@ -1278,6 +1278,7 @@ class Audalign:
         noise_start: float,
         noise_end: float,
         destination: str,
+        write_extension: str = None,
         alt_noise_filepath: str = None,
         prop_decrease: float = 1,
         use_tensorflow: bool = False,
@@ -1290,7 +1291,8 @@ class Audalign:
             filepath (str): filepath to read audio file
             noise_start (float): positition in seconds of start of noise section
             noise_end (float): position in seconds of end of noise section
-            destination (str): filepath of destination to write to
+            destination (str): filepath of destination to write to, full path or directory
+            write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
             alt_noise_filepath (str): path of different file for noise sample
             prop_decrease (float): between 0 and 1. Proportion to decrease noise
             use_tensorflow (bool, optional): Uses tensorflow to increase speed if available. Defaults to False.
@@ -1302,6 +1304,7 @@ class Audalign:
             noise_start,
             noise_end,
             destination,
+            write_extension=write_extension,
             alt_noise_filepath=alt_noise_filepath,
             prop_decrease=prop_decrease,
             use_tensorflow=use_tensorflow,
@@ -1316,6 +1319,7 @@ class Audalign:
         noise_start: float,
         noise_end: float,
         destination_directory: str,
+        write_extension: str = None,
         prop_decrease: float = 1,
         use_tensorflow: bool = False,
         verbose: bool = False,
@@ -1330,6 +1334,7 @@ class Audalign:
             noise_start (float): positition in seconds of start of noise section
             noise_end (float): position in seconds of end of noise section
             destination_directory (str): filepath of destination directory to write to
+            write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
             prop_decrease (float): between 0 and 1. Proportion to decrease noise
             use_tensorflow (bool, optional): Uses tensorflow to increase speed if available. Defaults to False.
             verbose (bool, optional): Shows several plots of noise removal process. Defaults to False.
@@ -1341,6 +1346,7 @@ class Audalign:
             noise_start,
             noise_end,
             destination_directory,
+            write_extension=write_extension,
             prop_decrease=prop_decrease,
             use_tensorflow=use_tensorflow,
             verbose=verbose,
