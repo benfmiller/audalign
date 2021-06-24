@@ -11,6 +11,7 @@ import noisereduce
 from functools import partial
 
 cant_write_ext = [".mov", ".mp4"]
+cant_read_ext = [".txt", ".md", ".pkf", ".py", ".pyc"]
 
 
 def find_files(path, extensions=["*"]):
@@ -121,6 +122,8 @@ def read(
         frame_rate (int): returns the bit depth
     """
 
+    if os.path.splitext(filename)[1] in cant_read_ext:
+        raise CouldntDecodeError
     audiofile = create_audiosegment(
         filename, start_end=start_end, sample_rate=sample_rate
     )
