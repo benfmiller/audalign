@@ -62,6 +62,7 @@ def rank_recognition(
             confidences=confidences,
             top_match_tups=top_match_tups,
             rank_minus=rank_minus,
+            offset_seconds=offset_seconds,
         )
         if len(offset_seconds) > 1 and abs(offset_seconds[0] - offset_seconds[1]) < 0.5:
             # second best is very close means probably very close
@@ -94,13 +95,15 @@ def rank_recognition(
             confidences=confidences,
             top_match_tups=top_match_tups,
             rank_minus=rank_minus,
+            offset_seconds=offset_seconds,
             num_matches_tups=num_matches_tups,
             num_match=top_num_match,
         )
     elif "offset_frames" in alignment.keys():
-        # correlation_spectrogram # TODO
+        # correlation_spectrogram
         rank_minus = ((0.96, 4), (0.92, 3), (0.89, 2), (0.85, 1), (0.0, 0))
         confidences = alignment["confidence"]
+        confidences = [x * alignment["scaling_factor"] for x in confidences]
         if alignment["locality_seconds"][0] is not None:  # there is locality
             top_match_tups = (
                 (9, 10),
@@ -127,13 +130,47 @@ def rank_recognition(
             confidences=confidences,
             top_match_tups=top_match_tups,
             rank_minus=rank_minus,
+            offset_seconds=offset_seconds,
         )
         if len(offset_seconds) > 1 and abs(offset_seconds[0] - offset_seconds[1]) < 0.5:
             # second best is very close means probably very close
             rank += 1
     else:
-        # Correlation # TODO
-        ...
+        # Correlation
+        rank_minus = ((0.95, 4), (0.9, 3), (0.85, 2), (0.8, 1), (0.0, 0))
+        confidences = alignment["confidence"]
+        confidences = [x * alignment["scaling_factor"] for x in confidences]
+        if alignment["locality_seconds"][0] is not None:  # there is locality
+            top_match_tups = (
+                (15, 10),
+                (12, 9),
+                (9, 8),
+                (7, 7),
+                (5.5, 6),
+                (3, 5),
+                (2, 4),
+                (0, 1),
+            )
+        else:  # no locality
+            top_match_tups = (
+                (8, 10),
+                (6, 9),
+                (4, 8),
+                (3, 7),
+                (2, 6),
+                (1.5, 5),
+                (1, 4),
+                (0, 1),
+            )
+        rank = _calc_rank(
+            confidences=confidences,
+            top_match_tups=top_match_tups,
+            rank_minus=rank_minus,
+            offset_seconds=offset_seconds,
+        )
+        if len(offset_seconds) > 1 and abs(offset_seconds[0] - offset_seconds[1]) < 0.5:
+            # second best is very close means probably very close
+            rank += 1
     return int(np.clip(rank, 1, 10))
 
 
@@ -141,10 +178,20 @@ def _calc_rank(
     confidences,
     top_match_tups,
     rank_minus,
+    offset_seconds,
     num_matches_tups: tuple = None,
     num_match: int = None,
 ):
-    top_match = confidences[0]
+    top_match = (confidences[0], offset_seconds[0])
+    confidences, offset_seconds = list(
+        zip(
+            *filter(
+                lambda x: abs(x[1] - top_match[1]) > 0.15,
+                zip(confidences, offset_seconds),
+            )
+        )
+    )
+    top_match = top_match[0]
     second_match = confidences[1] if len(confidences) > 1 else 0
     rank = [top_match > x[0] for x in top_match_tups]
     rank = top_match_tups[rank.index(True)][1]
