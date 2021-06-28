@@ -24,7 +24,12 @@ def _rank_alignment(alignment):
 def rank_recognition(
     alignment,
 ):
-    """Big decision tree"""
+    """Big decision tree
+
+    Locality is tricky because the locality width affect confidence so much.
+    The current values reflect an average locality value (20ish to 3 ish).
+    Should still be taken with a grain of salt.
+    """
     # TODO
     offset_seconds = alignment["offset_seconds"]
     if "confidence" in alignment.keys() and "scaling_factor" not in alignment.keys():
@@ -40,6 +45,7 @@ def rank_recognition(
                 (15, 6),
                 (10, 5),
                 (8, 4),
+                (0, 1),
             )
         else:  # no locality
             top_match_tups = (
@@ -50,13 +56,14 @@ def rank_recognition(
                 (30, 6),
                 (15, 5),
                 (10, 4),
+                (0, 1),
             )
         rank = _calc_rank(
             confidences=confidences,
             top_match_tups=top_match_tups,
             rank_minus=rank_minus,
         )
-        if abs(offset_seconds[0] - offset_seconds[1]) < 0.5:
+        if len(offset_seconds) > 1 and abs(offset_seconds[0] - offset_seconds[1]) < 0.5:
             # second best is very close means probably very close
             rank += 1
     elif "confidence" not in alignment.keys():
@@ -70,10 +77,11 @@ def rank_recognition(
             (0.61, 6),
             (0.59, 5),
             (0.53, 4),
+            (0, 1),
         )
         confidences = alignment["ssim"]
         top_num_match = alignment["num_matches"][0]
-        num_matches_tups = (  # TODO
+        num_matches_tups = (
             (1, 9),
             (3, 5),
             (5, 4),
@@ -90,19 +98,42 @@ def rank_recognition(
             num_match=top_num_match,
         )
     elif "offset_frames" in alignment.keys():
-        # correlation_spectrogram
-        if alignment["locality_seconds"][0] is not None:
-            ...
-        else:
-            ...
-        return 0
+        # correlation_spectrogram # TODO
+        rank_minus = ((0.96, 4), (0.92, 3), (0.89, 2), (0.85, 1), (0.0, 0))
+        confidences = alignment["confidence"]
+        if alignment["locality_seconds"][0] is not None:  # there is locality
+            top_match_tups = (
+                (9, 10),
+                (7.5, 9),
+                (6, 8),
+                (4, 7),
+                (3, 6),
+                (2, 5),
+                (1, 4),
+                (0, 1),
+            )
+        else:  # no locality
+            top_match_tups = (
+                (4.1, 10),
+                (3.9, 9),
+                (3.7, 8),
+                (3.4, 7),
+                (3.1, 6),
+                (2, 5),
+                (1.5, 4),
+                (0, 1),
+            )
+        rank = _calc_rank(
+            confidences=confidences,
+            top_match_tups=top_match_tups,
+            rank_minus=rank_minus,
+        )
+        if len(offset_seconds) > 1 and abs(offset_seconds[0] - offset_seconds[1]) < 0.5:
+            # second best is very close means probably very close
+            rank += 1
     else:
-        # correlation
-        if alignment["locality_seconds"][0] is not None:
-            ...
-        else:
-            ...
-        return 0
+        # Correlation # TODO
+        ...
     return int(np.clip(rank, 1, 10))
 
 
