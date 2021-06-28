@@ -32,8 +32,15 @@ def rank_recognition(
         rank_minus = ((0.95, 4), (0.9, 3), (0.85, 2), (0.8, 1), (0.0, 0))
         confidences = alignment["confidence"]
         if alignment["locality_seconds"][0] is not None:  # locality
-            ...
-            return 0
+            top_match_tups = (
+                (100, 10),
+                (70, 9),
+                (50, 8),
+                (30, 7),
+                (15, 6),
+                (10, 5),
+                (8, 4),
+            )
         else:  # no locality
             top_match_tups = (
                 (500, 10),
@@ -54,7 +61,34 @@ def rank_recognition(
             rank += 1
     elif "confidence" not in alignment.keys():
         # visual
-        return 0
+        rank_minus = ((0.97, 4), (0.95, 3), (0.92, 2), (0.9, 1), (0.0, 0))
+        top_match_tups = (
+            (0.7, 10),
+            (0.68, 9),
+            (0.65, 8),
+            (0.63, 7),
+            (0.61, 6),
+            (0.59, 5),
+            (0.53, 4),
+        )
+        confidences = alignment["ssim"]
+        top_num_match = alignment["num_matches"][0]
+        num_matches_tups = (  # TODO
+            (1, 9),
+            (3, 5),
+            (5, 4),
+            (8, 3),
+            (10, 2),
+            (20, 1),
+            (99999999999, 0),
+        )
+        rank = _calc_rank(
+            confidences=confidences,
+            top_match_tups=top_match_tups,
+            rank_minus=rank_minus,
+            num_matches_tups=num_matches_tups,
+            num_match=top_num_match,
+        )
     elif "offset_frames" in alignment.keys():
         # correlation_spectrogram
         if alignment["locality_seconds"][0] is not None:
@@ -72,13 +106,23 @@ def rank_recognition(
     return int(np.clip(rank, 1, 10))
 
 
-def _calc_rank(confidences, top_match_tups, rank_minus):
+def _calc_rank(
+    confidences,
+    top_match_tups,
+    rank_minus,
+    num_matches_tups: tuple = None,
+    num_match: int = None,
+):
     top_match = confidences[0]
     second_match = confidences[1] if len(confidences) > 1 else 0
     rank = [top_match > x[0] for x in top_match_tups]
     rank = top_match_tups[rank.index(True)][1]
     second_match_list = [second_match >= top_match * x[0] for x in rank_minus]
     rank -= rank_minus[second_match_list.index(True)][1]
+    if num_matches_tups is not None:
+        num_matches_tup_list = [num_match <= x[0] for x in num_matches_tups]
+        rank -= num_matches_tups[num_matches_tup_list.index(True)][1]
+    return rank
 
 
 def calc_technique(keys: dict.keys):
