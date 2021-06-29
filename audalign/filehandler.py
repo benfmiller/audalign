@@ -317,6 +317,23 @@ def _remove_noise(
         print(f"    Coudn't Decode {file_path}")
 
 
+def uniform_level_file():
+    # TODO
+    ...
+
+
+def uniform_level_directory(
+    filepath: str,
+):
+    # TODO
+    ...
+
+
+def _uniform_level():
+    # TODO
+    ...
+
+
 def shift_get_files(results: dict, sample_rate: int = None):
     names_and_paths = results.pop("names_and_paths")
     temp_a = results.pop("match_info")

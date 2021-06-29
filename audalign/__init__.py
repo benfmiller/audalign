@@ -12,6 +12,7 @@ import audalign.filehandler as filehandler
 import audalign.fingerprint as fingerprint
 import audalign.recognize as recognize
 import audalign.visrecognize as visrecognize
+import audalign.datalign as datalign
 
 
 class Audalign:
@@ -1143,6 +1144,11 @@ class Audalign:
         -------
             files_shifts (dict{float}): dict of file name with shift as value. Includes match_info, fine_match_info, and names_and_paths
         """
+
+        if results is None:
+            print("No Results to Fine Align")
+            return None
+
         print("Fine Aligning...")
 
         if strength_stat == "confidence":
@@ -1208,6 +1214,17 @@ class Audalign:
         return new_results
 
     @staticmethod
+    def rank_alignment(
+        alignment: dict,
+    ):
+        """
+        Ranks alignments and recognitions,too
+        ranks each recognition on a scale of 1-10
+        """
+        # TODO Docs
+        return datalign.rank_alignment(alignment=alignment)
+
+    @staticmethod
     def _write_shifted_files(
         files_shifts: dict,
         destination_path: str,
@@ -1271,6 +1288,21 @@ class Audalign:
         filehandler.read(
             filename=file_path, wrdestination=destination_path, start_end=start_end
         )
+
+    @staticmethod
+    def uniform_level_file(
+        filepath: str,
+    ):
+        raise NotImplemented
+        # TODO
+        # by average sound level and by peaks/normalization
+
+    def uniform_level_directory(
+        self,
+        filepath: str,
+    ):
+        raise NotImplemented
+        # TODO
 
     @staticmethod
     def remove_noise_file(
