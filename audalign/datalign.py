@@ -30,21 +30,30 @@ def rank_recognition(
     The current values reflect an average locality value (20ish to 3 ish).
     Should still be taken with a grain of salt.
     """
-    # TODO
     offset_seconds = alignment["offset_seconds"]
     if "confidence" in alignment.keys() and "scaling_factor" not in alignment.keys():
         # fingerprints
-        rank_minus = ((0.95, 4), (0.9, 3), (0.85, 2), (0.8, 1), (0.0, 0))
+        rank_minus = (
+            (0.95, 4),
+            (0.9, 3),
+            (0.85, 2),
+            (0.8, 1),
+            (0.7, 0),
+            (0.6, -1),
+            (0.45, -2),
+            (0.0, 0),
+        )
         confidences = alignment["confidence"]
         if alignment["locality_seconds"][0] is not None:  # locality
             top_match_tups = (
                 (100, 10),
-                (70, 9),
-                (50, 8),
-                (30, 7),
-                (15, 6),
-                (10, 5),
-                (8, 4),
+                (80, 9),
+                (60, 8),
+                (40, 7),
+                (30, 6),
+                (15, 5),
+                (12, 4),
+                (8, 3),
                 (0, 1),
             )
         else:  # no locality
@@ -84,11 +93,13 @@ def rank_recognition(
         top_num_match = alignment["num_matches"][0]
         num_matches_tups = (
             (1, 9),
-            (3, 5),
-            (5, 4),
-            (8, 3),
-            (10, 2),
-            (20, 1),
+            (4, 8),
+            (6, 7),
+            (9, 6),
+            (13, 4),
+            (16, 3),
+            (20, 2),
+            (30, 1),
             (99999999999, 0),
         )
         rank = _calc_rank(
@@ -101,7 +112,18 @@ def rank_recognition(
         )
     elif "offset_frames" in alignment.keys():
         # correlation_spectrogram
-        rank_minus = ((0.96, 4), (0.92, 3), (0.89, 2), (0.85, 1), (0.0, 0))
+        rank_minus = (
+            (0.96, 4),
+            (0.92, 3),
+            (0.89, 2),
+            (0.85, 1),
+            (0.8, 0),
+            (0.75, -1),
+            (0.7, -2),
+            (0.65, -3),
+            (0.1, -4),
+            (0.0, 0),
+        )
         confidences = alignment["confidence"]
         confidences = [x * alignment["scaling_factor"] for x in confidences]
         if alignment["locality_seconds"][0] is not None:  # there is locality
@@ -117,13 +139,15 @@ def rank_recognition(
             )
         else:  # no locality
             top_match_tups = (
-                (4.1, 10),
-                (3.9, 9),
-                (3.7, 8),
-                (3.4, 7),
-                (3.1, 6),
-                (2, 5),
-                (1.5, 4),
+                (4.5, 10),
+                (4, 9),
+                (3.5, 8),
+                (2.9, 7),
+                (2.2, 6),
+                (1.5, 5),
+                (1, 4),
+                (0.7, 3),
+                (0.4, 2),
                 (0, 1),
             )
         rank = _calc_rank(
@@ -137,7 +161,17 @@ def rank_recognition(
             rank += 1
     else:
         # Correlation
-        rank_minus = ((0.95, 4), (0.9, 3), (0.85, 2), (0.8, 1), (0.0, 0))
+        rank_minus = (
+            (0.95, 4),
+            (0.9, 3),
+            (0.85, 1),
+            (0.8, 0),
+            (0.75, -1),
+            (0.7, -2),
+            (0.65, -3),
+            (0.1, -4),
+            (0.0, 0),
+        )
         confidences = alignment["confidence"]
         confidences = [x * alignment["scaling_factor"] for x in confidences]
         if alignment["locality_seconds"][0] is not None:  # there is locality
@@ -195,8 +229,8 @@ def _calc_rank(
     else:
         second_match = 0
     top_match = top_match[0]
-    rank = [top_match > x[0] for x in top_match_tups]
-    rank = top_match_tups[rank.index(True)][1]
+    rank_list = [top_match > x[0] for x in top_match_tups]
+    rank = top_match_tups[rank_list.index(True)][1]
     second_match_list = [second_match >= top_match * x[0] for x in rank_minus]
     rank -= rank_minus[second_match_list.index(True)][1]
     if num_matches_tups is not None:
