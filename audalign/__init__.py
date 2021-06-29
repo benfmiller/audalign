@@ -2,7 +2,7 @@ import json
 import multiprocessing
 import os
 import pickle
-from functools import partial
+from functools import partial, wraps
 
 from pydub.utils import mediainfo
 
@@ -13,6 +13,17 @@ import audalign.fingerprint as fingerprint
 import audalign.recognize as recognize
 import audalign.visrecognize as visrecognize
 import audalign.datalign as datalign
+
+
+def add_rankings(func):
+    @wraps(func)
+    def wrapper_decorator(*args, **kwargs):
+        results = func(*args, **kwargs)
+        if results is not None:
+            results["rankings"] = Audalign.rank_alignment(results)
+        return results
+
+    return wrapper_decorator
 
 
 class Audalign:
@@ -447,6 +458,7 @@ class Audalign:
         file_name = set_file_name or file_name
         return [file_name, hashes]
 
+    @add_rankings
     def recognize(
         self,
         file_path: str,
@@ -495,6 +507,7 @@ class Audalign:
             **kwargs,
         )
 
+    @add_rankings
     def correcognize_spectrogram(
         self,
         target_file_path: str,
@@ -545,6 +558,7 @@ class Audalign:
             **kwargs,
         )
 
+    @add_rankings
     def correcognize(
         self,
         target_file_path: str,
@@ -597,6 +611,7 @@ class Audalign:
             **kwargs,
         )
 
+    @add_rankings
     def visrecognize(
         self,
         target_file_path: str,
@@ -657,6 +672,7 @@ class Audalign:
             plot=plot,
         )
 
+    @add_rankings
     def correcognize_directory(
         self,
         target_file_path: str,
@@ -711,6 +727,7 @@ class Audalign:
             **kwargs,
         )
 
+    @add_rankings
     def correcognize_spectrogram_directory(
         self,
         target_file_path: str,
@@ -761,6 +778,7 @@ class Audalign:
             **kwargs,
         )
 
+    @add_rankings
     def visrecognize_directory(
         self,
         target_file_path: str,
@@ -877,6 +895,7 @@ class Audalign:
         self.fingerprinted_files = []
         self.total_fingerprints = 0
 
+    @add_rankings
     def target_align(
         self,
         target_file: str,
@@ -952,6 +971,7 @@ class Audalign:
             **kwargs,
         )
 
+    @add_rankings
     def align_files(
         self,
         filename_a,
@@ -1027,6 +1047,7 @@ class Audalign:
             **kwargs,
         )
 
+    @add_rankings
     def align(
         self,
         directory_path: str,
@@ -1095,6 +1116,7 @@ class Audalign:
             **kwargs,
         )
 
+    @add_rankings
     def fine_align(
         self,
         results,
@@ -1150,6 +1172,9 @@ class Audalign:
             return None
 
         print("Fine Aligning...")
+
+        if results.get("rankings") is not None:
+            results.pop("rankings")
 
         if strength_stat == "confidence":
             _ = results["match_info"]
@@ -1293,6 +1318,7 @@ class Audalign:
     def uniform_level_file(
         filepath: str,
     ):
+        """Not implemented yet"""
         raise NotImplemented
         # TODO
         # by average sound level and by peaks/normalization
@@ -1301,6 +1327,7 @@ class Audalign:
         self,
         filepath: str,
     ):
+        """Not implemented yet"""
         raise NotImplemented
         # TODO
 
