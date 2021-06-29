@@ -1,6 +1,5 @@
 import audalign
 import multiprocessing
-import sys
 import os
 from functools import partial
 import tqdm
@@ -299,11 +298,13 @@ def calc_alignments(
             name = os.path.basename(file_path)
             if name in ada_obj.file_names:
                 if technique == "fingerprints":
-                    alignment = ada_obj.recognize(
+                    alignment = audalign.recognize.recognize(
+                        ada_obj,
                         file_path,
                         filter_matches=filter_matches,
                         locality=locality,
                         locality_filter_prop=locality_filter_prop,
+                        start_end=None,
                         max_lags=max_lags,
                     )
                 elif technique in ["correlation", "correlation_spectrogram"]:
@@ -323,18 +324,20 @@ def calc_alignments(
                         **kwargs,
                     )
                 elif technique == "visual":
-                    alignment = ada_obj.visrecognize_directory(
+                    alignment = audalign.visrecognize.visrecognize_directory(
                         target_file_path=file_path,
                         against_directory=dir_or_list,
                         start_end=target_start_end,
+                        img_width=img_width,
                         volume_threshold=volume_threshold,
                         volume_floor=volume_floor,
                         vert_scaling=vert_scaling,
                         horiz_scaling=horiz_scaling,
-                        img_width=img_width,
                         calc_mse=ada_obj.calc_mse,
-                        _file_audsegs=fine_aud_file_dict,
                         max_lags=max_lags,
+                        use_multiprocessing=ada_obj.get_multiprocessing(),
+                        num_processes=ada_obj.get_num_processors(),
+                        _file_audsegs=fine_aud_file_dict,
                     )
                 file_names_and_paths[name] = file_path
                 total_alignment[name] = alignment
