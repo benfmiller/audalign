@@ -185,7 +185,7 @@ class TestTargetAlign:
         result = self.ada.target_align(
             "test_audio/test_shifts/Eigen-song-base.mp3",
             "test_audio/test_shifts",
-            destination_path=tmpdir.join("emptydir/"),
+            destination_path=tmpdir,
             technique="visual",
             img_width=0.5,
             volume_threshold=215,
