@@ -69,15 +69,15 @@ def rank_recognition(
             rank += 1
     elif "confidence" not in alignment.keys():
         # visual
-        rank_minus = ((0.97, 4), (0.95, 3), (0.92, 2), (0.9, 1), (0.0, 0))
+        rank_minus = ((0.98, 4), (0.96, 3), (0.94, 2), (0.91, 1), (0.0, 0))
         top_match_tups = (
-            (0.7, 10),
-            (0.68, 9),
-            (0.65, 8),
-            (0.63, 7),
-            (0.61, 6),
-            (0.59, 5),
-            (0.53, 4),
+            (0.68, 10),
+            (0.66, 9),
+            (0.63, 8),
+            (0.61, 7),
+            (0.59, 6),
+            (0.55, 5),
+            (0.5, 4),
             (0, 1),
         )
         confidences = alignment["ssim"]
@@ -183,16 +183,18 @@ def _calc_rank(
     num_match: int = None,
 ):
     top_match = (confidences[0], offset_seconds[0])
-    confidences, offset_seconds = list(
-        zip(
-            *filter(
-                lambda x: abs(x[1] - top_match[1]) > 0.15,
-                zip(confidences, offset_seconds),
-            )
+    list_less_times = list(
+        filter(
+            lambda x: abs(x[1] - top_match[1]) > 0.15,
+            zip(confidences, offset_seconds),
         )
     )
+    if len(list_less_times) > 0:
+        confidences, _ = list(zip(*list_less_times))
+        second_match = confidences[1] if len(confidences) > 1 else 0
+    else:
+        second_match = 0
     top_match = top_match[0]
-    second_match = confidences[1] if len(confidences) > 1 else 0
     rank = [top_match > x[0] for x in top_match_tups]
     rank = top_match_tups[rank.index(True)][1]
     second_match_list = [second_match >= top_match * x[0] for x in rank_minus]
