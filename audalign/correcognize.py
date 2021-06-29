@@ -59,7 +59,7 @@ def correcognize(
     if max_lags is not None:
         max_lags = int(calc_spec_windows(max_lags, sample_rate, technique))
     if filter_matches is None:
-        filter_matches = 0.5
+        filter_matches = 0.0
     if locality is not None:
         locality = int(calc_spec_windows(locality, sample_rate, technique))
     if locality_filter_prop is None:
@@ -159,7 +159,7 @@ def correcognize_directory(
     if _file_audsegs is not None and filter_matches is None:
         filter_matches = 0.0
     elif filter_matches is None:
-        filter_matches = 0.5
+        filter_matches = 0.0
 
     sos = signal.butter(
         10, fingerprint.threshold, "highpass", fs=sample_rate, output="sos"
