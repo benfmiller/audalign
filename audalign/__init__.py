@@ -1243,10 +1243,21 @@ class Audalign:
         alignment: dict,
     ):
         """
-        Ranks alignments and recognitions,too
-        ranks each recognition on a scale of 1-10
+        Ranks alignments and recognitions.
+        Included as "rankings" in every recognition and alignment
+        Ranks each recognition on a scale of 1-10
+        Ranks are not proof of a good alignment, just a tool to gauge the different confidences and techniques
+
+
+        Args
+        ----
+            alignment (dict): result from either recognition or alignment
+
+        Returns
+        -------
+            dict: form similar to alignments or matches
+
         """
-        # TODO Docs
         return datalign.rank_alignment(alignment=alignment)
 
     @staticmethod
