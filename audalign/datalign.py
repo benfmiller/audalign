@@ -239,17 +239,6 @@ def _calc_rank(
     return rank
 
 
-def calc_technique(keys: dict.keys):
-    if "confidence" in keys and "scaling_factor" not in keys:
-        return "fingerprints"
-    elif "confidence" not in keys:
-        return "visual"
-    elif "offset_frames" in keys:
-        return "correlation_spectrogram"
-    else:
-        return "correlation"
-
-
 def speed_of_sound(degrees: int) -> int:
     """degrees in celcius"""
     return 331.3 + (degrees * 0.606)

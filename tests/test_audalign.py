@@ -148,6 +148,10 @@ class TestRemoveNoise:
             alt_noise_filepath="test_audio/testers/pink_noise.mp3",
         )
 
+        ad.Audalign.remove_noise_file(
+            self.test_file, 10, 20, tmpdir, write_extension="wav"
+        )
+
     @pytest.mark.xfail
     def test_remove_noise_bad_file(self):
         ad.Audalign.remove_noise_file(
