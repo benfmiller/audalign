@@ -239,6 +239,7 @@ def noise_remove_directory(
         noise_section=noise_data,
         destination_directory=destination_directory,
         prop_decrease=prop_decrease,
+        write_extension=write_extension,
         use_tensorflow=use_tensorflow,
         verbose=verbose,
         **kwargs,
