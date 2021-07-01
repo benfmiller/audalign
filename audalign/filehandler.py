@@ -39,7 +39,10 @@ def create_audiosegment(filepath: str, start_end: tuple = None, sample_rate=DEFA
         sample_rate = DEFAULT_FS
     if os.path.splitext(filepath)[1] in [".txt", ".json"]:
         raise CouldntDecodeError
-    audiofile = AudioSegment.from_file(filepath)
+    if len(filepath) > 0:
+        audiofile = AudioSegment.from_file(filepath)
+    else:
+        audiofile = AudioSegment.silent(duration=0, frame_rate=sample_rate)
     audiofile = audiofile.set_frame_rate(sample_rate)
     audiofile = audiofile.set_sample_width(2)
     audiofile = audiofile.set_channels(1)
@@ -317,6 +320,7 @@ def _remove_noise(
     except CouldntDecodeError:
         print(f"    Coudn't Decode {file_path}")
 
+
 def uniform_level_directory(
     directory: str,
     destination: str,
@@ -348,7 +352,7 @@ def uniform_level_directory(
 
         with multiprocessing.Pool(nprocesses) as pool:
 
-            pool.map(_uniform_level_, x[0] for x in find_files(directory))
+            pool.map(_uniform_level_, (x[0] for x in find_files(directory)))
 
             pool.close()
             pool.join()
@@ -369,6 +373,8 @@ def _uniform_level(
     try:
         print(f"Reducing noise: {file_path}")
         audiofile = create_audiosegment(file_path)
+
+        new_base = create_audiosegment("")
 
         # TODO: code goes here
 
