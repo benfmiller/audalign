@@ -34,7 +34,9 @@ def find_files(path, extensions=["*"]):
                 yield (p, extension)
 
 
-def create_audiosegment(filepath: str, start_end: tuple = None, sample_rate=DEFAULT_FS):
+def create_audiosegment(
+    filepath: str, start_end: tuple = None, sample_rate=DEFAULT_FS, length=None
+):
     if sample_rate is None:
         sample_rate = DEFAULT_FS
     if os.path.splitext(filepath)[1] in [".txt", ".json"]:
@@ -42,7 +44,10 @@ def create_audiosegment(filepath: str, start_end: tuple = None, sample_rate=DEFA
     if len(filepath) > 0:
         audiofile = AudioSegment.from_file(filepath)
     else:
-        audiofile = AudioSegment.silent(duration=0, frame_rate=sample_rate)
+        if length is None:
+            audiofile = AudioSegment.silent(duration=0, frame_rate=sample_rate)
+        else:
+            audiofile = AudioSegment.silent(duration=length, frame_rate=sample_rate)
     audiofile = audiofile.set_frame_rate(sample_rate)
     audiofile = audiofile.set_sample_width(2)
     audiofile = audiofile.set_channels(1)
@@ -321,6 +326,23 @@ def _remove_noise(
         print(f"    Coudn't Decode {file_path}")
 
 
+def calc_array_indexes(array, locality, overlap_ratio):
+    index_list = []
+    if locality > len(array):
+        index_list += [0]
+    else:
+        [
+            index_list.append(i)
+            for i in range(0, len(array) - int(locality), int(locality * overlap_ratio))
+        ]
+        if (
+            len(array) - int(locality) not in index_list
+            and len(array) - int(locality) > 0
+        ):
+            index_list.append(len(array) - int(locality))
+    return index_list
+
+
 def uniform_level_directory(
     directory: str,
     destination: str,
@@ -373,8 +395,11 @@ def _uniform_level(
     try:
         print(f"Reducing noise: {file_path}")
         audiofile = create_audiosegment(file_path)
-
-        new_base = create_audiosegment("")
+        new_base = create_audiosegment("", length=len(audiofile))
+        width *= 1000
+        if width > len(audiofile):
+            width = len(audiofile)
+        index_list = calc_array_indexes(audiofile, width, overlap_ratio)
 
         # TODO: code goes here
 
