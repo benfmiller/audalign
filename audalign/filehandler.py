@@ -183,7 +183,7 @@ def noise_remove(
             (noise_start * DEFAULT_FS) : (noise_end * DEFAULT_FS)
         ]
 
-    print("Reducing Noise")
+    print(f"Reducing noise: {filepath}")
     reduced_noise_data = noisereduce.reduce_noise(
         new_data,
         noisy_part,
@@ -317,22 +317,83 @@ def _remove_noise(
     except CouldntDecodeError:
         print(f"    Coudn't Decode {file_path}")
 
-
-def uniform_level_file():
-    # TODO
-    ...
-
-
 def uniform_level_directory(
-    filepath: str,
+    directory: str,
+    destination: str,
+    write_extension: str = None,
+    mode: str = "normalize",
+    width: float = 5,
+    overlap_ratio=0.5,
+    use_multiprocessing=False,
+    num_processes=None,
 ):
     # TODO
-    ...
+    _uniform_level_ = partial(
+        _uniform_level,
+        destination_directory=destination,
+        write_extension=write_extension,
+        mode=mode,
+        width=width,
+        overlap_ratio=overlap_ratio,
+    )
+
+    if use_multiprocessing == True:
+
+        try:
+            nprocesses = num_processes or multiprocessing.cpu_count()
+        except NotImplementedError:
+            nprocesses = 1
+        else:
+            nprocesses = 1 if nprocesses <= 0 else nprocesses
+
+        with multiprocessing.Pool(nprocesses) as pool:
+
+            pool.map(_uniform_level_, x[0] for x in find_files(directory))
+
+            pool.close()
+            pool.join()
+    else:
+        for i in (x[0] for x in find_files(directory)):
+            _uniform_level_(i)
 
 
-def _uniform_level():
+def _uniform_level(
+    file_path: str,
+    destination_directory: str,
+    write_extension: str = None,
+    mode: str = "normalize",
+    width: float = 5,
+    overlap_ratio=0.5,
+):
     # TODO
-    ...
+    try:
+        print(f"Reducing noise: {file_path}")
+        audiofile = create_audiosegment(file_path)
+
+        # TODO: code goes here
+
+        file_name = os.path.basename(file_path)
+        destination_name = os.path.join(destination_directory, file_name)
+        if os.path.splitext(destination_name)[1].lower() in cant_write_ext:
+            destination_name = os.path.splitext(destination_name)[0] + ".wav"
+
+        if write_extension is not None:
+            if write_extension[0] != ".":
+                write_extension = "." + write_extension
+            destination_name = os.path.splitext(destination_name)[0] + write_extension
+            print(f'Noise reduced for "{file_path}" writing to "{destination_name}"')
+            with open(destination_name, "wb") as file_place:
+                audiofile.export(
+                    file_place, format=os.path.splitext(destination_name)[1][1:]
+                )
+        else:
+            print(f'Noise reduced for "{file_path}" writing to "{destination_name}"')
+            with open(destination_name, "wb") as file_place:
+                audiofile.export(
+                    file_place, format=os.path.splitext(destination_name)[1][1:]
+                )
+    except CouldntDecodeError:
+        print(f"    Coudn't Decode {file_path}")
 
 
 def shift_get_files(results: dict, sample_rate: int = None):

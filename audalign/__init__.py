@@ -1248,7 +1248,6 @@ class Audalign:
         Ranks each recognition on a scale of 1-10
         Ranks are not proof of a good alignment, just a tool to gauge the different confidences and techniques
 
-
         Args
         ----
             alignment (dict): result from either recognition or alignment
@@ -1327,20 +1326,51 @@ class Audalign:
 
     @staticmethod
     def uniform_level_file(
-        filepath: str,
+        file_path: str,
+        destination: str,
+        write_extension: str = None,
+        mode: str = "normalize",
+        width: float = 5,
+        overlap_ratio=0.5,
     ):
-        """Not implemented yet"""
-        raise NotImplemented
+        """Not implemented yet
+
+        by average sound level and by peaks/normalization
         # TODO
-        # by average sound level and by peaks/normalization
+        """
+        filehandler._uniform_level(
+            file_path=file_path,
+            destination=destination,
+            write_extension=write_extension,
+            mode=mode,
+            width=width,
+            overlap_ratio=overlap_ratio,
+        )
 
     def uniform_level_directory(
         self,
-        filepath: str,
+        directory: str,
+        destination: str,
+        write_extension: str = None,
+        mode: str = "normalize",
+        width: float = 5,
+        overlap_ratio=0.5,
     ):
-        """Not implemented yet"""
-        raise NotImplemented
+        """Not implemented yet
+
+        by average sound level and by peaks/normalization
         # TODO
+        """
+        filehandler.uniform_level_directory(
+            directory=directory,
+            destination=destination,
+            write_extension=write_extension,
+            mode=mode,
+            width=width,
+            overlap_ratio=overlap_ratio,
+            use_multiprocessing=self.multiprocessing,
+            num_processes=self.num_processors,
+        )
 
     @staticmethod
     def remove_noise_file(
