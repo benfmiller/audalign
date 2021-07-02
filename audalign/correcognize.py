@@ -411,7 +411,9 @@ def calc_array_indexes(array, locality):
     else:
         [
             index_list.append(i)
-            for i in range(0, len(array) - int(locality), int(locality * OVERLAP_RATIO))
+            for i in range(
+                0, len(array) - int(locality), int(locality * (1 - OVERLAP_RATIO))
+            )
         ]
         if (
             len(array) - int(locality) not in index_list
