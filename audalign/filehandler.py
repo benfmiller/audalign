@@ -326,21 +326,40 @@ def _remove_noise(
         print(f"    Coudn't Decode {file_path}")
 
 
-def calc_array_indexes(array, locality, overlap_ratio):
+def calc_array_indexes(array_length, width, overlap_ratio):
     index_list = []
-    if locality > len(array):
+    if width > array_length:
         index_list += [0]
     else:
         [
             index_list.append(i)
-            for i in range(0, len(array) - int(locality), int(locality * overlap_ratio))
+            for i in range(
+                0, array_length - int(width), int(width * (1 - overlap_ratio))
+            )
         ]
         if (
-            len(array) - int(locality) not in index_list
-            and len(array) - int(locality) > 0
+            array_length - int(width) not in index_list
+            and array_length - int(width) > 0
         ):
-            index_list.append(len(array) - int(locality))
+            index_list.append(array_length - int(width))
+    print(np.max(index_list))
+    print(width)
+    print(array_length)
     return index_list
+
+
+def calc_overlap_array(length, index_list, width):
+    # TODO: width might be different that pydub width
+    # TODO: redo: float arithmetic isn't accurate enough
+    width = int(width / 1000 * DEFAULT_FS)
+    overlap_array = np.zeros(length, dtype=np.float32)
+    index_list = [int(x * DEFAULT_FS / 1000) for x in index_list]
+    print(np.max(index_list))
+    for index in index_list:
+        overlap_array[index : index + width] += 1
+        # for i in range(int(width)):
+        #     overlap_array[index + i] += 1
+    return overlap_array
 
 
 def uniform_level_directory(
@@ -393,15 +412,42 @@ def _uniform_level(
 ):
     # TODO
     try:
-        print(f"Reducing noise: {file_path}")
+        print(f"Uniform Leveling: {file_path}")
         audiofile = create_audiosegment(file_path)
-        new_base = create_audiosegment("", length=len(audiofile))
+        # new_base = create_audiosegment("", length=len(audiofile))
+        # new_array = np.zeros(len(audiofile) * DEFAULT_FS, dtype=np.int16)
         width *= 1000
         if width > len(audiofile):
             width = len(audiofile)
-        index_list = calc_array_indexes(audiofile, width, overlap_ratio)
+        print(f"from buffer is {len(np.frombuffer(audiofile._data, np.int16))}")
+        print(f"manual length is {int(len(audiofile._data) / audiofile.sample_width)}")
+        index_list = calc_array_indexes(
+            int(len(audiofile._data) / audiofile.sample_width / DEFAULT_FS * 1000),
+            width,
+            overlap_ratio,
+        )
+        overlap_array = calc_overlap_array(
+            int(len(audiofile._data) / audiofile.sample_width), index_list, width
+        )
+        print(np.max(overlap_array))
+        print(np.where(overlap_array == 0.0))
+        print(len(np.where(overlap_array == 0.0)[0]))
+        assert np.min(overlap_array) > 0
 
-        # TODO: code goes here
+        # TODO
+        # total_files = audsegs[0] - (3 * math.log(len(files_shifts), 2))
+        #
+        # data = np.frombuffer(audio_segment._data, np.int16)
+        #
+        # make sure overlap ratio < 0.8?
+        # create num_overlaps array, opportunity for optimization later
+        # create np array of correct length, int 32
+        # take slices
+        # normalize then average in the np array
+        # recreate audio segment
+        # audiofile._data = reduced_noise_data.astype(np.int16)
+
+        # print(len(audiofile._data))
 
         file_name = os.path.basename(file_path)
         destination_name = os.path.join(destination_directory, file_name)
