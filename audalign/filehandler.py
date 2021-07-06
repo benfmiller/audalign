@@ -349,11 +349,8 @@ def calc_array_indexes(array_length, width, overlap_ratio):
 
 
 def calc_overlap_array(length, index_list, width):
-    # TODO: width might be different that pydub width
-    # TODO: redo: float arithmetic isn't accurate enough
-    width = int(width / 1000 * DEFAULT_FS)
     overlap_array = np.zeros(length, dtype=np.float32)
-    index_list = [int(x * DEFAULT_FS / 1000) for x in index_list]
+    # index_list = [int(x * DEFAULT_FS / 1000) for x in index_list]
     print(np.max(index_list))
     for index in index_list:
         overlap_array[index : index + width] += 1
@@ -428,31 +425,28 @@ def _uniform_level(
             overlap_ratio,
         )
         overlap_array = calc_overlap_array(len(audiofile_data), index_list, width)
-        assert np.min(overlap_array) > 0
+        assert np.min(overlap_array) > 0  # remove later
         if mode == "normalize":
-            leveled_data = level_by_normalize(
+            audiofile._data = level_by_ave(
                 audiofile_data,
                 index_list,
                 overlap_array,
-            )
+            ).astype(np.int16)
         elif mode == "average":
-            leveled_data = level_by_ave(
+            audiofile._data = level_by_ave(
                 audiofile_data,
                 index_list,
                 overlap_array,
-            )
+            ).astype(np.int16)
         else:
             raise ValueError(
                 f'Mode must be either "normalize" or "average", not {mode}'
             )
 
-        leveled_data = _int16ify_data(leveled_data)  # might need
-        audiofile._data = leveled_data.astype(np.int16)
-
         # TODO
-        # print(np.max(overlap_array))
-        # print(np.where(overlap_array == 0.0))
-        # print(len(np.where(overlap_array == 0.0)[0]))
+        print(np.max(overlap_array))
+        print(np.where(overlap_array == 0.0))
+        print(len(np.where(overlap_array == 0.0)[0]))
         #
         # total_files = audsegs[0] - (3 * math.log(len(files_shifts), 2))
         #
@@ -476,13 +470,13 @@ def _uniform_level(
             if write_extension[0] != ".":
                 write_extension = "." + write_extension
             destination_name = os.path.splitext(destination_name)[0] + write_extension
-            print(f'Noise reduced for "{file_path}" writing to "{destination_name}"')
+            print(f'Uniform leveled for "{file_path}" writing to "{destination_name}"')
             with open(destination_name, "wb") as file_place:
                 audiofile.export(
                     file_place, format=os.path.splitext(destination_name)[1][1:]
                 )
         else:
-            print(f'Noise reduced for "{file_path}" writing to "{destination_name}"')
+            print(f'Uniform leveled for "{file_path}" writing to "{destination_name}"')
             with open(destination_name, "wb") as file_place:
                 audiofile.export(
                     file_place, format=os.path.splitext(destination_name)[1][1:]
@@ -496,7 +490,10 @@ def level_by_normalize(
     index_list,
     overlap_array,
 ):
-    ...
+    # TODO
+    new_audio_data = np.zeros(len(audiofile_data), dtype=np.float32)
+
+    return new_audio_data  # might need
 
 
 def level_by_ave(
@@ -504,7 +501,9 @@ def level_by_ave(
     index_list,
     overlap_array,
 ):
-    ...
+    # TODO
+    new_audio_data = np.zeros(len(audiofile_data), dtype=np.float32)
+    return new_audio_data
 
 
 def shift_get_files(results: dict, sample_rate: int = None):
