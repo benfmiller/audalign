@@ -36,7 +36,7 @@ def find_files(path, extensions=["*"]):
 
 def create_audiosegment(
     filepath: str, start_end: tuple = None, sample_rate=DEFAULT_FS, length=None
-):
+) -> AudioSegment:
     if sample_rate is None:
         sample_rate = DEFAULT_FS
     if os.path.splitext(filepath)[1] in [".txt", ".json"]:
@@ -497,17 +497,23 @@ def level_by_normalize(
     # TODO test
     new_audio_data = np.zeros(len(audiofile_data), dtype=np.float32)
     # window_arr = np.zeros(width, dtype=np.float32)
-    audiofile_data = audiofile_data.astype(np.float32)
-    audiofile_data += 32768
-    assert 0 not in audiofile_data
+    # audiofile_data = audiofile_data.astype(np.float32)
+    # audiofile_data += 32768
+    silent_audiosegment = create_audiosegment("", length=width / DEFAULT_FS * 1000)
+    # silent_audiosegment._data = np.zeros((0), dtype=np.int16)
+    # assert 0 not in audiofile_data
     for index in index_list:
-        new_audio_data[index : index + width] += audiofile_data[
-            index : index + width
-        ] / np.max(audiofile_data[index : index + width] * 65536)
-        # / overlap_array[index : index + width]
+        silent_audiosegment._data = audiofile_data[index : index + width]
+        silent_audiosegment = silent_audiosegment.normalize()
+        new_audio_data[index : index + width] += np.frombuffer(
+            silent_audiosegment._data, dtype=np.int16
+        )
 
-    audiofile_data /= overlap_array
-    audiofile_data -= 32768
+    new_audio_data /= overlap_array
+    # audiofile_data -= 32768
+    # print(np.min(new_audio_data))
+    # print(np.max(new_audio_data))
+    # print(np.average(new_audio_data))
     return new_audio_data
 
 
