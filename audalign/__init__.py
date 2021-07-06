@@ -1340,7 +1340,7 @@ class Audalign:
         """
         filehandler._uniform_level(
             file_path=file_path,
-            destination_directory=destination,
+            destination_name=destination,
             write_extension=write_extension,
             mode=mode,
             width=width,

@@ -372,7 +372,7 @@ def uniform_level_directory(
     # TODO
     _uniform_level_ = partial(
         _uniform_level,
-        destination_directory=destination,
+        destination_name=destination,
         write_extension=write_extension,
         mode=mode,
         width=width,
@@ -401,7 +401,7 @@ def uniform_level_directory(
 
 def _uniform_level(
     file_path: str,
-    destination_directory: str,
+    destination_name: str,
     write_extension: str = None,
     mode: str = "normalize",
     width: float = 5,
@@ -465,7 +465,8 @@ def _uniform_level(
 
         # TODO: make sure file writes work correctly
         file_name = os.path.basename(file_path)
-        destination_name = os.path.join(destination_directory, file_name)
+        if len(os.path.basename(destination_name)) == 0:
+            destination_name = os.path.join(destination_name, file_name)
         if os.path.splitext(destination_name)[1].lower() in cant_write_ext:
             destination_name = os.path.splitext(destination_name)[0] + ".wav"
 
