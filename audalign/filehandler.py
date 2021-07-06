@@ -366,6 +366,7 @@ def uniform_level_directory(
     mode: str = "normalize",
     width: float = 5,
     overlap_ratio=0.5,
+    exclude_min_db=-70,
     use_multiprocessing=False,
     num_processes=None,
 ):
@@ -377,6 +378,7 @@ def uniform_level_directory(
         mode=mode,
         width=width,
         overlap_ratio=overlap_ratio,
+        exclude_min_db=exclude_min_db,
     )
 
     if use_multiprocessing == True:
@@ -406,6 +408,7 @@ def _uniform_level(
     mode: str = "normalize",
     width: float = 5,
     overlap_ratio=0.5,
+    exclude_min_db=-70,
 ):
     # TODO
     assert overlap_ratio < 1 and overlap_ratio >= 0
@@ -433,6 +436,7 @@ def _uniform_level(
                 index_list,
                 overlap_array,
                 width,
+                exclude_min_db,
             ).astype(np.int16)
         elif mode == "average":
             audiofile._data = level_by_ave(
@@ -440,6 +444,7 @@ def _uniform_level(
                 index_list,
                 overlap_array,
                 width,
+                exclude_min_db,
             ).astype(np.int16)
         else:
             raise ValueError(
@@ -490,31 +495,21 @@ def _uniform_level(
 
 
 def level_by_normalize(
-    audiofile_data,
-    index_list,
-    overlap_array,
-    width,
+    audiofile_data, index_list, overlap_array, width, exclude_min_db
 ):
     # TODO test
     new_audio_data = np.zeros(len(audiofile_data), dtype=np.float32)
-    # window_arr = np.zeros(width, dtype=np.float32)
-    # audiofile_data = audiofile_data.astype(np.float32)
-    # audiofile_data += 32768
     silent_audiosegment = create_audiosegment("", length=width / DEFAULT_FS * 1000)
-    # silent_audiosegment._data = np.zeros((0), dtype=np.int16)
-    # assert 0 not in audiofile_data
     for index in index_list:
         silent_audiosegment._data = audiofile_data[index : index + width]
+        if silent_audiosegment.max_dBFS < exclude_min_db:
+            continue
         silent_audiosegment = silent_audiosegment.normalize()
         new_audio_data[index : index + width] += np.frombuffer(
             silent_audiosegment._data, dtype=np.int16
         )
 
     new_audio_data /= overlap_array
-    # audiofile_data -= 32768
-    # print(np.min(new_audio_data))
-    # print(np.max(new_audio_data))
-    # print(np.average(new_audio_data))
     return new_audio_data
 
 

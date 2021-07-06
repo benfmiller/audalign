@@ -1332,6 +1332,7 @@ class Audalign:
         mode: str = "normalize",
         width: float = 5,
         overlap_ratio=0.5,
+        exclude_min_db=-70,
     ):
         """Not implemented yet
 
@@ -1345,6 +1346,7 @@ class Audalign:
             mode=mode,
             width=width,
             overlap_ratio=overlap_ratio,
+            exclude_min_db=exclude_min_db,
         )
 
     def uniform_level_directory(
@@ -1355,6 +1357,7 @@ class Audalign:
         mode: str = "normalize",
         width: float = 5,
         overlap_ratio=0.5,
+        exclude_min_db=-70,
     ):
         """Not implemented yet
 
@@ -1368,6 +1371,7 @@ class Audalign:
             mode=mode,
             width=width,
             overlap_ratio=overlap_ratio,
+            exclude_min_db=exclude_min_db,
             use_multiprocessing=self.multiprocessing,
             num_processes=self.num_processors,
         )
