@@ -127,7 +127,6 @@ class TestUniformLevel:
     def test_uniform_level_dir(self, tmpdir):
         self.ada.uniform_level_directory(self.test_eig_folder, tmpdir)
 
-    @pytest.mark.skip(reason="Not implemented yet")
     def test_uniform_level_dir_average(self, tmpdir):
         self.ada.uniform_level_directory(self.test_eig_folder, tmpdir, mode="average")
 
@@ -137,7 +136,6 @@ class TestUniformLevel:
             self.test_eig, os.path.join(tmpdir, "whatever_file.mp3")
         )
 
-    @pytest.mark.skip(reason="Not implemented yet")
     def test_uniform_level_file_average(self, tmpdir):
         self.ada.uniform_level_file(self.test_eig, tmpdir, mode="average")
         self.ada.uniform_level_file(
