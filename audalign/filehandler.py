@@ -342,20 +342,13 @@ def calc_array_indexes(array_length, width, overlap_ratio):
             and array_length - int(width) > 0
         ):
             index_list.append(array_length - int(width))
-    # print(np.max(index_list))
-    # print(width)
-    # print(array_length)
     return index_list
 
 
 def calc_overlap_array(length, index_list, width):
     overlap_array = np.zeros(length, dtype=np.float32)
-    # index_list = [int(x * DEFAULT_FS / 1000) for x in index_list]
-    # print(np.max(index_list))
     for index in index_list:
         overlap_array[index : index + width] += 1
-        # for i in range(int(width)):
-        #     overlap_array[index + i] += 1
     return overlap_array
 
 
@@ -410,26 +403,20 @@ def _uniform_level(
     overlap_ratio=0.5,
     exclude_min_db=-70,
 ):
-    # TODO
     assert overlap_ratio < 1 and overlap_ratio >= 0
     try:
         print(f"Uniform Leveling: {file_path}")
         audiofile = create_audiosegment(file_path)
         audiofile_data = np.frombuffer(audiofile._data, np.int16)
-        # new_base = create_audiosegment("", length=len(audiofile))
-        # new_array = np.zeros(len(audiofile) * DEFAULT_FS, dtype=np.int16)
         width *= DEFAULT_FS
         if width > len(audiofile_data):
             width = len(audiofile_data)
-        # print(f"from buffer is {len(np.frombuffer(audiofile._data, np.int16))}")
-        # print(f"manual length is {int(len(audiofile._data) / audiofile.sample_width)}")
         index_list = calc_array_indexes(
             len(audiofile_data),
             width,
             overlap_ratio,
         )
         overlap_array = calc_overlap_array(len(audiofile_data), index_list, width)
-        # assert np.min(overlap_array) > 0  # remove later
         if mode == "normalize":
             audiofile._data = level_by_normalize(
                 audiofile_data,
@@ -451,24 +438,6 @@ def _uniform_level(
                 f'Mode must be either "normalize" or "average", not {mode}'
             )
 
-        # TODO
-        # print(np.max(overlap_array))
-        # print(np.where(overlap_array == 0.0))
-        # print(len(np.where(overlap_array == 0.0)[0]))
-        #
-        # total_files = audsegs[0] - (3 * math.log(len(files_shifts), 2))
-        #
-        # data = np.frombuffer(audio_segment._data, np.int16)
-        #
-        # make sure overlap ratio < 0.8?
-        # create num_overlaps array, opportunity for optimization later
-        # create np array of correct length, int 32
-        # take slices
-        # normalize then average in the np array
-        # recreate audio segment
-        # audiofile._data = reduced_noise_data.astype(np.int16)
-
-        # TODO: make sure file writes work correctly
         file_name = os.path.basename(file_path)
         if len(os.path.splitext(destination_name)[1]) == 0:
             destination_name = os.path.join(destination_name, file_name)
@@ -497,7 +466,6 @@ def _uniform_level(
 def level_by_normalize(
     audiofile_data, index_list, overlap_array, width, exclude_min_db
 ):
-    # TODO test
     new_audio_data = np.zeros(len(audiofile_data), dtype=np.float32)
     silent_audiosegment = create_audiosegment("", length=width / DEFAULT_FS * 1000)
     for index in index_list:
@@ -519,6 +487,7 @@ def level_by_ave(
     overlap_array,
     width,
 ):
+    raise NotImplementedError
     # TODO
     new_audio_data = np.zeros(len(audiofile_data), dtype=np.float32)
     return new_audio_data
