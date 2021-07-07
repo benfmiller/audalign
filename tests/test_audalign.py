@@ -1,5 +1,6 @@
 import audalign as ad
 import pytest
+import os
 
 
 def test_always_true():
@@ -115,6 +116,33 @@ class TestFilehandler:
     def test_write_shifted_file(self, tmpdir):
         ada = ad.Audalign()
         ada.write_shifted_file(self.test_file, tmpdir.join("place.mp3"), 5)
+
+
+class TestUniformLevel:
+    test_eig_folder = "test_audio/test_shifts/"
+    test_eig = "test_audio/test_shifts/Eigen-song-base.mp3"
+    test_eig20 = "test_audio/test_shifts/Eigen-20sec.mp3"
+    ada = ad.Audalign(num_processors=2)
+
+    def test_uniform_level_dir(self, tmpdir):
+        self.ada.uniform_level_directory(self.test_eig_folder, tmpdir)
+
+    @pytest.mark.skip(reason="Not implemented yet")
+    def test_uniform_level_dir_average(self, tmpdir):
+        self.ada.uniform_level_directory(self.test_eig_folder, tmpdir, mode="average")
+
+    def test_uniform_level_file(self, tmpdir):
+        self.ada.uniform_level_file(self.test_eig, tmpdir)
+        self.ada.uniform_level_file(
+            self.test_eig, os.path.join(tmpdir, "whatever_file.mp3")
+        )
+
+    @pytest.mark.skip(reason="Not implemented yet")
+    def test_uniform_level_file_average(self, tmpdir):
+        self.ada.uniform_level_file(self.test_eig, tmpdir, mode="average")
+        self.ada.uniform_level_file(
+            self.test_eig, os.path.join(tmpdir, "whatever_file.mp3"), mode="average"
+        )
 
 
 class TestRemoveNoise:

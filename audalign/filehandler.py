@@ -204,7 +204,7 @@ def noise_remove(
     reduced_noise_data = _int16ify_data(reduced_noise_data)
     audiofile._data = reduced_noise_data.astype(np.int16)
     # if you pass in a folder for destination
-    if len(os.path.basename(destination)) == 0:
+    if len(os.path.splitext(destination)[1]) == 0:
         destination = os.path.join(destination, os.path.basename(filepath))
     if write_extension is not None:
         if write_extension[0] != ".":
@@ -470,7 +470,7 @@ def _uniform_level(
 
         # TODO: make sure file writes work correctly
         file_name = os.path.basename(file_path)
-        if len(os.path.basename(destination_name)) == 0:
+        if len(os.path.splitext(destination_name)[1]) == 0:
             destination_name = os.path.join(destination_name, file_name)
         if os.path.splitext(destination_name)[1].lower() in cant_write_ext:
             destination_name = os.path.splitext(destination_name)[0] + ".wav"
