@@ -363,7 +363,6 @@ def uniform_level_directory(
     use_multiprocessing=False,
     num_processes=None,
 ):
-    # TODO
     _uniform_level_ = partial(
         _uniform_level,
         destination_name=destination,

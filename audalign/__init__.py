@@ -69,6 +69,7 @@ class Audalign:
         Accuracy settings are acheived by manipulations in fingerprinting variables.
 
         Args
+        ----
             arg1 (str): Optional file path to load json or pickle file of already fingerprinted files
             multiprocessing (bool): option to turn off multiprocessing
             num_processors (int): number of processors or threads to use for multiprocessing. Uses all if not given
@@ -96,7 +97,8 @@ class Audalign:
     def set_hash_style(self, hash_style: str) -> None:
         """Sets the hash style. Must be one of ["base", "panako", "panako_mod", "base_three"]
 
-        Args:
+        Args
+        ----
             hash_style (str): Method to use for hashing of fingerprints
         """
         if hash_style not in ["base", "panako", "panako_mod", "base_three"]:
@@ -121,6 +123,7 @@ class Audalign:
         Specific values for accuracy levels were chosen semi-arbitrarily from experimentation to give a few good options.
 
         Args
+        ----
             accuracy (int): which accuracy level: 1-4
         """
         accuracy = int(accuracy)
@@ -168,7 +171,8 @@ class Audalign:
     def set_freq_threshold(self, threshold: int) -> None:
         """Sets minimum frequency threshold for fingerprint
 
-        Args:
+        Args
+        ----
             threshold ([int]): [threshold]
         """
         self.freq_threshold = threshold
@@ -190,7 +194,8 @@ class Audalign:
     def set_multiprocessing(self, true_or_false: bool) -> None:
         """Sets to true for on or false for off
 
-        Args:
+        Args
+        ----
             true_or_false (bool): [true on or false off]
         """
         self.multiprocessing = true_or_false
@@ -202,7 +207,8 @@ class Audalign:
     def set_num_processors(self, num_processors: int) -> None:
         """Set to none to use all processors by default if multiprocessing is true
 
-        Args:
+        Args
+        ----
             num_processors (int): number of processors to use or None for all of them
         """
         self.num_processors = num_processors
@@ -215,7 +221,8 @@ class Audalign:
         """
         Serializes fingerprinted files to json or pickle file
 
-        Args:
+        Args
+        ----
             filename (str): file to load saved fingerprints from
         """
 
@@ -234,6 +241,7 @@ class Audalign:
         Loads/adds saved json or pickle file into current audalign object
 
         Args
+        ----
             filename (str): must be either json or pickle extension
 
         Returns
@@ -279,6 +287,7 @@ class Audalign:
         Fingerprints all files in given directory and all subdirectories
 
         Args
+        ----
             path (str): path to directory to be fingerprinted
             plot (boolean): if true, plots the peaks to be fingerprinted on a spectrogram
             extensions (list[str]): specify which extensions to fingerprint
@@ -316,6 +325,7 @@ class Audalign:
         Fingerprints all files in given directory and all subdirectories
 
         Args
+        ----
             path (str): path to directory to be fingerprinted
             plot (boolean): if true, plots the peaks to be fingerprinted on a spectrogram
             extensions (list[str]): specify which extensions to fingerprint
@@ -402,7 +412,8 @@ class Audalign:
         Fingerprints given file and adds to fingerprinted files
 
         Args
-            file_path (str): path to word to be fingerprinted
+        ----
+            file_path (str): path of file to be fingerprinted
             start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
             set_file_name (str): option to set file name manually rather than use file name in file_path
             plot (boolean): if true, plots the peaks to be fingerprinted on a spectrogram
@@ -437,7 +448,8 @@ class Audalign:
         Fingerprints given file and adds to fingerprinted files
 
         Args
-            file_path (str): path to word to be fingerprinted
+        ----
+            file_path (str): path to file to be fingerprinted
             start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
             set_file_name (str): option to set file name manually rather than use file name in file_path
             plot (boolean): if true, plots the peaks to be fingerprinted on a spectrogram
@@ -478,7 +490,8 @@ class Audalign:
         Locality option used to only return match results within certain second range
 
         Args
-            file_path (str): file path of target file to recognize
+        ----
+            file_path (str): file path of target file to recognize.
             filter_matches (int): filters all matches lower than given argument, 1 is recommended
             locality (float): filters matches to only count within locality. In seconds
             locality_filter_prop (int, float,optional): within each offset, filters locality tuples by proportion of highest confidence to tuple confidence
@@ -525,7 +538,8 @@ class Audalign:
     ):
         """Uses cross correlation on spectrograms to find alignment
 
-        Args:
+        Args
+        ----
             target_file_path (str): File to recognize
             against_file_path (str): File to recognize against
             start_end_target (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
@@ -539,7 +553,8 @@ class Audalign:
             plot (bool, optional): Plots. Defaults to False.
             kwargs: additional arguments for scipy.signal.find_peaks.
 
-        Returns:
+        Returns
+        -------
             dict: dictionary of recognition information
         """
         return correcognize.correcognize(
@@ -579,7 +594,8 @@ class Audalign:
         Faster than visrecognize or recognize and more useful for amplitude
         based alignments
 
-        Args:
+        Args
+        ----
             target_file_path (str): File to recognize
             against_file_path (str): File to recognize against
             start_end_target (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
@@ -593,7 +609,8 @@ class Audalign:
             plot (bool, optional): Plots. Defaults to False.
             kwargs: additional arguments for scipy.signal.find_peaks.
 
-        Returns:
+        Returns
+        -------
             dict: dictionary of recognition information
         """
         return correcognize.correcognize(
@@ -632,7 +649,8 @@ class Audalign:
         Uses multiprocessing if multiprocessing variable is set to true
         Uses audalign freq_threshold as well
 
-        Args:
+        Args
+        ----
             target_file_path (str): File to recognize.
             against_file_path (str): Recognize against.
             start_end_target (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
@@ -693,7 +711,8 @@ class Audalign:
         Faster than visrecognize or recognize and more useful for amplitude
         based alignments
 
-        Args:
+        Args
+        ----
             target_file_path (str): File to recognize
             against_directory (str): Directory to recognize against
             start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
@@ -707,7 +726,8 @@ class Audalign:
             _file_audsegs (dict, optional): For use with align.
             kwargs: additional arguments for scipy.signal.find_peaks.
 
-        Returns:
+        Returns
+        -------
             dict: dictionary of recognition information
         """
         return correcognize.correcognize_directory(
@@ -745,7 +765,8 @@ class Audalign:
     ):
         """Uses cross correlation on spectrogram to find alignment
 
-        Args:
+        Args
+        ----
             target_file_path (str): File to recognize
             against_directory (str): Directory to recognize against
             start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
@@ -759,7 +780,8 @@ class Audalign:
             _file_audsegs (dict, optional): For use with align.
             kwargs: additional arguments for scipy.signal.find_peaks.
 
-        Returns:
+        Returns
+        -------
             dict: dictionary of recognition information
         """
         return correcognize.correcognize_directory(
@@ -799,7 +821,8 @@ class Audalign:
         Uses multiprocessing if multiprocessing variable is set to true
         Uses audalign freq_threshold as well
 
-        Args:
+        Args
+        ----
             target_file_path (str): File to recognize.
             against_directory (str): Recognize against all files in directory.
             start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
@@ -848,6 +871,7 @@ class Audalign:
         writes given file to the destination file after processing for fingerprinting
 
         Args
+        ----
             file_path (str): file path of audio file
             destination_file (str): file path and name to write file to
             start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
@@ -871,6 +895,7 @@ class Audalign:
         Plots the file_path's peak chart
 
         Args
+        ----
             file_path (str): file to plot
             start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
 
@@ -885,6 +910,7 @@ class Audalign:
         Resets audalign object to brand new state
 
         Args
+        ----
             None
 
         Returns
@@ -922,7 +948,8 @@ class Audalign:
         aligns them, and writes them to destination_path if given. Uses fingerprinting by defualt,
         but uses visual recognition if false
 
-        Args:
+        Args
+        ----
             target_file (str): File to find alignments against
             directory_path (str): Directory to align against
             destination_path (str, optional): Directory to write alignments to
@@ -943,7 +970,8 @@ class Audalign:
             max_lags (float, optional): Maximum lags in seconds for correlation.
             kwargs: additional arguments for scipy.signal.find_peaks
 
-        Returns:
+        Returns
+        -------
             dict: dict of file name with shift as value along with match info
         """
 
@@ -1000,6 +1028,7 @@ class Audalign:
         try align_files(*filepath_list) for more concision if desired
 
         Args
+        ----
             filename_a (str): String of path for alignment
             filename_b (str): String of path for alignment
             *filenames (strs): strings of paths for alignment
@@ -1072,6 +1101,7 @@ class Audalign:
         Finds matches and relative offsets for all files in directory_path, aligns them, and writes them to destination_path
 
         Args
+        ----
             directory_path (str): String of directory for alignment
             destination_path (str): String of path to write alignments to
             write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
@@ -1142,6 +1172,7 @@ class Audalign:
         Finds matches and relative offsets for all files in directory_path, aligns them, and writes them to destination_path
 
         Args
+        ----
             results (dict): results from previous alignments.
             directory_path (str): String of directory for alignment
             destination_path (str): String of path to write alignments to
@@ -1270,6 +1301,7 @@ class Audalign:
         Writes files to destination_path with specified shift
 
         Args
+        ----
             files_shifts (dict{float}): dict with file path as key and shift as value
             destination_path (str): folder to write file to
             names_and_paths (dict{str}): dict with name as key and path as value
@@ -1284,10 +1316,12 @@ class Audalign:
 
         if file_path is not a valid file or is a directory, returns empty dict
 
-        Args:
+        Args
+        ----
             file_path (str): file path to file
 
-        Returns:
+        Returns
+        -------
             dict: dict of tags and values
         """
         return mediainfo(filepath=file_path)
@@ -1300,6 +1334,7 @@ class Audalign:
         Writes file to destination_path with specified shift in seconds
 
         Args
+        ----
             file_path (str): file path of file to shift
             destination_path (str): where to write file to and file name
             offset_seconds (float): how many seconds to shift, can't be negative
@@ -1316,6 +1351,7 @@ class Audalign:
         Convert audio file to type specified in destination path
 
         Args
+        ----
             file_path (str): file path of file to shift
             destination_path (str): where to write file to and file name
             start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
@@ -1331,13 +1367,30 @@ class Audalign:
         write_extension: str = None,
         mode: str = "normalize",
         width: float = 5,
-        overlap_ratio=0.5,
-        exclude_min_db=-70,
-    ):
-        """Not implemented yet
+        overlap_ratio: float = 0.5,
+        exclude_min_db: float = -70,
+    ) -> None:
+        """
+        Levels the file using either of two methods: normalize or average.
+        "normalize" levels the file by peak volume while "average" levels by average volume.
 
-        by average sound level and by peaks/normalization
-        # TODO
+        This function pairs well with remove_noise. Leveling brings sound events up in volume
+        so they influence alignments. Removing noise cancels noise that might have been boosted
+        by the leveling.
+
+        Args
+        ----
+            file_path (str): path of file to level.
+            destination (str): path of destination to write to. directory or file name.
+            write_extension (str, optional): extention/format for writing.
+            mode (str): either "normalize" or "average".
+            width (float): width in seconds for each leveling.
+            overlap_ratio (float): between 1 and 0. overlapping windows.
+            exclude_min_db (float): less than 0. Doesn't level window with max dBFS lower than this.
+
+        Returns
+        -------
+            None
         """
         filehandler._uniform_level(
             file_path=file_path,
@@ -1356,13 +1409,30 @@ class Audalign:
         write_extension: str = None,
         mode: str = "normalize",
         width: float = 5,
-        overlap_ratio=0.5,
-        exclude_min_db=-70,
-    ):
-        """Not implemented yet
+        overlap_ratio: float = 0.5,
+        exclude_min_db: float = -70,
+    ) -> None:
+        """
+        Levels the file using either of two methods: normalize or average.
+        "normalize" levels the file by peak volume while "average" levels by average volume.
 
-        by average sound level and by peaks/normalization
-        # TODO
+        This function pairs well with remove_noise. Leveling brings sound events up in volume
+        so they influence alignments. Removing noise cancels noise that might have been boosted
+        by the leveling.
+
+        Args
+        ----
+            file_path (str): path of file to level.
+            destination (str): path of destination to write to. directory or file name.
+            write_extension (str, optional): extention/format for writing.
+            mode (str): either "normalize" or "average".
+            width (float): width in seconds for each leveling.
+            overlap_ratio (float): between 1 and 0. overlapping windows.
+            exclude_min_db (float): less than 0. Doesn't level window with max dBFS lower than this.
+
+        Returns
+        -------
+            None
         """
         filehandler.uniform_level_directory(
             directory=directory,
@@ -1391,7 +1461,8 @@ class Audalign:
     ):
         """Remove noise from audio file by specifying start and end seconds of representative sound sections. Writes file to destination
 
-        Args:
+        Args
+        ----
             filepath (str): filepath to read audio file
             noise_start (float): positition in seconds of start of noise section
             noise_end (float): position in seconds of end of noise section
@@ -1432,7 +1503,8 @@ class Audalign:
         """Remove noise from audio files in directory by specifying start and end seconds of representative sound sections. Writes file to destination directory
         Uses multiprocessing if self.multiprocessing is true
 
-        Args:
+        Args
+        ----
             directory (str): filepath for directory to quiet
             nosie_filepath (str): filepath to read noise file
             noise_start (float): positition in seconds of start of noise section
