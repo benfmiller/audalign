@@ -437,6 +437,7 @@ def _uniform_level(
             raise ValueError(
                 f'Mode must be either "normalize" or "average", not {mode}'
             )
+        audiofile = audiofile.normalize()
 
         file_name = os.path.basename(file_path)
         if len(os.path.splitext(destination_name)[1]) == 0:
