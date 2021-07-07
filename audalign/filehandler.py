@@ -476,20 +476,31 @@ def level_by_normalize(
         new_audio_data[index : index + width] += np.frombuffer(
             silent_audiosegment._data, dtype=np.int16
         )
-
     new_audio_data /= overlap_array
     return new_audio_data
 
 
-def level_by_ave(
-    audiofile_data,
-    index_list,
-    overlap_array,
-    width,
-):
-    raise NotImplementedError
-    # TODO
+def level_by_ave(audiofile_data, index_list, overlap_array, width, exclude_min_db):
     new_audio_data = np.zeros(len(audiofile_data), dtype=np.float32)
+    audiosegment_slicer = create_audiosegment("", length=width / DEFAULT_FS * 1000)
+    average_level_list = []
+
+    for index in index_list:
+        audiosegment_slicer._data = audiofile_data[index : index + width]
+        if audiosegment_slicer.max_dBFS < exclude_min_db:
+            continue
+        average_level_list.append(
+            (index, audiosegment_slicer.dBFS, audiosegment_slicer.max_dBFS)
+        )
+    target_ave = max(average_level_list, key=lambda x: x[2] - x[1])
+    target_ave = target_ave[2] - target_ave[1]
+    for index, ave_db, _ in average_level_list:
+        audiosegment_slicer._data = audiofile_data[index : index + width]
+        audiosegment_slicer = audiosegment_slicer + (-ave_db - target_ave)
+        new_audio_data[index : index + width] += np.frombuffer(
+            audiosegment_slicer._data, dtype=np.int16
+        )
+    new_audio_data /= overlap_array
     return new_audio_data
 
 
