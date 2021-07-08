@@ -10,13 +10,15 @@ All fingerprints are stored in memory and must be saved to disk with the save_fi
 
 Regular file recogniton can also be done with Audalign similar to dejavu but held in memory.
 
+"rankings" key is included in each alignment and recognition result. This helps determine the strength of the alignment but is not definitive proof. Values range from 1-10.
+
 For more details on implementation and results, see the [wiki!!](https://github.com/benfmiller/audalign/wiki)
 
 ---
 
 This package is primarirly focused on accuracy of alignments and has several accuracy settings. Parameters for visual alignment can be adjusted. Fingerprinting parameters can be generally set to get consistent results, but visual alignment requires case by case adjustment. Parameters for correlation are focused on sample rate or scipy's find_peaks.
 
-[Noisereduce](https://timsainburg.com/noise-reduction-python.html) is very useful for this application and a wrapper is implemented for ease of use.
+[Noisereduce](https://timsainburg.com/noise-reduction-python.html) is very useful for this application and a wrapper is implemented for ease of use. Uniformly leveling prior to noise reduction using uniform_level_file boosts quiet but important sound features.
 
 ## Installation
 
@@ -182,6 +184,13 @@ ada.remove_noise_directory(
     "20", # noise end in seconds
     "destination/directory",
     prop_decrease="0.5", # If you want noise half reduced
+)
+
+ada.uniform_level_file(
+    "target/file",
+    "destination",
+    mode="normalize",
+    width=5,
 )
 
 ada.plot("file.wav") # Plots spectrogram with peaks overlaid
