@@ -10,7 +10,7 @@ from audalign.fingerprint import DEFAULT_FS
 import noisereduce
 from functools import partial
 
-cant_write_ext = [".mov", ".mp4"]
+cant_write_ext = [".mov", ".mp4", ".m4a"]
 cant_read_ext = [".txt", ".md", ".pkf", ".py", ".pyc"]
 
 
