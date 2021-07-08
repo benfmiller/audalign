@@ -544,7 +544,7 @@ class Audalign:
             against_file_path (str): File to recognize against
             start_end_target (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
             start_end_against (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
-            filter_matches (float, optional): Filters based on confidence. Ranges between 0 and 1. Defaults to 0.5.
+            filter_matches (float, optional): Filters based on confidence. Ranges between 0 and 1. Defaults to 0.0.
             match_len_filter (int, optional): Limits number of matches returned. Defaults to 30.
             locality (float): filters matches to only count within locality. In seconds
             locality_filter_prop (int, float,optional): within each offset, filters locality tuples by proportion of highest confidence to tuple confidence
@@ -600,7 +600,7 @@ class Audalign:
             against_file_path (str): File to recognize against
             start_end_target (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
             start_end_against (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
-            filter_matches (float, optional): Filters based on confidence. Ranges between 0 and 1. Defaults to 0.5.
+            filter_matches (float, optional): Filters based on confidence. Ranges between 0 and 1. Defaults to 0.0.
             match_len_filter (int, optional): Limits number of matches returned. Defaults to 30.
             locality (float): filters matches to only count within locality. In seconds
             locality_filter_prop (int, float,optional): within each offset, filters locality tuples by proportion of highest confidence to tuple confidence
@@ -770,7 +770,7 @@ class Audalign:
             target_file_path (str): File to recognize
             against_directory (str): Directory to recognize against
             start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
-            filter_matches (float, optional): Filters based on confidence. Ranges between 0 and 1. Defaults to 0.5.
+            filter_matches (float, optional): Filters based on confidence. Ranges between 0 and 1. Defaults to 0.0.
             match_len_filter (int, optional): Limits number of matches returned. Defaults to 30.
             locality (float): filters matches to only count within locality. In seconds
             locality_filter_prop (int, float,optional): within each offset, filters locality tuples by proportion of highest confidence to tuple confidence
@@ -957,7 +957,7 @@ class Audalign:
             write_extension (str, optional): audio file format to write to. Defaults to None.
             technique (str, optional): options are "fingerprints", "visual", "correlation_spectrogram", "correlation"
             strength_stat (str, optional): confidence for fingerprints, ssim for visual, mse or count also work for visual. Defaults to None.
-            filter_matches (int, float, optional): filter matches level for fingerprinting. Defaults to 1.
+            filter_matches (int, float, optional): filters matches for each technique, look at each recognition method for default.
             locality (float, optional): In seconds for fingerprints, only matches files within given window sizes
             locality_filter_prop (int, float, optional): within each offset, filters locality tuples by proportion of highest confidence to tuple confidence
             volume_threshold (float, optional): volume threshold for visual recognition. Defaults to 216.
@@ -1035,7 +1035,7 @@ class Audalign:
             destination_path (str): String of path to write alignments to
             write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
             technique (str): either "fingerprints", "visual", "correlation_spectrogram", or "correlation"
-            filter_matches (float): filters based on confidence.
+            filter_matches (int, float, optional): filters matches for each technique, look at each recognition method for default.
             locality (float): Only recognizes against fingerprints in given width. In seconds
             locality_filter_prop (int, float,optional): within each offset, filters locality tuples by proportion of highest confidence to tuple confidence
             cor_sample_rate (int): Sampling rate for correlation
@@ -1106,7 +1106,7 @@ class Audalign:
             destination_path (str): String of path to write alignments to
             write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
             technique (str): either "fingerprints", "visual", "correlation_spectrogram", or "correlation"
-            filter_matches (float): filters based on confidence.
+            filter_matches (int, float, optional): filters matches for each technique, look at each recognition method for default.
             locality (float): Only recognizes against fingerprints in given width. In seconds
             locality_filter_prop (int, float,optional): within each offset, filters locality tuples by proportion of highest confidence to tuple confidence
             cor_sample_rate (int): Sampling rate for correlation
@@ -1178,7 +1178,7 @@ class Audalign:
             destination_path (str): String of path to write alignments to
             write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
             technique (str): either "fingerprints", "visual", "correlation_spectrogram", or "correlation"
-            filter_matches (float): filters based on confidence.
+            filter_matches (int, float, optional): filters matches for each technique, look at each recognition method for default.
             max_lags (float, optional): Maximum lags in seconds for correlation.
             locality (float): Only recognizes against fingerprints in given width. In seconds
             locality_filter_prop (int, float,optional): within each offset, filters locality tuples by proportion of highest confidence to tuple confidence
