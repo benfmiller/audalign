@@ -143,27 +143,16 @@ def read(
 
 
 def _floatify_data(audio_segment: AudioSegment):
-    data = np.frombuffer(audio_segment._data, np.int16)
-    new_data = np.zeros(len(data))
-    for i in range(len(data)):
-        if data[i] < 0:
-            new_data[i] = float(data[i]) / 32768
-        elif data[i] == 0:
-            new_data[i] = 0.0
-        if data[i] > 0:
-            new_data[i] = float(data[i]) / 32767
-    return new_data
+    data = np.frombuffer(audio_segment._data, np.int16).astype(np.float32)
+    data[np.where(data < 0)] /= 32768
+    data[np.where(data > 0)] /= 32767
+    return data
 
 
 def _int16ify_data(data: array):
-    for i in range(len(data)):
-        if data[i] < 0:
-            data[i] = int(data[i] * 32768)
-        elif data[i] == 0:
-            data[i] = int(0)
-        else:
-            data[i] = int(data[i] * 32767)
-    return data
+    data[np.where(data < 0)] *= 32768
+    data[np.where(data > 0)] *= 32767
+    return data.astype(np.int16)
 
 
 def noise_remove(
@@ -201,8 +190,7 @@ def noise_remove(
         **kwargs,
     )
 
-    reduced_noise_data = _int16ify_data(reduced_noise_data)
-    audiofile._data = reduced_noise_data.astype(np.int16)
+    audiofile._data = _int16ify_data(reduced_noise_data)
     # if you pass in a folder for destination
     if len(os.path.splitext(destination)[1]) == 0:
         destination = os.path.join(destination, os.path.basename(filepath))
@@ -298,8 +286,7 @@ def _remove_noise(
             **kwargs,
         )
 
-        reduced_noise_data = _int16ify_data(reduced_noise_data)
-        audiofile._data = reduced_noise_data.astype(np.int16)
+        audiofile._data = _int16ify_data(reduced_noise_data)
 
         file_name = os.path.basename(file_path)
         destination_name = os.path.join(destination_directory, file_name)
