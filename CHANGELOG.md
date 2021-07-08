@@ -1,5 +1,27 @@
 # Change Log
 
+## [0.6.0] 2021 - 07 - 07
+
+### Added
+
+- rank alignment added to all recognitions and alignments
+- rank alignment function
+- noise remove write extention
+- noise remove destination directory support
+- can't read ext in writes, so unsupported file types are written to wavs
+
+### Changed
+
+- raises error if destination directory doesn't exist at the start of alignments
+- noise remove is prettier
+- correcognize and correcognize spectrogram filter_matches defaults to 0
+- updated docstrings
+
+### Fixed
+
+- inverted overlap ratio calculator
+- Fixed bug with no results in correcognizes and visrecognize
+
 ## [0.5.2] 2021 - 06 - 22
 
 ### Fixed
