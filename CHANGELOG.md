@@ -1,5 +1,15 @@
 # Change Log
 
+## [0.6.1] 2021 - 07 - 13
+
+### Changed
+
+- sped up remove noise by about 80%
+
+### Fixed
+
+- doesn't try to write m4a's
+
 ## [0.6.0] 2021 - 07 - 07
 
 ### Added
