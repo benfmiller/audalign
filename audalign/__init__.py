@@ -3,6 +3,7 @@ import multiprocessing
 import os
 import pickle
 from functools import partial, wraps
+from pprint import PrettyPrinter
 
 from pydub.utils import mediainfo
 
@@ -1291,6 +1292,162 @@ class Audalign:
         return datalign.rank_alignment(alignment=alignment)
 
     @staticmethod
+    def pretty_print_results(results, match_keys="both"):
+        """
+        nifty printer for recognition or alignment results
+        match_keys goes to pretty_print_alignment
+
+        Args
+        ----
+            results (dict): result from recognition or alignment
+            match_keys (str): "both", "match_info", or "fine_match_info"
+
+        Returns
+        -------
+            None
+        """
+        if results:
+            if "names_and_paths" not in results:
+                Audalign.pretty_print_recognition(results)
+            else:
+                Audalign.pretty_print_alignment(results, match_keys=match_keys)
+        else:
+            print("No Matches Found")
+
+    @staticmethod
+    def pretty_print_recognition(results):
+        """
+        nifty printer for recognition results
+
+        Args
+        ----
+            results (dict): result from recognition
+
+        Returns
+        -------
+            None
+        """
+        if results:
+            for audio_file in results["match_info"].keys():
+                print(f"\n{audio_file}")
+                for section, info in results["match_info"][audio_file].items():
+                    if type(info) == type([]):
+                        if section == "mse":
+                            continue
+                        elif (
+                            section == "locality_seconds"
+                            or section == "locality_frames"
+                            or section == "locality_samples"
+                        ):
+                            for num, i in enumerate(info):
+                                if i is None or i[0] is None:
+                                    break
+                                if num > 9:
+                                    break
+                                if i is not None and i[0] is not None:
+                                    print(f"[{i[0]}, len{len(i)} : ", end="")
+                                else:
+                                    print("None : ", end="")
+                                print("\b\b\b]")
+                            continue
+                        else:
+                            print(f"{section}, {info[0:10]}")
+                        if info[0]:
+                            print(f'max "{section}" is {max(info)}: min is {min(info)}')
+                    else:
+                        print(f"{section}, {info}")
+            print(f"\nMatch time: {results.get('match_time')}")
+            print()
+            PrettyPrinter().pprint(results["rankings"])
+        else:
+            print("No Matches Found")
+
+    @staticmethod
+    def pretty_print_alignment(results, match_keys="both"):
+        """
+        nifty printer for alignment results
+        if match_keys is both, prints "match_info" and "fine_match_info" if present
+
+        Args
+        ----
+            results (dict): result from alignment
+            match_keys (str): "both", "match_info", or "fine_match_info"
+
+        Returns
+        -------
+            None
+        """
+        if results:
+            if match_keys == "both":
+                match_keys = ["match_info"]
+                if results.get("fine_match_info") is not None:
+                    match_keys += ["fine_match_info"]
+            else:
+                match_keys = [match_keys]
+            for match_key in match_keys:
+                print(f'\n    Key: "{match_key}"')
+                for audio_file in results.get(match_key).keys():
+                    print(f"\n{audio_file}")
+                    for matched_audio_file in results[match_key][audio_file][
+                        "match_info"
+                    ].keys():
+                        print(f"\nmatched with {matched_audio_file}")
+                        for section, info in results[match_key][audio_file][
+                            "match_info"
+                        ][matched_audio_file].items():
+                            if section in [
+                                "locality_frames",
+                                "offset_frames",
+                                "locality_samples",
+                                "offset_samples",
+                            ]:
+                                pass
+                            elif type(info) == type([]):
+                                if section == "mse":
+                                    continue
+                                elif section == "locality_seconds":
+                                    print(f"{section}, [", end="")
+                                    for num, i in enumerate(info):
+                                        if num > 9:
+                                            break
+                                        if i is not None:
+                                            print(f"{i[0]} {len(i)} : ", end="")
+                                        else:
+                                            print("None : ", end="")
+                                    print("]")
+                                    continue
+                                if info is None or info[0] is None:
+                                    continue
+                                print(
+                                    # f"{section}, {info[0:10]}"
+                                    f"{section}: {info[0:10] if len(info) > 9 else info}"
+                                )
+                                print(
+                                    f'max "{section}" is {max(info)}: min is {min(info)}'
+                                )
+                            else:
+                                print(f"{section}, {info}")
+            for match in results.keys():
+                if match not in [
+                    "match_info",
+                    "fine_match_info",
+                    "names_and_paths",
+                    "rankings",
+                ]:
+                    print(f"{match} : {results[match]}")
+            print()
+            PrettyPrinter().pprint(results["rankings"])
+        else:
+            print("No Matches Found")
+        print()
+
+    @staticmethod
+    def recalc_shifts(results: dict, key="match_info", index=0):
+        # TODO
+        # like the recalc in fine_align, only lets us choose to use fine_match_info or regular match_info
+        raise NotImplementedError
+
+    @staticmethod
     def _write_shifted_files(
         files_shifts: dict,
         destination_path: str,
@@ -1340,6 +1497,11 @@ class Audalign:
             offset_seconds (float): how many seconds to shift, can't be negative
         """
         filehandler.shift_write_file(file_path, destination_path, offset_seconds)
+
+    @staticmethod
+    def write_shifts_from_results(results, read_from_dir, destination_dir):
+        # TODO
+        raise NotImplementedError
 
     @staticmethod
     def convert_audio_file(
