@@ -1427,6 +1427,7 @@ class Audalign:
                                 )
                             else:
                                 print(f"{section}, {info}")
+            print()
             for match in results.keys():
                 if match not in [
                     "match_info",
