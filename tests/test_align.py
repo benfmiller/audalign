@@ -20,6 +20,7 @@ class TestAlign:
             write_extension=".wav",
         )
         assert result
+        self.ada.pretty_print_alignment(result)
 
     def test_align_cor(self, tmpdir):
         result = self.ada.align(
@@ -39,6 +40,7 @@ class TestAlign:
             locality=30,
         )
         assert result
+        self.ada.pretty_print_alignment(result, match_keys="match_info")
 
     def test_align_cor_spec(self, tmpdir):
         result = self.ada.align(
@@ -47,6 +49,7 @@ class TestAlign:
             technique="correlation_spectrogram",
         )
         assert result
+        self.ada.pretty_print_alignment(result)
 
     def test_align_cor_spec_options(self, tmpdir):
         result = self.ada.align(
@@ -71,6 +74,7 @@ class TestAlign:
             max_lags=10,
         )
         assert result is not None
+        self.ada.pretty_print_alignment(result)
         self.ada.set_multiprocessing(True)
 
     def test_align_vis(self, tmpdir):
@@ -263,6 +267,7 @@ class TestFineAlign:
             locality=10,
         )
         assert result is not None
+        self.ada.pretty_print_alignment(result, match_keys="match_info")
 
     def test_fine_align_fingerprints(self, tmpdir):
         result = self.ada.fine_align(
@@ -273,6 +278,7 @@ class TestFineAlign:
             locality_filter_prop=0.5,
         )
         assert result is not None
+        self.ada.pretty_print_alignment(result, match_keys="match_info")
 
     def test_fine_align_visual(self, tmpdir):
         result = self.ada.fine_align(
@@ -293,6 +299,7 @@ class TestFineAlign:
         )
         assert result is not None
         self.ada.set_multiprocessing(True)
+        self.ada.pretty_print_alignment(result, match_keys="fine_match_info")
 
     def test_fine_align_options(self, tmpdir):
         result = self.ada.fine_align(
@@ -305,3 +312,4 @@ class TestFineAlign:
             filter_matches=0.1,
         )
         assert result is not None
+        self.ada.pretty_print_alignment(result)
