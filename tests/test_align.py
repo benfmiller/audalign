@@ -20,7 +20,7 @@ class TestAlign:
             write_extension=".wav",
         )
         assert result
-        self.ada.pretty_print_alignment(result)
+        self.ada.pretty_print_results(result)
 
     def test_align_cor(self, tmpdir):
         result = self.ada.align(
@@ -312,4 +312,4 @@ class TestFineAlign:
             filter_matches=0.1,
         )
         assert result is not None
-        self.ada.pretty_print_alignment(result)
+        self.ada.pretty_print_results(result)

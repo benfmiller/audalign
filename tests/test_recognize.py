@@ -127,6 +127,7 @@ class TestRecognize:
 
         result = self.ada.recognize(test_file, locality=10)
         assert len(result) > 1
+        self.ada.pretty_print_recognition(result)
 
     # @pytest.mark.skip(reason="not working for some reason")
     def test_recognize_locality_max_lags(self):
@@ -278,6 +279,7 @@ class TestRecognize:
             test_file_eig2,
         )
         assert results
+        self.ada.pretty_print_results(results)
 
     def test_correcognize_spectrogram_locality(self):
         results = self.ada.correcognize_spectrogram(
