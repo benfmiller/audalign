@@ -376,6 +376,10 @@ def calc_final_alignments(
         max_shift = max(files_shifts.values())
         for name in files_shifts.keys():
             files_shifts[name] = max_shift - files_shifts[name]
+    else:
+        min_shift = min(files_shifts.values())
+        for name in files_shifts.keys():
+            files_shifts[name] = files_shifts[name] - min_shift
 
     if destination_path:
         try:
@@ -515,7 +519,6 @@ def recalc_shifts_index(
     strength_stat: str = None,
     fine_strength_stat=None,
 ) -> dict:
-    # TODO only_fine_match_info key if they want only the finematch info alignment
     if key is None:
         if "fine_match_info" in results:
             key = "fine_match_info"
@@ -543,6 +546,10 @@ def recalc_shifts_index(
         max_shift = max(files_shifts.values())
         for name in files_shifts.keys():
             files_shifts[name] = max_shift - files_shifts[name]
+    else:
+        min_shift = min(files_shifts.values())
+        for name in files_shifts.keys():
+            files_shifts[name] = files_shifts[name] - min_shift
     for name in files_shifts.keys():
         results[name] = files_shifts[name]
 
