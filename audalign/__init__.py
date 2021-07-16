@@ -1218,7 +1218,10 @@ class Audalign:
 
         if match_index != 0:
             recalc_shifts_results = align.recalc_shifts_index(
-                results, strength_stat=strength_stat, match_index=match_index
+                results,
+                key="match_info",
+                match_index=match_index,
+                strength_stat=strength_stat,
             )
             paths_audio = filehandler.shift_get_files(
                 recalc_shifts_results, sample_rate=cor_sample_rate
@@ -1443,10 +1446,24 @@ class Audalign:
         print()
 
     @staticmethod
-    def recalc_shifts(results: dict, key="match_info", index=0):
+    def recalc_shifts(
+        results: dict,
+        key=None,
+        match_index=0,
+        fine_match_index=0,
+        strength_stat=None,
+        fine_strength_stat=None,
+    ):
         # TODO
         # like the recalc in fine_align, only lets us choose to use fine_match_info or regular match_info
-        raise NotImplementedError
+        return align.recalc_shifts_index(
+            results,
+            key=key,
+            match_index=match_index,
+            fine_match_index=fine_match_index,
+            strength_stat=strength_stat,
+            fine_strength_stat=fine_strength_stat,
+        )
 
     @staticmethod
     def _write_shifted_files(
@@ -1503,6 +1520,20 @@ class Audalign:
     def write_shifts_from_results(results, read_from_dir, destination_dir):
         # TODO
         raise NotImplementedError
+        # if destination_path:
+        #     copy_dict = {}
+        #     for name, value in new_results.items():
+        #         if name not in ["names_and_paths", "match_info", "fine_match_info"]:
+        #             copy_dict[name] = value
+        #     try:
+        #         self._write_shifted_files(
+        #             copy_dict,
+        #             destination_path,
+        #             new_results["names_and_paths"],
+        #             write_extension,
+        #         )
+        #     except PermissionError:
+        #         print("Permission Denied for write fine_align")
 
     @staticmethod
     def convert_audio_file(

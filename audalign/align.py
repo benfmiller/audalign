@@ -498,6 +498,9 @@ def combine_fine(results: dict, new_results: dict):
     max_shift = max(new_results.values())
     for name in new_results.keys():
         new_results[name] = max_shift - new_results[name] + results[name]
+    min_shift = min(new_results.values())
+    for name in new_results.keys():
+        new_results[name] = new_results[name] - min_shift
     new_results["fine_match_info"] = fine_match_info
     new_results["match_info"] = results["match_info"]
     new_results["names_and_paths"] = temp_names_and_paths
@@ -505,19 +508,79 @@ def combine_fine(results: dict, new_results: dict):
 
 
 def recalc_shifts_index(
-    results: dict, match_index: int, strength_stat: str = "confidence"
-):
+    results: dict,
+    key=None,
+    match_index: int = 0,
+    fine_match_index: int = 0,
+    strength_stat: str = None,
+    fine_strength_stat=None,
+) -> dict:
+    if key is None:
+        if "fine_match_info" in results:
+            key = "fine_match_info"
+        else:
+            key = "match_info"
+    if key not in ["match_info", "fine_match_info"]:
+        raise ValueError(f'key must be "match_info" or "fine_match_info", not "{key}"')
+    if strength_stat is None:
+        strength_stat = "confidence"
+        _ = results["match_info"]
+        _ = _[list(_.keys())[0]]
+        _ = _["match_info"]
+        _ = _[list(_.keys())[0]]
+        if "confidence" not in _.keys():
+            strength_stat = "ssim"
+
+    files_shifts = _calc_shifts_index(
+        results["match_info"], strength_stat, match_index=match_index
+    )
+    max_shift = max(files_shifts.values())
+    for name in files_shifts.keys():
+        files_shifts[name] = max_shift - files_shifts[name]
+    for name in files_shifts.keys():
+        results[name] = files_shifts[name]
+
+    if key == "fine_match_info":
+        if fine_strength_stat is None:
+            fine_strength_stat = "confidence"
+            _ = results["fine_match_info"]
+            _ = _[list(_.keys())[0]]
+            _ = _["match_info"]
+            _ = _[list(_.keys())[0]]
+            if "confidence" not in _.keys():
+                fine_strength_stat = "ssim"
+        files_shifts = _calc_shifts_index(
+            results["fine_match_info"], fine_strength_stat, match_index=fine_match_index
+        )
+        max_shift = max(files_shifts.values())
+        for name in files_shifts.keys():
+            files_shifts[name] = max_shift - files_shifts[name] + results[name]
+        min_shift = min(files_shifts.values())
+        for name in files_shifts.keys():
+            results[name] = files_shifts[name] - min_shift
+
+    for key in results.keys():
+        if key not in [
+            "match_info",
+            "fine_match_info",
+            "rankings",
+            "names_and_paths",
+            *list(files_shifts.keys()),
+        ]:
+            results.pop(key)
+
+    return results
+
+
+def _calc_shifts_index(info_to_use, strength_stat, match_index):
     files_shifts = find_most_matches(
-        results["match_info"], strength_stat=strength_stat, match_index=match_index
+        info_to_use, strength_stat=strength_stat, match_index=match_index
     )
     if not files_shifts:
         return
-    files_shifts = find_matches_not_in_file_shifts(
-        results["match_info"],
+    return find_matches_not_in_file_shifts(
+        info_to_use,
         files_shifts,
         strength_stat=strength_stat,
         match_index=match_index,
     )
-    for name in files_shifts.keys():
-        results[name] = files_shifts[name]
-    return results
