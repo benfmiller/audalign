@@ -1431,15 +1431,32 @@ class Audalign:
     @staticmethod
     def recalc_shifts(
         results: dict,
-        key=None,
-        match_index=0,
-        fine_match_index=0,
-        strength_stat=None,
-        fine_strength_stat=None,
+        key: str = None,
+        match_index: int = 0,
+        fine_match_index: int = 0,
+        strength_stat: str = None,
+        fine_strength_stat: str = None,
     ):
-        # TODO docs
-        # like the recalc in fine_align, only lets us choose to use fine_match_info or regular match_info
-        # match_info fine_match_info only_fine_match_info
+        """
+        Takes results from alignment and recalculates alignment
+
+        key is either "match_info", "fine_match_info", or "only_fine_match_info"
+        "match_info" is like undoing the fine alignment. "fine_match_info" is like redoing the fine alignment.
+        "only_fine_match_info" gives the relative shifts only calculated by fine alignment without the first alignment.
+
+        Args
+        ----
+            files_shifts (dict{float}): dict with file path as key and shift as value
+            destination_path (str): folder to write file to
+            names_and_paths (dict{str}): dict with name as key and path as value
+
+            results (dict): results from alignment.
+            key (int, optional): key to recalculate from. defaults to "fine_match_info" if present.
+            match_index (int, optional): index of match to reorder by. First index (0) is usually the strongest match.
+            fine_match_index (int, optional): index of match to reorder by for fine_match_info. First index (0) is usually the strongest match.
+            strength_stat (str, optional): change if using mse for visual *not recommended*.
+            fine_strength_stat (str, optional): change if using mse for visual *not recommended*.
+        """
         return align.recalc_shifts_index(
             results,
             key=key,
