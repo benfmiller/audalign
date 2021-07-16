@@ -1330,6 +1330,7 @@ class Audalign:
         -------
             None
         """
+        # TODO: calc strength stat
         if results:
             for audio_file in results["match_info"].keys():
                 if not _in_alignment:
@@ -1351,7 +1352,7 @@ class Audalign:
                                 if info[0] == 20000000:
                                     continue
                             elif section == "locality_seconds":
-                                print(f"{section}, [", end="")
+                                print(f"{section}: [", end="")
                                 for num, i in enumerate(info):
                                     if num > 9:
                                         break
@@ -1359,7 +1360,7 @@ class Audalign:
                                         print(f"{i[0]} {len(i)} : ", end="")
                                     else:
                                         print("None : ", end="")
-                                print("]")  # TODO: might want \b
+                                print("\b\b\b] ")
                                 continue
                             if info is None or info[0] is None:
                                 continue
