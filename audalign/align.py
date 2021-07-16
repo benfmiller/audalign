@@ -515,16 +515,21 @@ def recalc_shifts_index(
     strength_stat: str = None,
     fine_strength_stat=None,
 ) -> dict:
+    # TODO only_fine_match_info key if they want only the finematch info alignment
     if key is None:
         if "fine_match_info" in results:
             key = "fine_match_info"
         else:
             key = "match_info"
-    if key not in ["match_info", "fine_match_info"]:
-        raise ValueError(f'key must be "match_info" or "fine_match_info", not "{key}"')
+    if key not in ["match_info", "fine_match_info", "only_fine_match_info"]:
+        raise ValueError(
+            f'key must be "match_info", "fine_match_info", or "only_fine_match_info", not "{key}"'
+        )
+    temp_info_key = "match_info" if key != "only_fine_match_info" else "fine_match_info"
+
     if strength_stat is None:
         strength_stat = "confidence"
-        _ = results["match_info"]
+        _ = results[temp_info_key]
         _ = _[list(_.keys())[0]]
         _ = _["match_info"]
         _ = _[list(_.keys())[0]]
@@ -532,11 +537,12 @@ def recalc_shifts_index(
             strength_stat = "ssim"
 
     files_shifts = _calc_shifts_index(
-        results["match_info"], strength_stat, match_index=match_index
+        results[temp_info_key], strength_stat, match_index=match_index
     )
-    max_shift = max(files_shifts.values())
-    for name in files_shifts.keys():
-        files_shifts[name] = max_shift - files_shifts[name]
+    if temp_info_key == "match_info":
+        max_shift = max(files_shifts.values())
+        for name in files_shifts.keys():
+            files_shifts[name] = max_shift - files_shifts[name]
     for name in files_shifts.keys():
         results[name] = files_shifts[name]
 
@@ -559,15 +565,15 @@ def recalc_shifts_index(
         for name in files_shifts.keys():
             results[name] = files_shifts[name] - min_shift
 
-    for key in results.keys():
-        if key not in [
+    for name in results.keys():
+        if name not in [
             "match_info",
             "fine_match_info",
             "rankings",
             "names_and_paths",
             *list(files_shifts.keys()),
         ]:
-            results.pop(key)
+            results.pop(name)
 
     return results
 
