@@ -1413,6 +1413,8 @@ class Audalign:
                     Audalign.pretty_print_recognition(
                         results[match_key][audio_file], _in_alignment=True
                     )
+            print("\nRankings")
+            PrettyPrinter().pprint(results["rankings"])
             print()
             for match in results.keys():
                 if match not in [
@@ -1422,8 +1424,6 @@ class Audalign:
                     "rankings",
                 ]:
                     print(f"{match} : {results[match]}")
-            print()
-            PrettyPrinter().pprint(results["rankings"])
         else:
             print("No Matches Found")
         print()
@@ -1437,8 +1437,9 @@ class Audalign:
         strength_stat=None,
         fine_strength_stat=None,
     ):
-        # TODO
+        # TODO docs
         # like the recalc in fine_align, only lets us choose to use fine_match_info or regular match_info
+        # match_info fine_match_info only_fine_match_info
         return align.recalc_shifts_index(
             results,
             key=key,
