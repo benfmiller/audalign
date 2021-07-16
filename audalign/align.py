@@ -50,7 +50,7 @@ def _align(
             target_aligning=target_aligning,
             target_start_end=target_start_end,
             fine_aud_file_dict=fine_aud_file_dict,
-            cor_sample_rate=cor_sample_rate,
+            cor_sample_rate=cor_sample_rate,  # TODO remove
         )
 
         file_list, dir_or_list = set_list_and_dir(
@@ -91,6 +91,7 @@ def _align(
             file_names_and_paths=file_names_and_paths,
             write_extension=write_extension,
             target_aligning=target_aligning,
+            fine_aligning=fine_aud_file_dict is not None,
         )
 
         if not files_shifts:
@@ -133,7 +134,7 @@ def set_ada_file_names(
     target_aligning,
     target_start_end,
     fine_aud_file_dict,
-    cor_sample_rate,
+    cor_sample_rate,  # TODO: remove this???
 ):
     # Make target directory
     if destination_path:
@@ -354,6 +355,7 @@ def calc_final_alignments(
     file_names_and_paths,
     write_extension,
     target_aligning,
+    fine_aligning: bool,
 ):
     if ada_obj.alternate_strength_stat is not None:
         if technique == "fingerprints":
@@ -380,6 +382,10 @@ def calc_final_alignments(
                 ].keys()
             ):
                 file_names_and_paths[os.path.basename(file_path)] = file_path
+    if fine_aligning is False:
+        max_shift = max(files_shifts.values())
+        for name in files_shifts.keys():
+            files_shifts[name] = max_shift - files_shifts[name]
 
     if destination_path:
         try:
@@ -499,8 +505,9 @@ def find_matches_not_in_file_shifts(
 def combine_fine(results: dict, new_results: dict):
     fine_match_info = new_results.pop("match_info")
     temp_names_and_paths = new_results.pop("names_and_paths")
+    max_shift = max(new_results.values())
     for name in new_results.keys():
-        new_results[name] += results[name]
+        new_results[name] = max_shift - new_results[name] + results[name]
     new_results["fine_match_info"] = fine_match_info
     new_results["match_info"] = results["match_info"]
     new_results["names_and_paths"] = temp_names_and_paths

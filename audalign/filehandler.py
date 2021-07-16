@@ -533,7 +533,6 @@ def _shift_files(
 ):
     if sample_rate is None:
         sample_rate = DEFAULT_FS
-    max_shift = max(files_shifts.values())
 
     if write_extension:
         if write_extension[0] != ".":
@@ -543,10 +542,10 @@ def _shift_files(
     for name in files_shifts.keys():
         file_path = names_and_paths[name]
         if return_files:
-            audsegs[file_path] = max_shift - files_shifts[name]
+            audsegs[file_path] = files_shifts[name]
         else:
             silence = AudioSegment.silent(
-                (max_shift - files_shifts[name]) * 1000, frame_rate=sample_rate
+                (files_shifts[name]) * 1000, frame_rate=sample_rate
             )
 
             audiofile = create_audiosegment(file_path, sample_rate=sample_rate)
