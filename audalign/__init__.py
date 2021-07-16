@@ -1318,7 +1318,7 @@ class Audalign:
             print("No Matches Found")
 
     @staticmethod
-    def pretty_print_recognition(results):
+    def pretty_print_recognition(results, _in_alignment: bool = False):
         """
         nifty printer for recognition results
 
@@ -1332,36 +1332,44 @@ class Audalign:
         """
         if results:
             for audio_file in results["match_info"].keys():
-                print(f"\n{audio_file}")
+                if not _in_alignment:
+                    print(f"\n{audio_file}")
+                else:
+                    print(f"\nmatched with {audio_file}")
+                print(f"Match time: {seconds_to_min_hrs(results.get('match_time'))}")
                 for section, info in results["match_info"][audio_file].items():
                     if type(info) == type([]):
-                        if section == "mse":
+                        if section in [
+                            "locality_frames",
+                            "offset_frames",
+                            "locality_samples",
+                            "offset_samples",
+                        ]:
                             continue
-                        elif (
-                            section == "locality_seconds"
-                            or section == "locality_frames"
-                            or section == "locality_samples"
-                        ):
-                            for num, i in enumerate(info):
-                                if i is None or i[0] is None:
-                                    break
-                                if num > 9:
-                                    break
-                                if i is not None and i[0] is not None:
-                                    print(f"[{i[0]}, len{len(i)} : ", end="")
-                                else:
-                                    print("None : ", end="")
-                                print("\b\b\b]")
-                            continue
-                        else:
-                            print(f"{section}, {info[0:10]}")
-                        if info[0]:
+                        elif type(info) == type([]):
+                            if section == "mse":
+                                if info[0] == 20000000:
+                                    continue
+                            elif section == "locality_seconds":
+                                print(f"{section}, [", end="")
+                                for num, i in enumerate(info):
+                                    if num > 9:
+                                        break
+                                    if i is not None:
+                                        print(f"{i[0]} {len(i)} : ", end="")
+                                    else:
+                                        print("None : ", end="")
+                                print("]")  # TODO: might want \b
+                                continue
+                            if info is None or info[0] is None:
+                                continue
+                            print(f"{section}: {info[0:10] if len(info) > 9 else info}")
                             print(f'max "{section}" is {max(info)}: min is {min(info)}')
                     else:
                         print(f"{section}, {info}")
-            print(f"\nMatch time: {results.get('match_time')}")
-            print()
-            PrettyPrinter().pprint(results["rankings"])
+            if not _in_alignment:
+                print()
+                PrettyPrinter().pprint(results["rankings"])
         else:
             print("No Matches Found")
 
@@ -1388,48 +1396,12 @@ class Audalign:
             else:
                 match_keys = [match_keys]
             for match_key in match_keys:
-                print(f'\n    Key: "{match_key}"')
+                print(f'\n        Key: "{match_key}"')
                 for audio_file in results.get(match_key).keys():
-                    print(f"\n{audio_file}")
-                    for matched_audio_file in results[match_key][audio_file][
-                        "match_info"
-                    ].keys():
-                        print(f"\nmatched with {matched_audio_file}")
-                        for section, info in results[match_key][audio_file][
-                            "match_info"
-                        ][matched_audio_file].items():
-                            if section in [
-                                "locality_frames",
-                                "offset_frames",
-                                "locality_samples",
-                                "offset_samples",
-                            ]:
-                                pass
-                            elif type(info) == type([]):
-                                if section == "mse":
-                                    continue
-                                elif section == "locality_seconds":
-                                    print(f"{section}, [", end="")
-                                    for num, i in enumerate(info):
-                                        if num > 9:
-                                            break
-                                        if i is not None:
-                                            print(f"{i[0]} {len(i)} : ", end="")
-                                        else:
-                                            print("None : ", end="")
-                                    print("]")
-                                    continue
-                                if info is None or info[0] is None:
-                                    continue
-                                print(
-                                    # f"{section}, {info[0:10]}"
-                                    f"{section}: {info[0:10] if len(info) > 9 else info}"
-                                )
-                                print(
-                                    f'max "{section}" is {max(info)}: min is {min(info)}'
-                                )
-                            else:
-                                print(f"{section}, {info}")
+                    print(f"\n    {audio_file}")
+                    Audalign.pretty_print_recognition(
+                        results[match_key][audio_file], _in_alignment=True
+                    )
             print()
             for match in results.keys():
                 if match not in [
@@ -1724,3 +1696,19 @@ class Audalign:
             num_processes=self.num_processors,
             **kwargs,
         )
+
+
+def seconds_to_min_hrs(seconds):
+    if seconds > 60:
+        minutes = seconds // 60
+        seconds = seconds % 60
+        if minutes > 60:
+            hours = minutes // 60
+            minutes = minutes % 60
+            return (
+                f"{int(hours)} hours, {int(minutes)} minutes, and {seconds:.3f} seconds"
+            )
+        else:
+            return f"{int(minutes)} minutes and {seconds:.3f} seconds"
+    else:
+        return f"{seconds:.3f} seconds"
