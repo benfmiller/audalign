@@ -1330,9 +1330,19 @@ class Audalign:
         -------
             None
         """
-        # TODO: calc strength stat
         if results:
-            for audio_file in results["match_info"].keys():
+            strength_stat = "confidence"
+            _ = results["match_info"]
+            _ = _[list(_.keys())[0]]
+            if "confidence" not in _:
+                strength_stat = "ssim"
+            elif "scaling_factor" in _:
+                strength_stat = "scaling_factor"
+            audio_file_list = sorted(
+                list(results["match_info"].keys()),
+                key=lambda x: _recog_sorter(x, results, strength_stat),
+            )
+            for audio_file in audio_file_list:
                 if not _in_alignment:
                     print(f"\n{audio_file}")
                 else:
@@ -1713,3 +1723,9 @@ def seconds_to_min_hrs(seconds):
             return f"{int(minutes)} minutes and {seconds:.3f} seconds"
     else:
         return f"{seconds:.3f} seconds"
+
+
+def _recog_sorter(x, result, strength_stat):
+    if strength_stat == "scaling_factor":
+        return result["match_info"][x][strength_stat]
+    return result["match_info"][x][strength_stat][0]
