@@ -371,19 +371,18 @@ def process_results(
         complete_match_info[file_name][audalign_object.OFFSET_SAMPLES] = offset_diff
         complete_match_info[file_name][audalign_object.LOCALITY] = offset_loc
         if locality:
-            complete_match_info[file_name][audalign_object.LOCALITY + "_setting"] = [
-                round(
-                    float(locality)
-                    / fingerprint.DEFAULT_FS
-                    * fingerprint.DEFAULT_WINDOW_SIZE
-                    * fingerprint.DEFAULT_OVERLAP_RATIO,
-                    5,
-                )
-            ]
+            complete_match_info[file_name][
+                audalign_object.LOCALITY + "_setting"
+            ] = round(
+                float(locality)
+                / fingerprint.DEFAULT_FS
+                * fingerprint.DEFAULT_WINDOW_SIZE
+                * fingerprint.DEFAULT_OVERLAP_RATIO,
+                5,
+            )
+
         else:
-            complete_match_info[file_name][audalign_object.LOCALITY + "_setting"] = [
-                None
-            ]
+            complete_match_info[file_name][audalign_object.LOCALITY + "_setting"] = None
 
         # calculate seconds
         complete_match_info[file_name][audalign_object.OFFSET_SECS] = []
