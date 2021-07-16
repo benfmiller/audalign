@@ -50,7 +50,6 @@ def _align(
             target_aligning=target_aligning,
             target_start_end=target_start_end,
             fine_aud_file_dict=fine_aud_file_dict,
-            cor_sample_rate=cor_sample_rate,  # TODO remove
         )
 
         file_list, dir_or_list = set_list_and_dir(
@@ -134,7 +133,6 @@ def set_ada_file_names(
     target_aligning,
     target_start_end,
     fine_aud_file_dict,
-    cor_sample_rate,  # TODO: remove this???
 ):
     # Make target directory
     if destination_path:
@@ -168,14 +166,6 @@ def set_ada_file_names(
             ada_obj.file_names = [
                 os.path.basename(x) for x in fine_aud_file_dict.keys()
             ]
-            # if technique in ["correlation", "correlation_spectrogram"]:
-            # TODO could remove for multiprocessing in the future
-            # for path in fine_aud_file_dict.keys():
-            #     fine_aud_file_dict[path] = audalign.filehandler.get_shifted_file(
-            #         path,
-            #         fine_aud_file_dict[path],
-            #         sample_rate=cor_sample_rate,
-            #     )
         else:
             ada_obj.file_names = [os.path.basename(x) for x in filename_list]
 
