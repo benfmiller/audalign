@@ -12,6 +12,20 @@ from functools import partial
 
 cant_write_ext = [".mov", ".mp4", ".m4a"]
 cant_read_ext = [".txt", ".md", ".pkf", ".py", ".pyc"]
+can_read_ext = [
+    ".mov",
+    ".mp4",
+    ".m4a",
+    ".wav",
+    ".WAV",
+    ".mp3",
+    ".MOV",
+    ".ogg",
+    ".aiff",
+    ".aac",
+    ".wma",
+    ".flac",
+]
 
 
 def find_files(path, extensions=["*"]):
@@ -90,7 +104,7 @@ def create_audiosegment(
     return audiofile
 
 
-def get_audio_files_directory(directory_path: str) -> list:
+def get_audio_files_directory(directory_path: str, full_path: bool = False) -> list:
     """returns a list of the file paths in directory that are audio
 
     Args:
@@ -101,11 +115,16 @@ def get_audio_files_directory(directory_path: str) -> list:
     """
     aud_list = []
     for file_path, _ in find_files(directory_path):
+        ext = os.path.splitext(file_path)[1]
         try:
-            if os.path.splitext(file_path)[1] in [".txt", ".json"]:
+            if ext in [".txt", ".json"] or ext in cant_read_ext:
                 continue
-            AudioSegment.from_file(file_path)
-            aud_list += [os.path.basename(file_path)]
+            elif ext.lower() not in can_read_ext:
+                AudioSegment.from_file(file_path)
+            if full_path is False:
+                aud_list += [os.path.basename(file_path)]
+            else:
+                aud_list += [file_path]
         except CouldntDecodeError:
             pass  # Do nothing
     return aud_list
