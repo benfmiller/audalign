@@ -1518,23 +1518,42 @@ class Audalign:
         filehandler.shift_write_file(file_path, destination_path, offset_seconds)
 
     @staticmethod
-    def write_shifts_from_results(results, read_from_dir, destination_dir):
-        # TODO
-        raise NotImplementedError
-        # if destination_path:
-        #     copy_dict = {}
-        #     for name, value in new_results.items():
-        #         if name not in ["names_and_paths", "match_info", "fine_match_info"]:
-        #             copy_dict[name] = value
-        #     try:
-        #         self._write_shifted_files(
-        #             copy_dict,
-        #             destination_path,
-        #             new_results["names_and_paths"],
-        #             write_extension,
-        #         )
-        #     except PermissionError:
-        #         print("Permission Denied for write fine_align")
+    def write_shifts_from_results(
+        results: dict, read_from_dir, destination_path: str, write_extension: str = None
+    ):
+        # TODO test
+        # read_from_dir string or list of file_names
+        # cannot have two files with same basename
+
+        if isinstance(read_from_dir, str):
+            print("Finding audio files")
+            read_from_dir = filehandler.get_audio_files_directory(
+                read_from_dir, full_path=True
+            )
+        results_files = {}
+        for path in results.keys():
+            if len(os.path.splitext(os.path.basename(path))[1]) > 0:
+                results_files[os.path.splitext(os.path.basename(path))[0]] = path
+
+        copy_dict = {}
+        names_and_paths = {}
+        for filename in read_from_dir:
+            base_basename = os.path.splitext(os.path.basename(filename))[0]
+            if base_basename in results_files:
+                copy_dict[base_basename] = results[results_files[base_basename]]
+                names_and_paths[base_basename] = filename
+        if copy_dict == {}:
+            print("No matching file basenames found")
+            return
+        try:
+            Audalign._write_shifted_files(
+                copy_dict,
+                destination_path,
+                names_and_paths,
+                write_extension,
+            )
+        except PermissionError:
+            print("Permission Denied for write fine_align")
 
     @staticmethod
     def convert_audio_file(
