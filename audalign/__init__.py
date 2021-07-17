@@ -1446,10 +1446,6 @@ class Audalign:
 
         Args
         ----
-            files_shifts (dict{float}): dict with file path as key and shift as value
-            destination_path (str): folder to write file to
-            names_and_paths (dict{str}): dict with name as key and path as value
-
             results (dict): results from alignment.
             key (int, optional): key to recalculate from. defaults to "fine_match_info" if present.
             match_index (int, optional): index of match to reorder by. First index (0) is usually the strongest match.
@@ -1526,42 +1522,49 @@ class Audalign:
         Especially useful if you want to align the original files with the results from noise
         removed or uniform leveled versions.
 
-        Read_from_dir can be a str of directory or a list of file path str's.
+        Read_from_dir can be a str of directory, a list of file path str's, or None to use original source files.
 
         Cannot have two files with same basename ("Test.wav" and "Test.mp3" in same read_from_dir is undefined)
 
         Args
         ----
-            file_path (str): file path of file to shift
-            destination_path (str): where to write file to and file name
-            offset_seconds (float): how many seconds to shift, can't be negative
-
             results (dict): results from alignment.
-            read_from_dir (str, list): source files for writing.
+            read_from_dir (str, list): source files for writing. or None to use original files.
             destination_path (str): destination to write to.
             write_extension (str, optional): if given, all files writen with given extension
         """
-
         if isinstance(read_from_dir, str):
             print("Finding audio files")
             read_from_dir = filehandler.get_audio_files_directory(
                 read_from_dir, full_path=True
             )
-        results_files = {}
-        for path in results.keys():
-            if len(os.path.splitext(os.path.basename(path))[1]) > 0:
-                results_files[os.path.splitext(os.path.basename(path))[0]] = path
+        if read_from_dir is not None:
+            results_files = {}
+            for path in results.keys():
+                if len(os.path.splitext(os.path.basename(path))[1]) > 0:
+                    results_files[os.path.splitext(os.path.basename(path))[0]] = path
 
-        copy_dict = {}
-        names_and_paths = {}
-        for filename in read_from_dir:
-            base_basename = os.path.splitext(os.path.basename(filename))[0]
-            if base_basename in results_files:
-                copy_dict[base_basename] = results[results_files[base_basename]]
-                names_and_paths[base_basename] = filename
-        if copy_dict == {}:
-            print("No matching file basenames found")
-            return
+            copy_dict = {}
+            names_and_paths = {}
+            for filename in read_from_dir:
+                base_basename = os.path.splitext(os.path.basename(filename))[0]
+                if base_basename in results_files:
+                    copy_dict[base_basename] = results[results_files[base_basename]]
+                    names_and_paths[base_basename] = filename
+            if copy_dict == {}:
+                print("No matching file basenames found")
+                return
+        else:
+            copy_dict = {}
+            for name, value in results.items():
+                if name not in [
+                    "names_and_paths",
+                    "match_info",
+                    "fine_match_info",
+                    "rankings",
+                ]:
+                    copy_dict[name] = value
+            names_and_paths = results["names_and_paths"]
         try:
             Audalign._write_shifted_files(
                 copy_dict,
