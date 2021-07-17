@@ -239,6 +239,7 @@ class TestFineAlign:
 
     with open("tests/align_test.pickle", "rb") as f:
         align_fing_results = pickle.load(f)
+    align_fing_results = ada.recalc_shifts(align_fing_results)
 
     @pytest.mark.smoke
     def test_fine_align(self):
@@ -313,3 +314,69 @@ class TestFineAlign:
         )
         assert result is not None
         self.ada.pretty_print_results(result)
+
+
+class TestRecalcWriteShifts:
+    # TODO test recalc shifts and write from results
+    ada = ad.Audalign(num_processors=2)
+
+    with open("tests/align_test.pickle", "rb") as f:
+        align_fing_results = pickle.load(f)
+    align_fing_results = ada.recalc_shifts(align_fing_results)
+    full_results = ada.fine_align(
+        align_fing_results,
+    )
+
+    def test_recalc_shifts(self):
+        temp_results = self.ada.recalc_shifts(self.align_fing_results)
+        assert temp_results is not None
+
+        temp_results = self.ada.recalc_shifts(self.full_results)
+        assert temp_results is not None
+        temp_results = self.ada.recalc_shifts(self.full_results, key="match_info")
+        assert temp_results is not None
+        temp_results = self.ada.recalc_shifts(
+            self.full_results, key="only_fine_match_info"
+        )
+        assert temp_results is not None
+
+    def test_recalc_shifts_indexes(self):
+        temp_results = self.ada.recalc_shifts(self.align_fing_results, match_index=1)
+        assert temp_results is not None
+
+        temp_results = self.ada.recalc_shifts(self.full_results, match_index=1)
+        assert temp_results is not None
+        temp_results = self.ada.recalc_shifts(
+            self.full_results, key="match_info", match_index=1
+        )
+        assert temp_results is not None
+        temp_results = self.ada.recalc_shifts(
+            self.full_results, key="only_fine_match_info", match_index=1
+        )
+        assert temp_results is not None
+
+        temp_results = self.ada.recalc_shifts(
+            self.full_results, match_index=1, fine_match_index=1
+        )
+        assert temp_results is not None
+        temp_results = self.ada.recalc_shifts(
+            self.full_results, key="match_info", match_index=1, fine_match_index=1
+        )
+        assert temp_results is not None
+        temp_results = self.ada.recalc_shifts(
+            self.full_results,
+            key="only_fine_match_info",
+            match_index=1,
+            fine_match_index=1,
+        )
+        assert temp_results is not None
+
+    def test_write_from_results(self, tmpdir):
+        self.ada.write_shifts_from_results(self.full_results, test_folder_eig, tmpdir)
+        self.ada.write_shifts_from_results(
+            self.full_results, test_folder_eig, tmpdir, write_extension=".mp3"
+        )
+
+        self.ada.write_shifts_from_results(
+            self.full_results, "no errors just prints", tmpdir, write_extension=".mp3"
+        )
