@@ -487,7 +487,7 @@ class Audalign:
         Recognizes given file against already fingerprinted files
 
         Offset describes duration that the recognized file aligns after the target file
-        Does not recognize against files with same name and extention
+        Does not recognize against files with same name and extension
         Locality option used to only return match results within certain second range
 
         Args
@@ -1521,9 +1521,26 @@ class Audalign:
     def write_shifts_from_results(
         results: dict, read_from_dir, destination_path: str, write_extension: str = None
     ):
-        # TODO test
-        # read_from_dir string or list of file_names
-        # cannot have two files with same basename
+        """
+        For writing the results of an alignment with alternate source files.
+        Especially useful if you want to align the original files with the results from noise
+        removed or uniform leveled versions.
+
+        Read_from_dir can be a str of directory or a list of file path str's.
+
+        Cannot have two files with same basename ("Test.wav" and "Test.mp3" in same read_from_dir is undefined)
+
+        Args
+        ----
+            file_path (str): file path of file to shift
+            destination_path (str): where to write file to and file name
+            offset_seconds (float): how many seconds to shift, can't be negative
+
+            results (dict): results from alignment.
+            read_from_dir (str, list): source files for writing.
+            destination_path (str): destination to write to.
+            write_extension (str, optional): if given, all files writen with given extension
+        """
 
         if isinstance(read_from_dir, str):
             print("Finding audio files")
@@ -1596,7 +1613,7 @@ class Audalign:
         ----
             file_path (str): path of file to level.
             destination (str): path of destination to write to. directory or file name.
-            write_extension (str, optional): extention/format for writing.
+            write_extension (str, optional): extension/format for writing.
             mode (str): either "normalize" or "average".
             width (float): width in seconds for each leveling.
             overlap_ratio (float): between 1 and 0. overlapping windows.
@@ -1638,7 +1655,7 @@ class Audalign:
         ----
             file_path (str): path of file to level.
             destination (str): path of destination to write to. directory or file name.
-            write_extension (str, optional): extention/format for writing.
+            write_extension (str, optional): extension/format for writing.
             mode (str): either "normalize" or "average".
             width (float): width in seconds for each leveling.
             overlap_ratio (float): between 1 and 0. overlapping windows.
