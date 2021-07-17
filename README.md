@@ -198,6 +198,15 @@ ada.convert_audio_file("audio.wav", "audio.mp3") # Also convert video file to au
 ada.get_metadata("file.wav") # Returns metadata from ffmpeg/ avlib
 ```
 
+You can easily recalcute the alignment shifts from previous results using recalc_shifts.
+You can then write those shifts using write_shifts_from_results. write_shifts_from_results also
+lets you use different source files for alignments too.
+
+```python
+recalculated_results = ada.recalc_shifts(older_results)
+ada.write_shifts_from_results(recalculated_results, "source_files_folder_or_file_list", "destination")
+```
+
 ## Audalign Functions
 
 ```python
