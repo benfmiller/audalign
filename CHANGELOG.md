@@ -1,5 +1,19 @@
 # Change Log
 
+## [0.7.0] 2021 - 07 - 17
+
+### Changed
+
+- alignments are all positive now. You can easily align the files in a DAW by placing the files at the given time mark
+- removed list around fingerprints recognition locality_frames_setting
+- sped up finding audio files
+
+### Added
+
+- pretty printers for recognitions and alignments in audalign object
+- recalc shifts from alignment results
+- write_shifts_from_results. For use with recalc shifts or using different source files
+
 ## [0.6.1] 2021 - 07 - 13
 
 ### Changed
