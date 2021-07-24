@@ -11,6 +11,8 @@ def rank_alignment(alignment):
 
 def _rank_alignment(alignment):
     new_ranks = {}
+    if alignment is None:
+        return 0
     if "match_info" in alignment.keys():
         alignment = alignment["match_info"]
     if "offset_seconds" in alignment.keys():
@@ -225,7 +227,7 @@ def _calc_rank(
     )
     if len(list_less_times) > 0:
         confidences, _ = list(zip(*list_less_times))
-        second_match = confidences[1] if len(confidences) > 1 else 0
+        second_match = confidences[0] if len(confidences) > 1 else 0
     else:
         second_match = 0
     top_match = top_match[0]
