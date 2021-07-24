@@ -105,6 +105,10 @@ def _align(
 
         files_shifts["match_info"] = total_alignment
         files_shifts["names_and_paths"] = file_names_and_paths
+        if technique == "fingerprints":
+            print()
+            print(f"Total fingerprints: {ada_obj.total_fingerprints}")
+
         return files_shifts
 
     finally:
