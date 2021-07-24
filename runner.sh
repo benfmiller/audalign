@@ -33,30 +33,92 @@ files='audio_files/audio_sync/trecs/'
 # this works great but I don't like the arbitrary 999999
 # python3 figuring.py -a 1 | tac | grep -F -m1 -B 999999 '}' | head -n -1 | tac
 
+files=( 'audio_files/shifts/' 'audio_files/audio_sync/20200602/' )
+for file in "${files[@]}"; do
+    accuracy=( 1 2 3 4 )
+    hash_style=( "panako_mod" "panako" "base" "base_three" )
+    freq_threshold=(0 25 50 100 200)
+    for f in "${freq_threshold[@]}"; do
+        for h in "${hash_style[@]}"; do 
+            for a in "${accuracy[@]}"; do
+            ((num_runs=num_runs+1))
+            echo >> $write_file
+            echo "    run number $num_runs------------------------" >> $write_file
+            echo "    Hash Style '$h', Accuracy '$a', Frequency Threshold '$f'">> $write_file
+            echo >> $write_file
+            echo "$(date +"%T"): Running number $num_runs"
+            echo "    '$file', Hash Style '$h', Accuracy '$a', Frequency Threshold '$f'"
 
+            # python3 figuring.py -a $a -s $h -r $f -f $file| tac | sed '/}/Q' | tac | grep "\S" >> workj_results.txt
+            done
+        done
+    done
 
-accuracy=( 1 2 3 4 )
-hash_style=( "panako_mod" "panako" "base" "base_three" )
-freq_threshold=(0 50 100 200)
-locality=(0 5 10 20 40)
-for f in "${freq_threshold[@]}"; do
-    for h in "${hash_style[@]}"; do 
-        for a in "${accuracy[@]}"; do
-        ((num_runs=num_runs+1))
-        echo >> $write_file
-        echo "    run number $num_runs------------------------" >> $write_file
-        echo "    Hash Style '$h', Accuracy '$a', Frequency Threshold '$f'">> $write_file
-        echo >> $write_file
+    locality=( 0 5 15 )
+    accuracy=( 2 3 )
+    hash_style=( "panako_mod" "base" )
+    freq_threshold=(0 50 100 )
+    for l in "${locality[@]}"; do 
+        for f in "${freq_threshold[@]}"; do
+            for h in "${hash_style[@]}"; do 
+                for a in "${accuracy[@]}"; do
+                ((num_runs=num_runs+1))
+                echo >> $write_file
+                echo "    run number $num_runs------------------------" >> $write_file
+                echo "    Hash Style '$h', Accuracy '$a', Frequency Threshold '$f'">> $write_file
+                echo >> $write_file
+                echo "$(date +"%T"): Running number $num_runs"
+                echo "    '$file', Hash Style '$h', Accuracy '$a', Frequency Threshold '$f', Locality '$l'"
 
-        # python3 figuring.py -a 1 | tac | sed '/}/Q' | tac | grep "\S" >> workj_results.txt
-        # python3 figuring.py -a 1 | tac | sed '/}/Q' | tac >> workj_results.txt
+                # python3 figuring.py -a $a -s $h -r $f -l $l -f $file| tac | sed '/}/Q' | tac | grep "\S" >> workj_results.txt
+                done
+            done
         done
     done
 done
-# for l in "${locality[@]}"; do 
-# # only panako_mod, accuracy 2-4,
-# done
-echo "$(date +"%T"): Running number $num_runs"
+files=( 'audio_files/shifts/' 'audio_files/audio_sync/20200602/' 'audio_files/audio_sync/20201204/' 'audio_files/audio_sync/trec1/' )
+for file in "${files[@]}"; do
+    accuracy=( 4 )
+    hash_style=( "panako_mod")
+    freq_threshold=( 50 100 )
+    for f in "${freq_threshold[@]}"; do
+        for h in "${hash_style[@]}"; do 
+            for a in "${accuracy[@]}"; do
+            ((num_runs=num_runs+1))
+            echo >> $write_file
+            echo "    run number $num_runs------------------------" >> $write_file
+            echo "    Hash Style '$h', Accuracy '$a', Frequency Threshold '$f'">> $write_file
+            echo >> $write_file
+            echo "$(date +"%T"): Running number $num_runs"
+            echo "    '$file', Hash Style '$h', Accuracy '$a', Frequency Threshold '$f'"
+
+            # python3 figuring.py -a $a -s $h -r $f -f $file| tac | sed '/}/Q' | tac | grep "\S" >> workj_results.txt
+            done
+        done
+    done
+
+    locality=( 5 15 )
+    accuracy=( 4 )
+    hash_style=( "panako_mod" )
+    freq_threshold=( 50 100 )
+    for l in "${locality[@]}"; do 
+        for f in "${freq_threshold[@]}"; do
+            for h in "${hash_style[@]}"; do 
+                for a in "${accuracy[@]}"; do
+                ((num_runs=num_runs+1))
+                echo >> $write_file
+                echo "    run number $num_runs------------------------" >> $write_file
+                echo "    Hash Style '$h', Accuracy '$a', Frequency Threshold '$f'">> $write_file
+                echo >> $write_file
+                echo "$(date +"%T"): Running number $num_runs"
+                echo "    '$file', Hash Style '$h', Accuracy '$a', Frequency Threshold '$f', Locality '$l'"
+
+                # python3 figuring.py -a $a -s $h -r $f -l $l -f $file| tac | sed '/}/Q' | tac | grep "\S" >> workj_results.txt
+                done
+            done
+        done
+    done
+done
 # python3 figuring.py -a 1 | tac | sed '/}/Q' | tac | grep "\S" >> workj_results.txt
 # let time_took = $results | tail -n 1
 # echo $now
