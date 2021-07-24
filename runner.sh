@@ -52,9 +52,9 @@ for file in "${files[@]}"; do
 
             # result=$(python3 figuring.py -a $a -s $h -r $f -f $file| tac | sed '/}/Q' | tac | grep "\S")
             result=$(python3 figuring.py -a $a -s $h -r $f -f $file)
+            echo "$result" | rg "Total fingerprints" >> $write_file
             echo >> $write_file
-            echo "$result" | grep "Total fingerprints" >> $write_file
-            echo "$result" | tac | sed '/}/Q' | tac | grep "\S" >> $write_file
+            echo "$result" | tac | sed '/}/Q' | tac | rg -N "\S" >> $write_file
 
             done
         done
@@ -78,9 +78,9 @@ for file in "${files[@]}"; do
 
                 # python3 figuring.py -a $a -s $h -r $f -l $l -f $file| tac | sed '/}/Q' | tac | grep "\S" >> $write_file
                 result=$(python3 figuring.py -a $a -s $h -r $f -l $l -f $file)
+                echo "$result" | rg "Total fingerprints" >> $write_file
                 echo >> $write_file
-                echo "$result" | grep "Total fingerprints" >> $write_file
-                echo "$result" | tac | sed '/}/Q' | tac | grep "\S" >> $write_file
+                echo "$result" | tac | sed '/}/Q' | tac | rg -N "\S" >> $write_file
 
                 done
             done
@@ -105,9 +105,9 @@ for file in "${files[@]}"; do
 
             # python3 figuring.py -a $a -s $h -r $f -f $file| tac | sed '/}/Q' | tac | grep "\S" >> $write_file
             result=$(python3 figuring.py -a $a -s $h -r $f -f $file)
+            echo "$result" | rg "Total fingerprints" >> $write_file
             echo >> $write_file
-            echo "$result" | grep "Total fingerprints" >> $write_file
-            echo "$result" | tac | sed '/}/Q' | tac | grep "\S" >> $write_file
+            echo "$result" | tac | sed '/}/Q' | tac | rg -N "\S" >> $write_file
 
             done
         done
@@ -131,9 +131,9 @@ for file in "${files[@]}"; do
 
                 # python3 figuring.py -a $a -s $h -r $f -l $l -f $file| tac | sed '/}/Q' | tac | grep "\S" >> $write_file
                 result=$(python3 figuring.py -a $a -s $h -r $f -l $l -f $file)
+                echo "$result" | rg "Total fingerprints" >> $write_file
                 echo >> $write_file
-                echo "$result" | grep "Total fingerprints" >> $write_file
-                echo "$result" | tac | sed '/}/Q' | tac | grep "\S" >> $write_file
+                echo "$result" | tac | sed '/}/Q' | tac | rg -N "\S" >> $write_file
 
                 done
             done
