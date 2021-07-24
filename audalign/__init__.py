@@ -1330,6 +1330,8 @@ class Audalign:
         -------
             None
         """
+        max_conf = 0
+        min_conf = 999999999999
         if results:
             strength_stat = "confidence"
             _ = results["match_info"]
@@ -1342,6 +1344,16 @@ class Audalign:
                 list(results["match_info"].keys()),
                 key=lambda x: _recog_sorter(x, results, strength_stat),
             )
+            max_conf = max(
+                list(results["match_info"].keys()),
+                key=lambda x: _recog_sorter(x, results, strength_stat),
+            )
+            max_conf = _recog_sorter(max_conf, results, strength_stat)
+            min_conf = min(
+                list(results["match_info"].keys()),
+                key=lambda x: _recog_sorter(x, results, strength_stat),
+            )
+            min_conf = _recog_sorter(min_conf, results, strength_stat)
             for audio_file in audio_file_list:
                 if not _in_alignment:
                     print(f"\n{audio_file}")
@@ -1383,6 +1395,7 @@ class Audalign:
                 PrettyPrinter().pprint(results["rankings"])
         else:
             print("No Matches Found")
+        return min_conf, max_conf
 
     @staticmethod
     def pretty_print_alignment(results, match_keys="both"):
@@ -1399,6 +1412,7 @@ class Audalign:
         -------
             None
         """
+        min_conf_list, max_conf_list = [], []
         if results:
             if match_keys == "both":
                 match_keys = ["match_info"]
@@ -1410,9 +1424,11 @@ class Audalign:
                 print(f'\n        Key: "{match_key}"')
                 for audio_file in results.get(match_key).keys():
                     print(f"\n    {audio_file}")
-                    Audalign.pretty_print_recognition(
+                    min_conf, max_conf = Audalign.pretty_print_recognition(
                         results[match_key][audio_file], _in_alignment=True
                     )
+                    min_conf_list += [min_conf]
+                    max_conf_list += [max_conf]
             print("\nRankings")
             PrettyPrinter().pprint(results["rankings"])
             print()
@@ -1424,6 +1440,10 @@ class Audalign:
                     "rankings",
                 ]:
                     print(f"{match} : {results[match]}")
+            print()
+            print(
+                f"max conf is {max(max_conf_list)} : min conf is {min(min_conf_list)}"
+            )
         else:
             print("No Matches Found")
         print()
