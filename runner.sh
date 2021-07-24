@@ -33,7 +33,7 @@ files='audio_files/audio_sync/trecs/'
 # this works great but I don't like the arbitrary 999999
 # python3 figuring.py -a 1 | tac | grep -F -m1 -B 999999 '}' | head -n -1 | tac
 
-expecting 256 matches
+# expecting 256 matches for fingerprints
 files=( 'audio_files/shifts/' 'audio_files/audio_sync/20200602/' )
 for file in "${files[@]}"; do
     accuracy=( 1 2 3 4 )
@@ -161,10 +161,10 @@ for file in "${files[@]}"; do
             ((num_runs=num_runs+1))
             echo >> $write_file
             echo "    run number $num_runs------------------------" >> $write_file
-            echo "    '$file', Frequency Threshold '$f', Sample Rate '$r', $technique">> $write_file
+            echo "    '$file', Frequency Threshold '$r', Sample Rate '$m', $technique">> $write_file
             echo >> $write_file
             echo "$(date +"%T"): Running number $num_runs"
-            echo "    '$file', Frequency Threshold '$f', Sample Rate '$r', $technique"
+            echo "    '$file', Frequency Threshold '$r', Sample Rate '$m', $technique"
 
             result=$(python3 figuring.py -t $technique -r $r -m $m -f $file)
             echo "$result" | rg "Total fingerprints" >> $write_file
@@ -183,10 +183,10 @@ for file in "${files[@]}"; do
                 ((num_runs=num_runs+1))
                 echo >> $write_file
                 echo "    run number $num_runs------------------------" >> $write_file
-                echo "    '$file', Frequency Threshold '$f', Sample Rate '$r', Locality '$l', $technique">> $write_file
+                echo "    '$file', Frequency Threshold '$r', Sample Rate '$m', Locality '$l', $technique">> $write_file
                 echo >> $write_file
                 echo "$(date +"%T"): Running number $num_runs"
-                echo "    '$file', Frequency Threshold '$f', Sample Rate '$r', Locality '$l', $technique"
+                echo "    '$file', Frequency Threshold '$r', Sample Rate '$m', Locality '$l', $technique"
 
                 result=$(python3 figuring.py -t $technique -r $r -m $m -l $l -f $file)
                 echo "$result" | rg "Total fingerprints" >> $write_file
@@ -218,10 +218,10 @@ for file in "${files[@]}"; do
             ((num_runs=num_runs+1))
             echo >> $write_file
             echo "    run number $num_runs------------------------" >> $write_file
-            echo "    '$file', Frequency Threshold '$f', Sample Rate '$r', $technique">> $write_file
+            echo "    '$file', Frequency Threshold '$r', Sample Rate '$m', $technique">> $write_file
             echo >> $write_file
             echo "$(date +"%T"): Running number $num_runs"
-            echo "    '$file', Frequency Threshold '$f', Sample Rate '$r', $technique"
+            echo "    '$file', Frequency Threshold '$r', Sample Rate '$m', $technique"
 
             result=$(python3 figuring.py -t $technique -r $r -m $m -f $file)
             echo "$result" | rg "Total fingerprints" >> $write_file
@@ -240,10 +240,10 @@ for file in "${files[@]}"; do
                 ((num_runs=num_runs+1))
                 echo >> $write_file
                 echo "    run number $num_runs------------------------" >> $write_file
-                echo "    '$file', Frequency Threshold '$f', Sample Rate '$r', Locality '$l', $technique">> $write_file
+                echo "    '$file', Frequency Threshold '$r', Sample Rate '$m', Locality '$l', $technique">> $write_file
                 echo >> $write_file
                 echo "$(date +"%T"): Running number $num_runs"
-                echo "    '$file', Frequency Threshold '$f', Sample Rate '$r', Locality '$l', $technique"
+                echo "    '$file', Frequency Threshold '$r', Sample Rate '$m', Locality '$l', $technique"
 
                 result=$(python3 figuring.py -t $technique -r $r -m $m -l $l -f $file)
                 echo "$result" | rg "Total fingerprints" >> $write_file
