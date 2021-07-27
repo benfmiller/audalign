@@ -153,7 +153,7 @@ fi
 
 technique="correlation"
 files=( 'audio_files/shifts/' 'audio_files/audio_sync/20200602/' 'audio_files/audio_sync/20201204/' 'audio_files/audio_sync/trec1/' )
-for file in "${files[@]}"; do
+for file in "${files[@]}"; do # TODO make sure all files are run, not quite right
     freq_threshold=( 25 50 100 )
     sample_rates=( 4000 8000 16000 44100 )
     for r in "${freq_threshold[@]}"; do
