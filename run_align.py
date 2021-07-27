@@ -7,6 +7,47 @@ import argparse
 
 parser = argparse.ArgumentParser(description="Niftier running.")
 parser.add_argument(
+    "-f",
+    "--files",
+    type=str,
+    help="files to fingerprint",
+)
+parser.add_argument(
+    "--fine-align", action="store_true", help="if present, runs a fine alignment"
+)
+parser.add_argument(
+    "-d",
+    "--destination",
+    type=str,
+    required=False,
+    default=None,
+)
+parser.add_argument("-w", "--write-extention", type=str, required=False, default=None)
+parser.add_argument(
+    "-t",
+    "--technique",
+    type=str,
+    help="alignment technique",
+    required=False,
+    default="fingerprints",
+)
+parser.add_argument(
+    "-l",
+    "--locality",
+    type=float,
+    help="locality",
+    required=False,
+    default=None,
+)
+parser.add_argument(
+    "-m",
+    "--sample-rate",
+    type=int,
+    help="sample rate to read the file in",
+    required=False,
+    default=44100,
+)
+parser.add_argument(
     "-a",
     "--accuracy",
     type=int,
@@ -39,38 +80,6 @@ parser.add_argument(
     default=6,
 )
 parser.add_argument(
-    "-t",
-    "--technique",
-    type=str,
-    help="alignment technique",
-    required=False,
-    default="fingerprints",
-)
-parser.add_argument(
-    "-l",
-    "--locality",
-    type=float,
-    help="locality",
-    required=False,
-    default=None,
-)
-parser.add_argument(
-    "-m",
-    "--sample-rate",
-    type=int,
-    help="sample rate to read the file in",
-    required=False,
-    default=44100,
-)
-parser.add_argument(
-    "-f",
-    "--files",
-    type=str,
-    help="files to fingerprint",
-    required=False,
-    default="audio_files/shifts/",
-)
-parser.add_argument(
     "-i",
     "--img-width",
     type=float,
@@ -87,13 +96,44 @@ parser.add_argument(
     default=215,
 )
 parser.add_argument(
-    "-w",
     "--write_results",
     action="store_true",
     help='if present, writes results to "last_results.json"',
 )
 parser.add_argument(
-    "--fine-align", action="store_true", help="if present, runs a fine alignment"
+    "--fine-technique",
+    type=str,
+    help="fine alignment technique",
+    required=False,
+    default="correlation",
+)
+parser.add_argument(
+    "--fine-locality",
+    type=float,
+    help="fine alignment locality",
+    required=False,
+    default=None,
+)
+parser.add_argument(
+    "--fine-sample-rate",
+    type=int,
+    help="fine alignment sample rate to convert the files to",
+    required=False,
+    default=8000,
+)
+parser.add_argument(
+    "--fine-img-width",
+    type=float,
+    help="fine alingment image width for visual",
+    required=False,
+    default=0.5,
+)
+parser.add_argument(
+    "--fine-volume-threshold",
+    type=float,
+    help="fine alignment volume threshold for visual",
+    required=False,
+    default=215,
 )
 
 args = parser.parse_args()
@@ -144,15 +184,20 @@ def main(args):
             locality=args.locality,
             volume_threshold=args.volume_threshold,
             img_width=args.img_width,
+            destination_path=args.destination,
+            write_extension=args.write_extention,
         )
-        # results = ada.fine_align(
-        #     results,
-        #     # destination_path="alignment/alignment2",
-        #     cor_sample_rate=8000,
-        #     write_extension="wav",
-        #     # locality=30,
-        #     # max_lags=500,
-        # )
+        if args.fine_align:
+            results = ada.fine_align(
+                results,
+                technique=args.fine_technique,
+                locality=args.fine_locality,
+                cor_sample_rate=args.fine_sample_rate,
+                img_width=args.fine_img_width,
+                volume_threshold=args.fine_volume_threshold,
+                write_extension=args.write_extention,
+                destination_path=args.destination,
+            )
 
         print()
 
@@ -163,14 +208,14 @@ def main(args):
         print(f"\nRan for {ad.seconds_to_min_hrs(t)}.")
         return
 
-    if results is not None and args.w:
+    if results is not None and args.write_results:
         with open("last_results.json", "w") as f:
             json.dump(results, f, cls=NpEncoder)
 
     # --------------------------------------------------------------------------
     ada.pretty_print_results(results)
 
-    _sum, count, max_, min_ = 0, 0, 0, 9999999999
+    sum_, count, max_, min_ = 0, 0, 0, 9999999999
     if results is not None:
 
         for target in results["rankings"]["match_info"].keys():
@@ -178,17 +223,17 @@ def main(args):
             if temp_results == 0:
                 max_ = max(max_, 0)
                 min_ = min(min_, 0)
-                _sum += 0
+                sum_ += 0
                 count += 1
                 continue
             for rank in temp_results.values():
                 max_ = max(max_, rank)
                 min_ = min(min_, rank)
-                _sum += rank
+                sum_ += rank
                 count += 1
         print()
         print(
-            f"Rankings -- Count: {count}, Sum: {_sum}, Min: {min_}, Average: {_sum / count}, Max: {max_}"
+            f"Rankings -- Count: {count}, Sum: {sum_}, Min: {min_}, Average: {sum_ / count}, Max: {max_}"
         )
 
     print()
