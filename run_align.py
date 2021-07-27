@@ -86,12 +86,14 @@ parser.add_argument(
     required=False,
     default=215,
 )
-
 parser.add_argument(
     "-w",
     "--write_results",
     action="store_true",
     help='if present, writes results to "last_results.json"',
+)
+parser.add_argument(
+    "--fine-align", action="store_true", help="if present, runs a fine alignment"
 )
 
 args = parser.parse_args()
