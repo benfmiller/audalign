@@ -219,26 +219,34 @@ def _calc_rank(
     num_match: int = None,
 ):
     top_match = (confidences[0], offset_seconds[0])
+    rank_delta = 0
     list_less_times = list(
         filter(
             lambda x: abs(x[1] - top_match[1]) > 0.15,
             zip(confidences, offset_seconds),
         )
     )
-    if len(list_less_times) > 0:
+    if len(list_less_times) > 1:
         confidences, _ = list(zip(*list_less_times))
+        third_match = confidences[1] if len(confidences) > 1 else 0
+
         second_match = confidences[0] if len(confidences) > 1 else 0
+        top_three_list = np.array([top_match[0], second_match, third_match])
+        top_three_list -= top_three_list[2]
+        second_proportion = top_three_list[1] / top_three_list[0]
+        if second_proportion > 0.75:
+            rank_delta = 2
     else:
-        second_match = 0
+        third_match = 0
     top_match = top_match[0]
     rank_list = [top_match > x[0] for x in top_match_tups]
     rank = top_match_tups[rank_list.index(True)][1]
-    second_match_list = [second_match >= top_match * x[0] for x in rank_minus]
-    rank -= rank_minus[second_match_list.index(True)][1]
+    third_match_list = [third_match >= top_match * x[0] for x in rank_minus]
+    rank -= rank_minus[third_match_list.index(True)][1]
     if num_matches_tups is not None:
         num_matches_tup_list = [num_match <= x[0] for x in num_matches_tups]
         rank -= num_matches_tups[num_matches_tup_list.index(True)][1]
-    return rank
+    return rank - rank_delta
 
 
 def speed_of_sound(degrees: int) -> int:
