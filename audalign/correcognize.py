@@ -818,10 +818,10 @@ def plot_cor(
             plt.title(arr_b_title)
 
     if corr_array is not None:
-        max_cor = np.max(corr_array)
+        max_cor = np.max(corr_array[0])
 
         fig.add_subplot(3, 2, 5)
-        plt.plot(corr_array)
+        plt.plot(corr_array[0])
         if scaling_factor:
             plt.title(f"Correlation - Scaling Factor: {scaling_factor}")
         else:
@@ -829,7 +829,7 @@ def plot_cor(
         plt.xlabel("Sample Index")
         plt.ylabel("correlation")
         if peaks:
-            indexes = [x[0] / 2 + int(len(corr_array) / 2) for x in peaks]
+            indexes = [x[0] / 2 + int(len(corr_array[0]) / 2) for x in peaks]
             heights = [x[1] * max_cor for x in peaks]
             plt.plot(indexes, heights, "x")
 
