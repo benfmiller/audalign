@@ -5,7 +5,7 @@ write_file="workj_results.txt"
 if test -f "workj_results.txt"; then
     cp $write_file workj_results_last.txt
     > $write_file
-    echo "last run cleared, new tests"
+    echo "last fingerprints run cleared, new tests"
 fi
 
 echo "Starting run" >> $write_file
@@ -31,7 +31,7 @@ files='audio_files/audio_sync/trecs/'
 # gotta test the noise reduced files, too
 
 # this works great but I don't like the arbitrary 999999
-# python3 figuring.py -a 1 | tac | grep -F -m1 -B 999999 '}' | head -n -1 | tac
+# python3 run_align.py -a 1 | tac | grep -F -m1 -B 999999 '}' | head -n -1 | tac
 
 # expecting 256 matches for fingerprints
 files=( 'audio_files/shifts/' 'audio_files/audio_sync/20200602/' )
@@ -50,8 +50,8 @@ for file in "${files[@]}"; do
             echo "$(date +"%T"): Running number $num_runs"
             echo "    '$file', Hash Style '$h', Accuracy '$a', Frequency Threshold '$f'"
 
-            # result=$(python3 figuring.py -a $a -s $h -r $f -f $file| tac | sed '/}/Q' | tac | grep "\S")
-            result=$(python3 figuring.py -a $a -s $h -r $f -f $file)
+            # result=$(python3 run_align.py -a $a -s $h -r $f -f $file| tac | sed '/}/Q' | tac | grep "\S")
+            result=$(python3 run_align.py -a $a -s $h -r $f -f $file)
             echo "$result" | rg "Total fingerprints" >> $write_file
             echo >> $write_file
             echo "$result" | tac | sed '/}/Q' | tac | rg -N "\S" >> $write_file
@@ -60,7 +60,7 @@ for file in "${files[@]}"; do
         done
     done
 
-    locality=( 0 5 15 )
+    locality=( 5 15 )
     accuracy=( 2 3 )
     hash_style=( "panako_mod" "base" )
     freq_threshold=(0 50 100 )
@@ -76,8 +76,8 @@ for file in "${files[@]}"; do
                 echo "$(date +"%T"): Running number $num_runs"
                 echo "    '$file', Hash Style '$h', Accuracy '$a', Frequency Threshold '$f', Locality '$l'"
 
-                # python3 figuring.py -a $a -s $h -r $f -l $l -f $file| tac | sed '/}/Q' | tac | grep "\S" >> $write_file
-                result=$(python3 figuring.py -a $a -s $h -r $f -l $l -f $file)
+                # python3 run_align.py -a $a -s $h -r $f -l $l -f $file| tac | sed '/}/Q' | tac | grep "\S" >> $write_file
+                result=$(python3 run_align.py -a $a -s $h -r $f -l $l -f $file)
                 echo "$result" | rg "Total fingerprints" >> $write_file
                 echo >> $write_file
                 echo "$result" | tac | sed '/}/Q' | tac | rg -N "\S" >> $write_file
@@ -103,8 +103,8 @@ for file in "${files[@]}"; do
             echo "$(date +"%T"): Running number $num_runs"
             echo "    '$file', Hash Style '$h', Accuracy '$a', Frequency Threshold '$f'"
 
-            # python3 figuring.py -a $a -s $h -r $f -f $file| tac | sed '/}/Q' | tac | grep "\S" >> $write_file
-            result=$(python3 figuring.py -a $a -s $h -r $f -f $file)
+            # python3 run_align.py -a $a -s $h -r $f -f $file| tac | sed '/}/Q' | tac | grep "\S" >> $write_file
+            result=$(python3 run_align.py -a $a -s $h -r $f -f $file)
             echo "$result" | rg "Total fingerprints" >> $write_file
             echo >> $write_file
             echo "$result" | tac | sed '/}/Q' | tac | rg -N "\S" >> $write_file
@@ -129,8 +129,8 @@ for file in "${files[@]}"; do
                 echo "$(date +"%T"): Running number $num_runs"
                 echo "    '$file', Hash Style '$h', Accuracy '$a', Frequency Threshold '$f', Locality '$l'"
 
-                # python3 figuring.py -a $a -s $h -r $f -l $l -f $file| tac | sed '/}/Q' | tac | grep "\S" >> $write_file
-                result=$(python3 figuring.py -a $a -s $h -r $f -l $l -f $file)
+                # python3 run_align.py -a $a -s $h -r $f -l $l -f $file| tac | sed '/}/Q' | tac | grep "\S" >> $write_file
+                result=$(python3 run_align.py -a $a -s $h -r $f -l $l -f $file)
                 echo "$result" | rg "Total fingerprints" >> $write_file
                 echo >> $write_file
                 echo "$result" | tac | sed '/}/Q' | tac | rg -N "\S" >> $write_file
@@ -148,12 +148,12 @@ write_file="workj_results_corelation.txt"
 if test -f $write_file; then
     cp $write_file workj_results_last_correlation.txt
     > $write_file
-    echo "last run cleared, new tests"
+    echo "last correlation run cleared, new tests"
 fi
 
 technique="correlation"
 files=( 'audio_files/shifts/' 'audio_files/audio_sync/20200602/' 'audio_files/audio_sync/20201204/' 'audio_files/audio_sync/trec1/' )
-for file in "${files[@]}"; do # TODO make sure all files are run, not quite right
+for file in "${files[@]}"; do
     freq_threshold=( 25 50 100 )
     sample_rates=( 4000 8000 16000 44100 )
     for r in "${freq_threshold[@]}"; do
@@ -166,11 +166,10 @@ for file in "${files[@]}"; do # TODO make sure all files are run, not quite righ
             echo "$(date +"%T"): Running number $num_runs"
             echo "    '$file', Frequency Threshold '$r', Sample Rate '$m', $technique"
 
-            result=$(python3 figuring.py -t $technique -r $r -m $m -f $file)
+            result=$(python3 run_align.py -t $technique -r $r -m $m -f $file)
             echo "$result" | rg "Total fingerprints" >> $write_file
             echo >> $write_file
             echo "$result" | tac | sed '/}/Q' | tac | rg -N "\S" >> $write_file
-            done
         done
     done
 
@@ -188,11 +187,10 @@ for file in "${files[@]}"; do # TODO make sure all files are run, not quite righ
                 echo "$(date +"%T"): Running number $num_runs"
                 echo "    '$file', Frequency Threshold '$r', Sample Rate '$m', Locality '$l', $technique"
 
-                result=$(python3 figuring.py -t $technique -r $r -m $m -l $l -f $file)
+                result=$(python3 run_align.py -t $technique -r $r -m $m -l $l -f $file)
                 echo "$result" | rg "Total fingerprints" >> $write_file
                 echo >> $write_file
                 echo "$result" | tac | sed '/}/Q' | tac | rg -N "\S" >> $write_file
-                done
             done
         done
     done
@@ -205,7 +203,7 @@ write_file="workj_results_corelation_spectrogram.txt"
 if test -f $write_file; then
     cp $write_file workj_results_last_correlation_spectrogram.txt
     > $write_file
-    echo "last run cleared, new tests"
+    echo "last correlation spectrogram run cleared, new tests"
 fi
 
 technique="correlation_spectrogram"
@@ -223,11 +221,10 @@ for file in "${files[@]}"; do
             echo "$(date +"%T"): Running number $num_runs"
             echo "    '$file', Frequency Threshold '$r', Sample Rate '$m', $technique"
 
-            result=$(python3 figuring.py -t $technique -r $r -m $m -f $file)
+            result=$(python3 run_align.py -t $technique -r $r -m $m -f $file)
             echo "$result" | rg "Total fingerprints" >> $write_file
             echo >> $write_file
             echo "$result" | tac | sed '/}/Q' | tac | rg -N "\S" >> $write_file
-            done
         done
     done
 
@@ -245,11 +242,10 @@ for file in "${files[@]}"; do
                 echo "$(date +"%T"): Running number $num_runs"
                 echo "    '$file', Frequency Threshold '$r', Sample Rate '$m', Locality '$l', $technique"
 
-                result=$(python3 figuring.py -t $technique -r $r -m $m -l $l -f $file)
+                result=$(python3 run_align.py -t $technique -r $r -m $m -l $l -f $file)
                 echo "$result" | rg "Total fingerprints" >> $write_file
                 echo >> $write_file
                 echo "$result" | tac | sed '/}/Q' | tac | rg -N "\S" >> $write_file
-                done
             done
         done
     done
@@ -267,7 +263,7 @@ done
 # done < workj_temp.txt
 # $temp_results | grep "took" | cat
 # echo $temp_results
-# python3 figuring.py -a 1 > workj_temp.txt
+# python3 run_align.py -a 1 > workj_temp.txt
 # echo $img_width
 
 echo >> $write_file
