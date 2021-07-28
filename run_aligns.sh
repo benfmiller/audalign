@@ -44,13 +44,12 @@ for file in "${files[@]}"; do
             for a in "${accuracy[@]}"; do
             ((num_runs=num_runs+1))
             echo >> $write_file
-            echo "    run number $num_runs------------------------" >> $write_file
+            echo "    $(date +"%T"): run number $num_runs------------------------" >> $write_file
             echo "    '$file', Hash Style '$h', Accuracy '$a', Frequency Threshold '$f'">> $write_file
             echo >> $write_file
             echo "$(date +"%T"): Running number $num_runs"
             echo "    '$file', Hash Style '$h', Accuracy '$a', Frequency Threshold '$f'"
 
-            # result=$(python3 run_align.py -a $a -s $h -r $f -f $file| tac | sed '/}/Q' | tac | grep "\S")
             result=$(python3 run_align.py -a $a -s $h -r $f -f $file)
             echo "$result" | rg "Total fingerprints" >> $write_file
             echo >> $write_file
@@ -70,13 +69,12 @@ for file in "${files[@]}"; do
                 for a in "${accuracy[@]}"; do
                 ((num_runs=num_runs+1))
                 echo >> $write_file
-                echo "    run number $num_runs------------------------" >> $write_file
+                echo "    $(date +"%T"): run number $num_runs------------------------" >> $write_file
                 echo "    '$file', Hash Style '$h', Accuracy '$a', Frequency Threshold '$f', Locality '$l'">> $write_file
                 echo >> $write_file
                 echo "$(date +"%T"): Running number $num_runs"
                 echo "    '$file', Hash Style '$h', Accuracy '$a', Frequency Threshold '$f', Locality '$l'"
 
-                # python3 run_align.py -a $a -s $h -r $f -l $l -f $file| tac | sed '/}/Q' | tac | grep "\S" >> $write_file
                 result=$(python3 run_align.py -a $a -s $h -r $f -l $l -f $file)
                 echo "$result" | rg "Total fingerprints" >> $write_file
                 echo >> $write_file
@@ -97,13 +95,12 @@ for file in "${files[@]}"; do
             for a in "${accuracy[@]}"; do
             ((num_runs=num_runs+1))
             echo >> $write_file
-            echo "    run number $num_runs------------------------" >> $write_file
+            echo "    $(date +"%T"): run number $num_runs------------------------" >> $write_file
             echo "    '$file', Hash Style '$h', Accuracy '$a', Frequency Threshold '$f'">> $write_file
             echo >> $write_file
             echo "$(date +"%T"): Running number $num_runs"
             echo "    '$file', Hash Style '$h', Accuracy '$a', Frequency Threshold '$f'"
 
-            # python3 run_align.py -a $a -s $h -r $f -f $file| tac | sed '/}/Q' | tac | grep "\S" >> $write_file
             result=$(python3 run_align.py -a $a -s $h -r $f -f $file)
             echo "$result" | rg "Total fingerprints" >> $write_file
             echo >> $write_file
@@ -123,13 +120,12 @@ for file in "${files[@]}"; do
                 for a in "${accuracy[@]}"; do
                 ((num_runs=num_runs+1))
                 echo >> $write_file
-                echo "    run number $num_runs------------------------" >> $write_file
+                echo "    $(date +"%T"): run number $num_runs------------------------" >> $write_file
                 echo "    '$file', Hash Style '$h', Accuracy '$a', Frequency Threshold '$f', Locality '$l'">> $write_file
                 echo >> $write_file
                 echo "$(date +"%T"): Running number $num_runs"
                 echo "    '$file', Hash Style '$h', Accuracy '$a', Frequency Threshold '$f', Locality '$l'"
 
-                # python3 run_align.py -a $a -s $h -r $f -l $l -f $file| tac | sed '/}/Q' | tac | grep "\S" >> $write_file
                 result=$(python3 run_align.py -a $a -s $h -r $f -l $l -f $file)
                 echo "$result" | rg "Total fingerprints" >> $write_file
                 echo >> $write_file
@@ -142,8 +138,9 @@ for file in "${files[@]}"; do
 done
 
 # ------------------------------- correlation
+# expecting 240 alignments for both correlations in total
 
-write_file="workj_results_corelation.txt"
+write_file="workj_results_correlation.txt"
 
 if test -f $write_file; then
     cp $write_file workj_results_last_correlation.txt
@@ -160,7 +157,7 @@ for file in "${files[@]}"; do
         for m in "${sample_rates[@]}"; do 
             ((num_runs=num_runs+1))
             echo >> $write_file
-            echo "    run number $num_runs------------------------" >> $write_file
+            echo "    $(date +"%T"): run number $num_runs------------------------" >> $write_file
             echo "    '$file', Frequency Threshold '$r', Sample Rate '$m', $technique">> $write_file
             echo >> $write_file
             echo "$(date +"%T"): Running number $num_runs"
@@ -181,7 +178,7 @@ for file in "${files[@]}"; do
             for m in "${sample_rates[@]}"; do 
                 ((num_runs=num_runs+1))
                 echo >> $write_file
-                echo "    run number $num_runs------------------------" >> $write_file
+                echo "    $(date +"%T"): run number $num_runs------------------------" >> $write_file
                 echo "    '$file', Frequency Threshold '$r', Sample Rate '$m', Locality '$l', $technique">> $write_file
                 echo >> $write_file
                 echo "$(date +"%T"): Running number $num_runs"
@@ -198,7 +195,7 @@ done
 
 # ------------------------------- correlation spectrogram
 
-write_file="workj_results_corelation_spectrogram.txt"
+write_file="workj_results_correlation_spectrogram.txt"
 
 if test -f $write_file; then
     cp $write_file workj_results_last_correlation_spectrogram.txt
@@ -215,7 +212,7 @@ for file in "${files[@]}"; do
         for m in "${sample_rates[@]}"; do 
             ((num_runs=num_runs+1))
             echo >> $write_file
-            echo "    run number $num_runs------------------------" >> $write_file
+            echo "    $(date +"%T"): run number $num_runs------------------------" >> $write_file
             echo "    '$file', Frequency Threshold '$r', Sample Rate '$m', $technique">> $write_file
             echo >> $write_file
             echo "$(date +"%T"): Running number $num_runs"
@@ -236,7 +233,7 @@ for file in "${files[@]}"; do
             for m in "${sample_rates[@]}"; do 
                 ((num_runs=num_runs+1))
                 echo >> $write_file
-                echo "    run number $num_runs------------------------" >> $write_file
+                echo "    $(date +"%T"): run number $num_runs------------------------" >> $write_file
                 echo "    '$file', Frequency Threshold '$r', Sample Rate '$m', Locality '$l', $technique">> $write_file
                 echo >> $write_file
                 echo "$(date +"%T"): Running number $num_runs"
