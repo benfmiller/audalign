@@ -233,7 +233,9 @@ def _calc_rank(
         second_match = confidences[0] if len(confidences) > 1 else 0
         top_three_list = np.array([top_match[0], second_match, third_match])
         top_three_list -= top_three_list[2]
-        second_proportion = top_three_list[1] / top_three_list[0]
+        second_proportion = (
+            top_three_list[1] / top_three_list[0] if top_three_list[1] > 0 else 0
+        )
         if second_proportion > 0.75:
             rank_delta = 2
     else:
