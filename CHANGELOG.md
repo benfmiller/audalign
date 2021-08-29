@@ -1,5 +1,23 @@
 # Change Log
 
+## [0.7.1] 2021 - 08 - 29
+
+### Changed
+
+- Better handling of second match in rankings
+
+### Added
+
+- number of fingerprints print in alignments
+- run_align.py script. CLI with argparse to run alignment easily
+
+### Fixed
+
+- runtime divide by zero warning
+- butter filter error with 0 threshold
+- target aligning prelim checks for files outside against dir
+- Alignment cases with no matches
+
 ## [0.7.0] 2021 - 07 - 17
 
 ### Changed
