@@ -125,7 +125,14 @@ def prelim_fingerprint_checks(ada_obj, target_file, directory_path):
         os.path.basename(target_file) in all_against_files_base
         and target_file not in all_against_files_full
     ):
-        ada_obj.fingerprint_file(target_file)
+        for i, x in enumerate(all_against_files_full):
+            if os.path.basename(target_file) == os.path.basename(x):
+                all_against_files_full.pop(i)
+                break
+        all_against_files_full.append(target_file)
+    elif os.path.basename(target_file) not in all_against_files_base:
+        all_against_files_full.append(target_file)
+    return all_against_files_full
 
 
 def set_ada_file_names(
@@ -147,7 +154,7 @@ def set_ada_file_names(
         if target_aligning:
             if target_start_end is not None:
                 ada_obj.fingerprint_file(filename_list[0], start_end=target_start_end)
-            prelim_fingerprint_checks(
+            file_dir = prelim_fingerprint_checks(
                 ada_obj=ada_obj,
                 target_file=filename_list[0],
                 directory_path=file_dir,
