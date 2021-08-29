@@ -377,6 +377,11 @@ class TestRecalcWriteShifts:
             self.full_results, test_folder_eig, tmpdir, write_extension=".mp3"
         )
 
+        # sources from original file location
+        self.ada.write_shifts_from_results(
+            self.full_results, None, tmpdir, write_extension=".mp3"
+        )
+
         self.ada.write_shifts_from_results(
             self.full_results, "no errors just prints", tmpdir, write_extension=".mp3"
         )
