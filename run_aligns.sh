@@ -32,8 +32,7 @@ files='audio_files/audio_sync/trecs/'
 
 # this works great but I don't like the arbitrary 999999
 # python3 run_align.py -a 1 | tac | grep -F -m1 -B 999999 '}' | head -n -1 | tac
-
-# expecting 256 matches for fingerprints
+# exptecting 232 matches for fingerprints
 files=( 'audio_files/shifts/' 'audio_files/audio_sync/20200602/' )
 for file in "${files[@]}"; do
     accuracy=( 1 2 3 4 )
