@@ -161,6 +161,8 @@ def correcognize_directory(
     elif filter_matches is None:
         filter_matches = 0.0
 
+    if fingerprint.threshold <= 0:
+        fingerprint.threshold = 1
     sos = signal.butter(
         10, fingerprint.threshold, "highpass", fs=sample_rate, output="sos"
     )
