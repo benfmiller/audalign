@@ -14,6 +14,8 @@ Regular file recogniton can also be done with Audalign similar to dejavu but hel
 
 For more details on implementation and results, see the [wiki!!](https://github.com/benfmiller/audalign/wiki)
 
+![gif of audalign aligning](audalign.gif)
+
 ---
 
 This package is primarirly focused on accuracy of alignments and has several accuracy settings. Parameters for visual alignment can be adjusted. Fingerprinting parameters can be generally set to get consistent results, but visual alignment requires case by case adjustment. Parameters for correlation are focused on sample rate or scipy's find_peaks.
