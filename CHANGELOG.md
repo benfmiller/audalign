@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.7.2] 2021 - 09 - 22
+
+### Added
+
+- load_fingerprints option in alignments
+
 ## [0.7.1] 2021 - 08 - 29
 
 ### Changed
@@ -116,8 +122,8 @@
 
 - Lots more neat tests
 
-### Changed 
-- multiprocessing works for Windows. Linux forces single threaded. 
+### Changed
+- multiprocessing works for Windows. Linux forces single threaded.
   - By my tests, Windows multiprocessing and Linux were the same speed.
 
 ## [0.4.0] 2021 - 05 - 18
@@ -192,7 +198,7 @@
 
 ## [0.1.5] 2021 - 02 - 26
 
-### Added 
+### Added
 
 - fingerprinting and alignment windows
 
@@ -228,7 +234,7 @@
 
 - Visual Alignment weighting
 
-### Fixed 
+### Fixed
 
 - Try except for write in aligns
 
