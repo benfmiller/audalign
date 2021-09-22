@@ -109,11 +109,32 @@ class TestAlign:
     def test_align_bad_technique(self):
         self.ada.align("test_audio/test_shifts", technique="correlationion_bad")
 
+    def test_align_load_fingerprints(self):
+        result = self.ada.align(
+            "test_audio/test_shifts",
+            load_fingerprints="tests/test_fingerprints.json",
+            technique="fingerprints",
+        )
+        assert result
+
+
+class TestAlignFiles:
+    ada = ad.Audalign(num_processors=4)
+
     def test_align_files_fingerprints(self, tmpdir):
         result = self.ada.align_files(
             "test_audio/test_shifts/Eigen-20sec.mp3",
             "test_audio/test_shifts/Eigen-song-base.mp3",
             destination_path=tmpdir,
+        )
+        assert result
+
+    def test_align_files_load_fingerprints(self):
+        result = self.ada.align_files(
+            "test_audio/test_shifts/Eigen-20sec.mp3",
+            "test_audio/test_shifts/Eigen-song-base.mp3",
+            load_fingerprints="tests/test_fingerprints.json",
+            technique="fingerprints",
         )
         assert result
 
@@ -233,6 +254,15 @@ class TestTargetAlign:
         )
         assert result
 
+    def test_target_align_load_fingerprints(self):
+        result = self.ada.target_align(
+            "test_audio/test_shifts/Eigen-song-base.mp3",
+            "test_audio/test_shifts",
+            load_fingerprints="tests/test_fingerprints.json",
+            technique="fingerprints",
+        )
+        assert result
+
 
 class TestFineAlign:
     ada = ad.Audalign(num_processors=4)
@@ -275,6 +305,17 @@ class TestFineAlign:
             self.align_fing_results,
             technique="fingerprints",
             destination_path=tmpdir,
+            locality=5,
+            locality_filter_prop=0.5,
+        )
+        assert result is not None
+        self.ada.pretty_print_alignment(result, match_keys="match_info")
+
+    def test_fine_align_load_fingerprints(self):
+        result = self.ada.fine_align(
+            self.align_fing_results,
+            technique="fingerprints",
+            load_fingerprints="tests/test_fingerprints.json",
             locality=5,
             locality_filter_prop=0.5,
         )
