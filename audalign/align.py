@@ -1,8 +1,11 @@
+from posixpath import basename
 import audalign
+import audalign.filehandler as filehandler
 import multiprocessing
 import os
 from functools import partial
 import tqdm
+import warnings
 
 
 def _align(
@@ -27,6 +30,7 @@ def _align(
     horiz_scaling: float = 1.0,
     img_width: float = 1.0,
     calc_mse: bool = False,
+    load_fingerprints: str = None,
     **kwargs,
 ):
     if destination_path is not None and not os.path.exists(destination_path):
@@ -50,6 +54,7 @@ def _align(
             target_aligning=target_aligning,
             target_start_end=target_start_end,
             fine_aud_file_dict=fine_aud_file_dict,
+            load_fingerprints=load_fingerprints,
         )
 
         file_list, dir_or_list = set_list_and_dir(
@@ -144,6 +149,7 @@ def set_ada_file_names(
     target_aligning,
     target_start_end,
     fine_aud_file_dict,
+    load_fingerprints,
 ):
     # Make target directory
     if destination_path:
@@ -151,6 +157,13 @@ def set_ada_file_names(
             os.makedirs(destination_path)
 
     if technique == "fingerprints":
+        if load_fingerprints is not None:
+            if os.path.exists(load_fingerprints):
+                ada_obj.load_fingerprinted_files(load_fingerprints)
+            else:
+                warnings.warn(
+                    f"load fingerprints given and fingerprinting, but load_fingerprints {load_fingerprints} not found"
+                )
         if target_aligning:
             if target_start_end is not None:
                 ada_obj.fingerprint_file(filename_list[0], start_end=target_start_end)
@@ -166,6 +179,32 @@ def set_ada_file_names(
                 filename_list,
                 _file_audsegs=fine_aud_file_dict,
             )
+        if load_fingerprints is not None:
+            if type(file_dir) == str:
+                file_names = [
+                    x for x in filehandler.get_audio_files_directory(file_dir)
+                ]
+            elif type(file_dir) == list:
+                file_names = [os.path.basename(x) for x in file_dir]
+            elif file_dir is None and fine_aud_file_dict is not None:
+                file_names = [os.path.basename(x) for x in fine_aud_file_dict.keys()]
+            elif filename_list is not None:
+                file_names = [os.path.basename(x) for x in filename_list]
+
+            ada_obj.file_names, temp_file_names = [], ada_obj.file_names
+            ada_obj.fingerprinted_files, temp_fingerprinted_files = (
+                [],
+                ada_obj.fingerprinted_files,
+            )
+            ada_obj.total_fingerprints, temp_total_fingerprints = (
+                0,
+                ada_obj.total_fingerprints,
+            )
+            for loaded_file in temp_fingerprinted_files:
+                if loaded_file[0] != None and loaded_file[0] in file_names:
+                    ada_obj.fingerprinted_files.append(loaded_file)
+                    ada_obj.file_names.append(loaded_file[0])
+                    ada_obj.total_fingerprints += len(loaded_file[1])
     elif technique in ["correlation", "visual", "correlation_spectrogram"]:
         if target_aligning:
             ada_obj.file_names = [os.path.basename(x) for x in filename_list]

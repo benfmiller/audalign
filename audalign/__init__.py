@@ -342,16 +342,21 @@ class Audalign:
         elif path is None and _file_audsegs is not None:
             file_names = zip(_file_audsegs.keys(), ["_"] * len(_file_audsegs))
 
+        one_file_already_fingerprinted = False
         filenames_to_fingerprint = []
         for filename, _ in file_names:  # finds all files to fingerprint
             file_name = os.path.basename(filename)
             if file_name in self.file_names:
                 print(f"{file_name} already fingerprinted")
+                one_file_already_fingerprinted = True
                 continue
             filenames_to_fingerprint.append(filename)
 
         if len(filenames_to_fingerprint) == 0:
-            print("Directory contains 0 files or could not be found")
+            if one_file_already_fingerprinted == True:
+                print("All files in directory already fingerprinted")
+            else:
+                print("Directory contains 0 files or could not be found")
             return
 
         if _file_audsegs is not None:
@@ -943,6 +948,7 @@ class Audalign:
         calc_mse: bool = False,
         cor_sample_rate: int = fingerprint.DEFAULT_FS,
         max_lags: float = None,
+        load_fingerprints: str = None,
         **kwargs,
     ):
         """matches and relative offsets for all files in directory_path using only target file,
@@ -969,6 +975,7 @@ class Audalign:
             calc_mse (bool): also calculates mse for each shift if true. If false, uses default mse 20000000
             cor_sample_rate (int): optionally change the sample rate if using correlation
             max_lags (float, optional): Maximum lags in seconds for correlation.
+            load_fingerprints (str, optional): If given and technique == fingerprints, loads fingerprints from file before fingerprinting.
             kwargs: additional arguments for scipy.signal.find_peaks
 
         Returns
@@ -997,6 +1004,7 @@ class Audalign:
             calc_mse=calc_mse,
             cor_sample_rate=cor_sample_rate,
             max_lags=max_lags,
+            load_fingerprints=load_fingerprints,
             **kwargs,
         )
 
@@ -1021,6 +1029,7 @@ class Audalign:
         horiz_scaling: float = 1.0,
         img_width: float = 1.0,
         calc_mse: bool = False,
+        load_fingerprints: str = None,
         **kwargs,
     ):
         """
@@ -1048,6 +1057,7 @@ class Audalign:
             horiz_scaling (float): scales horizontally to speed up calculations. Smaller numbers have smaller images. Affects alignment granularity.
             img_width (float, optional): width of image comparison for visual recognition
             calc_mse (bool): also calculates mse for each shift if true. If false, uses default mse 20000000
+            load_fingerprints (str, optional): If given and technique == fingerprints, loads fingerprints from file before fingerprinting.
             **kwargs: Additional arguments for finding peaks in correlation
 
         Returns
@@ -1074,6 +1084,7 @@ class Audalign:
             img_width=img_width,
             calc_mse=calc_mse,
             max_lags=max_lags,
+            load_fingerprints=load_fingerprints,
             **kwargs,
         )
 
@@ -1096,6 +1107,7 @@ class Audalign:
         horiz_scaling: float = 1.0,
         img_width: float = 1.0,
         calc_mse: bool = False,
+        load_fingerprints: str = None,
         **kwargs,
     ):
         """
@@ -1119,6 +1131,7 @@ class Audalign:
             horiz_scaling (float): scales horizontally to speed up calculations. Smaller numbers have smaller images. Affects alignment granularity.
             img_width (float, optional): width of image comparison for visual recognition
             calc_mse (bool): also calculates mse for each shift if true. If false, uses default mse 20000000
+            load_fingerprints (str, optional): If given and technique == fingerprints, loads fingerprints from file before fingerprinting.
             **kwargs: Additional arguments for finding peaks in correlation
 
         Returns
@@ -1144,6 +1157,7 @@ class Audalign:
             img_width=img_width,
             calc_mse=calc_mse,
             max_lags=max_lags,
+            load_fingerprints=load_fingerprints,
             **kwargs,
         )
 
@@ -1167,6 +1181,7 @@ class Audalign:
         horiz_scaling: float = 1.0,
         img_width: float = 1.0,
         calc_mse: bool = False,
+        load_fingerprints: str = None,
         **kwargs,
     ):
         """
@@ -1192,6 +1207,7 @@ class Audalign:
             horiz_scaling (float): scales horizontally to speed up calculations. Smaller numbers have smaller images. Affects alignment granularity.
             img_width (float, optional): width of image comparison for visual recognition
             calc_mse (bool): also calculates mse for each shift if true. If false, uses default mse 20000000
+            load_fingerprints (str, optional): If given and technique == fingerprints, loads fingerprints from file before fingerprinting.
             **kwargs: Additional arguments for finding peaks in correlation
 
         Returns
@@ -1249,6 +1265,7 @@ class Audalign:
             horiz_scaling=horiz_scaling,
             img_width=img_width,
             calc_mse=calc_mse,
+            load_fingerprints=load_fingerprints,
             **kwargs,
         )
         if new_results is None:
