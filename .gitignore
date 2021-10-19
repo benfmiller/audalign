@@ -153,6 +153,6 @@ audio_files
 test_save_fingerprints*
 .vs
 .icon
-Session.vim
+*Session*.vim
 Audalign.wiki
 last_results*
