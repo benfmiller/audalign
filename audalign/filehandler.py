@@ -1,14 +1,16 @@
+import fnmatch
+import math
 import multiprocessing
 import os
-import fnmatch
+from functools import partial
+
+import noisereduce
 import numpy as np
 from numpy.core.defchararray import array
 from pydub import AudioSegment
 from pydub.exceptions import CouldntDecodeError
-import math
-from audalign.fingerprint import DEFAULT_FS
-import noisereduce
-from functools import partial
+
+from audalign.recognizers.fingerprint.fingerprinter import DEFAULT_FS
 
 cant_write_ext = [".mov", ".mp4", ".m4a"]
 cant_read_ext = [".txt", ".md", ".pkf", ".py", ".pyc"]

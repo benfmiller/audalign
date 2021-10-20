@@ -1,6 +1,7 @@
-import audalign.fingerprint as fingerprint
-import time
 import os
+import time
+
+import audalign.recognizers.fingerprint.fingerprinter as fingerprint
 
 
 def recognize(

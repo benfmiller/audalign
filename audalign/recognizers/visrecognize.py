@@ -1,17 +1,18 @@
-import audalign.fingerprint as fingerprint
-from audalign.filehandler import read, find_files, get_shifted_file
-from pydub.exceptions import CouldntDecodeError
-import tqdm
-import time
+import multiprocessing
 import os
 import sys
-from skimage.metrics import structural_similarity as ssim
-from skimage.metrics import mean_squared_error
+import time
+from functools import partial
+
+import audalign.recognizers.fingerprint.fingerprinter as fingerprint
 import matplotlib.pyplot as plt
 import numpy as np
-import multiprocessing
-from functools import partial
+import tqdm
+from audalign.filehandler import find_files, get_shifted_file, read
 from PIL import Image
+from pydub.exceptions import CouldntDecodeError
+from skimage.metrics import mean_squared_error
+from skimage.metrics import structural_similarity as ssim
 
 lower_clip = 5
 upper_clip = 255
@@ -220,7 +221,7 @@ def visrecognize_directory(
 
     img_width = get_frame_width(img_width)
 
-    if use_multiprocessing == False:
+    if use_multiprocessing is False:
         target_arr2d, transposed_target_arr2d = get_arrays(
             target_file_path,
             volume_floor=volume_floor,

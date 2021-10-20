@@ -8,12 +8,12 @@ from pprint import PrettyPrinter
 from pydub.utils import mediainfo
 
 import audalign.align as align
-import audalign.correcognize as correcognize
-import audalign.filehandler as filehandler
-import audalign.fingerprint as fingerprint
-import audalign.recognize as recognize
-import audalign.visrecognize as visrecognize
 import audalign.datalign as datalign
+import audalign.filehandler as filehandler
+import audalign.recognizers.correcognize as correcognize
+import audalign.recognizers.fingerprint.fingerprinter as fingerprint
+import audalign.recognizers.fingerprint.recognize as recognize
+import audalign.recognizers.visrecognize as visrecognize
 
 
 def add_rankings(func):
