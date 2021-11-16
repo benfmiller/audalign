@@ -1,4 +1,4 @@
-from audalign.recognizers import BaseConfig
+from audalign.config import BaseConfig
 import typing
 
 
@@ -25,7 +25,8 @@ class FingerprintConfig(BaseConfig):
     Accuracy settings are acheived by manipulations in fingerprinting variables.
     """
 
-    set_parameters = set(
+    set_parameters = BaseConfig.set_parameters
+    set_parameters.update(
         [
             "hash_style",
             "accuracy",

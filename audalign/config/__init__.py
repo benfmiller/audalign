@@ -4,15 +4,17 @@ from abc import ABC
 
 class BaseConfig(ABC):
     used_parameters = set()
-    set_parameters = {}
+    set_parameters = set()
     extra_parameters = {}
     freq_threshold = 44100
     multiprocessing = True
-    num_processors = (None,)
+    num_processors = None
     start_end = None
     plot = False
     max_lags: typing.Optional[float] = None
     filter_matches: typing.Optional[int] = None
+    sample_rate = 44100
+    match_len_filter: typing.Optional[int] = None
 
     CONFIDENCE = "confidence"
     MATCH_TIME = "match_time"
