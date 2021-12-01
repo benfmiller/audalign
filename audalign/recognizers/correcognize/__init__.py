@@ -7,6 +7,8 @@ from audalign.recognizers.correcognize.correcognize import (
 
 import os
 
+# TODO fine align compatibility
+
 
 class CorrelationRecognizer(BaseRecognizer):
     def __init__(self, config: CorrelationConfig = None):

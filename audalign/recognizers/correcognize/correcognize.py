@@ -410,13 +410,6 @@ def calc_corrs(
             ]
 
 
-def _calc_corrs_spec(against, target):
-    corr_result = signal.correlate(against[0], target[0])
-    for i in range(1, len(against)):
-        corr_result += signal.correlate(against[i], target[i])
-    return corr_result
-
-
 def find_maxes(
     correlation: list,
     filter_matches: float,
@@ -630,6 +623,7 @@ def plot_cor(
     Really nifty plotter, lots of good information here.
     Can get really slow if the sample rate is high and the audio file is long.
     """
+    # TODO test this plotter
     new_vis_wsize = int(config.fft_window_size / 44100 * config.sample_rate)
     fig = plt.figure(title)
 

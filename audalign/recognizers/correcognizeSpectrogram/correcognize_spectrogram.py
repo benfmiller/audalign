@@ -3,7 +3,6 @@ import os
 import time
 from functools import partial
 
-import audalign
 import audalign.recognizers.fingerprint.fingerprinter as fingerprinter
 from audalign.config.correlation_spectrogram import CorrelationSpectrogramConfig
 import matplotlib.pyplot as plt
@@ -184,7 +183,7 @@ def correcognize_directory(
             results_list += [_correcognize_dir_(file_path)]
     else:
         try:
-            nprocesses = config.num_processes or multiprocessing.cpu_count()
+            nprocesses = config.num_processors or multiprocessing.cpu_count()
         except NotImplementedError:
             nprocesses = 1
         else:
@@ -254,6 +253,7 @@ def _correcognize(
         locality_filter_prop=locality_filter_prop,
         locality=locality,
         indexes_len=len(indexes),
+        config=config,
         **kwargs,
     )
 
@@ -435,49 +435,29 @@ def calc_corrs(
     against_array,
     target_array,
     locality: float,
-    technique: str,
     indexes: list,
 ):
     if locality is None:
-        if technique == "correlation":
-            yield (
-                signal.correlate(against_array, target_array),
-                (against_array.size, target_array.size),
-            )
-        elif technique == "correlation_spectrogram":
-            against_array = against_array.T
-            target_array = target_array.T
-            yield (
-                _calc_corrs_spec(against_array, target_array),
-                (against_array.shape[1], target_array.shape[1]),
-            )
+        against_array = against_array.T
+        target_array = target_array.T
+        yield (
+            _calc_corrs_spec(against_array, target_array),
+            (against_array.shape[1], target_array.shape[1]),
+        )
     else:
         locality_a = len(against_array) if locality > len(against_array) else locality
         locality_b = len(target_array) if locality > len(target_array) else locality
-        if technique == "correlation":
-            for pair in indexes:
-                yield [
-                    (
-                        signal.correlate(
-                            against_array[pair[0] : pair[0] + locality_a],
-                            target_array[pair[1] : pair[1] + locality_b],
-                        ),
-                        (locality_a, locality_b),
+        for pair in indexes:
+            yield [
+                (
+                    _calc_corrs_spec(
+                        against_array[pair[0] : pair[0] + locality_a].T,
+                        target_array[pair[1] : pair[1] + locality_b].T,
                     ),
-                    pair,
-                ]
-        elif technique == "correlation_spectrogram":
-            for pair in indexes:
-                yield [
-                    (
-                        _calc_corrs_spec(
-                            against_array[pair[0] : pair[0] + locality_a].T,
-                            target_array[pair[1] : pair[1] + locality_b].T,
-                        ),
-                        (locality_a, locality_b),
-                    ),
-                    pair,
-                ]
+                    (locality_a, locality_b),
+                ),
+                pair,
+            ]
 
 
 def _calc_corrs_spec(against, target):
@@ -494,8 +474,8 @@ def find_maxes(
     max_lags: float,
     locality_filter_prop: float,
     locality: float,
-    technique: str,
     indexes_len: int,
+    config: CorrelationSpectrogramConfig,
     **kwargs,
 ) -> list:
     print("Finding Local Maximums... ", end="")
@@ -506,7 +486,7 @@ def find_maxes(
             filter_matches=filter_matches,
             match_len_filter=match_len_filter,
             max_lags=max_lags,
-            technique=technique,
+            config=config,
             **kwargs,
         )
     else:
@@ -519,8 +499,8 @@ def find_maxes(
                     filter_matches=0,
                     match_len_filter=match_len_filter,
                     max_lags=max_lags,
+                    config=config,
                     index_pair=i[1],
-                    technique=technique,
                     **kwargs,
                 ),
             ]
@@ -542,18 +522,14 @@ def _find_peaks(
     max_lags: float,
     config: CorrelationSpectrogramConfig,
     index_pair: tuple = None,
-    technique: str = "correlation",
     **kwargs,
 ):
     """This is where kwargs go. returns zip of peak indices and their heights sorted by height"""
     max_corr = np.max(correlation)
-    if technique == "correlation":
-        scaling_factor = max_corr / len(correlation) / SCALING_16_BIT
-    elif technique == "correlation_spectrogram":
-        scaling_factor = (
-            max_corr / len(correlation) / (config.fft_window_size / 2) / 50
-        )  # 200 is about the max of spectrogram
-        # *4 because most frequency bands are quite low, especially with butter filter
+    scaling_factor = (
+        max_corr / len(correlation) / (config.fft_window_size / 2) / 50
+    )  # 200 is about the max of spectrogram
+    # *4 because most frequency bands are quite low, especially with butter filter
     correlation = (
         correlation / np.max(np.abs(correlation), axis=0)
         if max_corr > 0
@@ -641,9 +617,8 @@ def process_results(
     results_list: list,
     file_name: str,
     scaling_factor: float,
-    sample_rate: int,
     locality: float = None,
-    technique: str = "correlation",
+    config: CorrelationSpectrogramConfig = None,
 ):
     """Processes peaks and stuff into our regular recognition dictionary"""
 
@@ -656,57 +631,35 @@ def process_results(
         for result_item in results_list:
             offset_samples.append(result_item[0])
             peak_heights.append(result_item[1])
-            if technique == "correlation":
-                offset_seconds.append(result_item[0] / sample_rate)
-            elif technique == "correlation_spectrogram":
-                offset_seconds.append(frames_to_sec(result_item[0], sample_rate))
+            offset_seconds.append(frames_to_sec(result_item[0], config))
         locality_list = [None] * len(results_list)
         locality_seconds = [None] * len(results_list)
     else:
         for result_item in results_list:
             offset_samples.append(result_item[0][0])
-            if technique == "correlation":
-                offset_seconds.append(result_item[0][0] / sample_rate)
-            elif technique == "correlation_spectrogram":
-                offset_seconds.append(frames_to_sec(result_item[0][0], sample_rate))
+            offset_seconds.append(frames_to_sec(result_item[0][0], config))
             peak_heights.append(result_item[0][1])
             locality_list.append(result_item[1])
-            if technique == "correlation":
-                locality_seconds.append(
-                    [
-                        (
-                            x[1] / sample_rate,
-                            x[0] / sample_rate,
-                            x[2],
-                        )  # target, against, scaling
-                        for x in result_item[1]
-                    ]
-                )
-            elif technique == "correlation_spectrogram":
-                locality_seconds.append(
-                    [
-                        (
-                            frames_to_sec(x[1], sample_rate),
-                            frames_to_sec(x[0], sample_rate),
-                            x[2],
-                        )  # target, against, scaling
-                        for x in result_item[1]
-                    ]
-                )
+            locality_seconds.append(
+                [
+                    (
+                        frames_to_sec(x[1], config),
+                        frames_to_sec(x[0], config),
+                        x[2],
+                    )  # target, against, scaling
+                    for x in result_item[1]
+                ]
+            )
 
     match = {}
     match[file_name] = {}
 
-    if technique == "correlation":
-        match[file_name]["locality_samples"] = locality_list
-        match[file_name]["offset_samples"] = offset_samples
-    elif technique == "correlation_spectrogram":
-        match[file_name][audalign.Audalign.LOCALITY] = locality_list
-        match[file_name][audalign.Audalign.OFFSET_SAMPLES] = offset_samples
-    match[file_name][audalign.Audalign.LOCALITY_SECS] = locality_seconds
-    match[file_name][audalign.Audalign.OFFSET_SECS] = offset_seconds
-    match[file_name][audalign.Audalign.CONFIDENCE] = peak_heights
-    match[file_name]["sample_rate"] = sample_rate
+    match[file_name][config.LOCALITY] = locality_list
+    match[file_name][config.OFFSET_SAMPLES] = offset_samples
+    match[file_name][config.LOCALITY_SECS] = locality_seconds
+    match[file_name][config.OFFSET_SECS] = offset_seconds
+    match[file_name][config.CONFIDENCE] = peak_heights
+    match[file_name]["sample_rate"] = config.sample_rate
     match[file_name]["scaling_factor"] = scaling_factor
 
     print("done")
@@ -730,61 +683,26 @@ def plot_cor(
     arr_b_title=None,
     peaks=None,
     scaling_factor=None,
-    technique=None,
 ):
     """
     Really nifty plotter, lots of good information here.
     Can get really slow if the sample rate is high and the audio file is long.
     """
+    # TODO test this plotter
     new_vis_wsize = int(config.fft_window_size / 44100 * sample_rate)
     fig = plt.figure(title)
 
-    if technique == "correlation":
-        fingerprint_config = CorrelationSpectrogramConfig()
-        fingerprint_config.sample_rate = sample_rate
-        fingerprint_config.fft_window_size = new_vis_wsize
+    fig.add_subplot(3, 2, 1)
+    plt.imshow(array_a)  # , cmap=plt.cm.gray)
+    plt.gca().invert_yaxis()
+    if arr_a_title:
+        plt.title(arr_a_title)
 
-        fig.add_subplot(3, 2, 1)
-        plt.plot(array_a)
-        plt.xlabel("Sample Index")
-        plt.ylabel("Amplitude")
-        if arr_a_title:
-            plt.title(arr_a_title)
-
-        arr2d_a = fingerprinter.fingerprint(array_a, fingerprint_config, retspec=True)
-        fig.add_subplot(3, 2, 2)
-        plt.imshow(arr2d_a)  # , cmap=plt.cm.gray)
-        plt.gca().invert_yaxis()
-        if arr_a_title:
-            plt.title(arr_a_title)
-
-        fig.add_subplot(3, 2, 3)
-        plt.plot(array_b)
-        plt.xlabel("Sample Index")
-        plt.ylabel("Amplitude")
-        if arr_b_title:
-            plt.title(arr_b_title)
-
-            arr2d_b = fingerprinter.fingerprint(
-                array_b, fingerprint_config, retspec=True
-            )
-            fig.add_subplot(3, 2, 4)
-            plt.imshow(arr2d_b)
-            plt.gca().invert_yaxis()
-            if arr_b_title:
-                plt.title(arr_b_title)
-    elif technique == "correlation_spectrogram":
-        fig.add_subplot(3, 2, 1)
-        plt.imshow(array_a)  # , cmap=plt.cm.gray)
-        plt.gca().invert_yaxis()
-        if arr_a_title:
-            plt.title(arr_a_title)
-
-        fig.add_subplot(3, 2, 3)
-        plt.imshow(array_b)
-        plt.gca().invert_yaxis()
-        if arr_b_title:
-            plt.title(arr_b_title)
+    fig.add_subplot(3, 2, 3)
+    plt.imshow(array_b)
+    plt.gca().invert_yaxis()
+    if arr_b_title:
+        plt.title(arr_b_title)
 
     if corr_array is not None:
         max_cor = np.max(corr_array[0])

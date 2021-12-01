@@ -12,6 +12,10 @@ import audalign.filehandler as filehandler
 from audalign.recognizers import BaseRecognizer
 from audalign.align import Aligner
 from audalign.recognizers.fingerprint import FingerprintRecognizer
+from audalign.recognizers.correcognize import CorrelationRecognizer
+from audalign.recognizers.correcognizeSpectrogram import (
+    CorrelationSpectrogramRecognizer,
+)
 
 
 def add_rankings(func):
