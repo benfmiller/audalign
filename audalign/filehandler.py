@@ -10,7 +10,9 @@ from numpy.core.defchararray import array
 from pydub import AudioSegment
 from pydub.exceptions import CouldntDecodeError
 
-from audalign.recognizers.fingerprint.fingerprinter import DEFAULT_FS
+from audalign.config import BaseConfig
+
+# FIXME use given sample rate
 
 cant_write_ext = [".mov", ".mp4", ".m4a"]
 cant_read_ext = [".txt", ".md", ".pkf", ".py", ".pyc"]
@@ -47,14 +49,17 @@ def find_files(path, extensions=["*"]):
         for extension in extensions:
             for f in fnmatch.filter(files, "*.%s" % extension):
                 p = os.path.join(dirpath, f)
-                yield (p, extension)
+                yield (p, os.path.splitext(p)[1])
 
 
 def create_audiosegment(
-    filepath: str, start_end: tuple = None, sample_rate=DEFAULT_FS, length=None
+    filepath: str,
+    start_end: tuple = None,
+    sample_rate=BaseConfig.sample_rate,
+    length=None,
 ) -> AudioSegment:
     if sample_rate is None:
-        sample_rate = DEFAULT_FS
+        sample_rate = BaseConfig.sample_rate
     if os.path.splitext(filepath)[1] in [".txt", ".json"]:
         raise CouldntDecodeError
     if len(filepath) > 0:
@@ -116,27 +121,32 @@ def get_audio_files_directory(directory_path: str, full_path: bool = False) -> l
         list: of all paths in file that are audio
     """
     aud_list = []
-    for file_path, _ in find_files(directory_path):
-        ext = os.path.splitext(file_path)[1]
-        try:
-            if ext in [".txt", ".json"] or ext in cant_read_ext:
-                continue
-            elif ext.lower() not in can_read_ext:
-                AudioSegment.from_file(file_path)
+    for file_path, ext in find_files(directory_path):
+        if check_is_audio_file(file_path=file_path):
             if full_path is False:
                 aud_list += [os.path.basename(file_path)]
             else:
                 aud_list += [file_path]
-        except CouldntDecodeError:
-            pass  # Do nothing
     return aud_list
+
+
+def check_is_audio_file(file_path: str) -> bool:
+    ext = os.path.splitext(file_path)[1]
+    try:
+        if ext in [".txt", ".json"] or ext in cant_read_ext:
+            return False
+        elif ext.lower() not in can_read_ext:
+            AudioSegment.from_file(file_path)
+    except CouldntDecodeError:
+        return False
+    return True
 
 
 def read(
     filename: str,
     wrdestination=None,
     start_end: tuple = None,
-    sample_rate=DEFAULT_FS,
+    sample_rate=BaseConfig.sample_rate,
 ):
     """
     Reads any file supported by pydub (ffmpeg) and returns a numpy array and the bit depth
@@ -193,12 +203,18 @@ def noise_remove(
     new_data = _floatify_data(audiofile)
 
     if not alt_noise_filepath:
-        noisy_part = new_data[(noise_start * DEFAULT_FS) : (noise_end * DEFAULT_FS)]
+        noisy_part = new_data[
+            (noise_start * BaseConfig.sample_rate) : (
+                noise_end * BaseConfig.sample_rate
+            )
+        ]
     else:
         noise_audiofile = create_audiosegment(alt_noise_filepath)
         noise_new_data = _floatify_data(noise_audiofile)
         noisy_part = noise_new_data[
-            (noise_start * DEFAULT_FS) : (noise_end * DEFAULT_FS)
+            (noise_start * BaseConfig.sample_rate) : (
+                noise_end * BaseConfig.sample_rate
+            )
         ]
 
     print(f"Reducing noise: {filepath}")
@@ -245,7 +261,7 @@ def noise_remove_directory(
     **kwargs,
 ):
     noise_data = _floatify_data(create_audiosegment(noise_filepath))[
-        (noise_start * DEFAULT_FS) : (noise_end * DEFAULT_FS)
+        (noise_start * BaseConfig.sample_rate) : (noise_end * BaseConfig.sample_rate)
     ]
     file_names = []
     for file_path, _ in find_files(directory):
@@ -415,7 +431,7 @@ def _uniform_level(
         print(f"Uniform Leveling: {file_path}")
         audiofile = create_audiosegment(file_path)
         audiofile_data = np.frombuffer(audiofile._data, np.int16)
-        width *= DEFAULT_FS
+        width *= BaseConfig.sample_rate
         if width > len(audiofile_data):
             width = len(audiofile_data)
         index_list = calc_array_indexes(
@@ -475,7 +491,9 @@ def level_by_normalize(
     audiofile_data, index_list, overlap_array, width, exclude_min_db
 ):
     new_audio_data = np.zeros(len(audiofile_data), dtype=np.float32)
-    silent_audiosegment = create_audiosegment("", length=width / DEFAULT_FS * 1000)
+    silent_audiosegment = create_audiosegment(
+        "", length=width / BaseConfig.sample_rate * 1000
+    )
     for index in index_list:
         silent_audiosegment._data = audiofile_data[index : index + width]
         if silent_audiosegment.max_dBFS < exclude_min_db:
@@ -490,7 +508,9 @@ def level_by_normalize(
 
 def level_by_ave(audiofile_data, index_list, overlap_array, width, exclude_min_db):
     new_audio_data = np.zeros(len(audiofile_data), dtype=np.float32)
-    audiosegment_slicer = create_audiosegment("", length=width / DEFAULT_FS * 1000)
+    audiosegment_slicer = create_audiosegment(
+        "", length=width / BaseConfig.sample_rate * 1000
+    )
     average_level_list = []
 
     for index in index_list:
@@ -553,7 +573,7 @@ def _shift_files(
     return_files: bool = False,
 ):
     if sample_rate is None:
-        sample_rate = DEFAULT_FS
+        sample_rate = BaseConfig.sample_rate
 
     if write_extension:
         if write_extension[0] != ".":
@@ -638,7 +658,9 @@ def _shift_files(
 
 def shift_write_file(file_path, destination_path, offset_seconds):
 
-    silence = AudioSegment.silent(offset_seconds * 1000, frame_rate=DEFAULT_FS)
+    silence = AudioSegment.silent(
+        offset_seconds * 1000, frame_rate=BaseConfig.sample_rate
+    )
 
     audiofile = create_audiosegment(file_path)
     audiofile = silence + audiofile
@@ -647,7 +669,9 @@ def shift_write_file(file_path, destination_path, offset_seconds):
         audiofile.export(file_place, format=os.path.splitext(destination_path)[1][1:])
 
 
-def get_shifted_file(file_path, offset_seconds, sample_rate=DEFAULT_FS) -> np.array:
+def get_shifted_file(
+    file_path, offset_seconds, sample_rate=BaseConfig.sample_rate
+) -> np.array:
     silence = AudioSegment.silent(offset_seconds * 1000, frame_rate=sample_rate)
 
     audiofile = create_audiosegment(file_path, sample_rate=sample_rate)
