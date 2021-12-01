@@ -4,7 +4,8 @@ import time
 from functools import partial
 
 import audalign
-import audalign.recognizers.fingerprint.fingerprinter as fingerprint
+import audalign.recognizers.fingerprint.fingerprinter as fingerprinter
+from audalign.config.correlation_spectrogram import CorrelationSpectrogramConfig
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.signal as signal
@@ -17,20 +18,13 @@ SCALING_16_BIT = 65536
 OVERLAP_RATIO = 0.5
 DEFAULT_LOCALITY_FILTER_PROP = 0.6
 
+# FIXME all of this
+
 
 def correcognize(
     target_file_path: str,
     against_file_path: str,
-    start_end_target: tuple = None,
-    start_end_against: tuple = None,
-    filter_matches: float = None,
-    match_len_filter: int = None,
-    locality: float = None,
-    locality_filter_prop: float = None,
-    sample_rate: int = fingerprint.DEFAULT_FS,
-    max_lags: float = None,
-    plot: bool = False,
-    technique: str = "correlation",
+    config: CorrelationSpectrogramConfig,
     **kwargs,
 ):
     """Called from audalign correcognize
@@ -50,19 +44,23 @@ def correcognize(
         [type]: [description]
     """
     assert (
-        sample_rate < 200000
+        config.sample_rate < 200000
     )  # I accidentally used 441000 once... not good, big crash
-    if technique not in ["correlation", "correlation_spectrogram"]:
-        raise ValueError(
-            "technique must be either 'correlation' or 'correlation_spectrogram"
-        )
 
+    assert (
+        config.sample_rate < 200000
+    )  # I accidentally used 441000 once... not good, big crash
+
+    max_lags = config.max_lags
     if max_lags is not None:
-        max_lags = int(calc_spec_windows(max_lags, sample_rate, technique))
+        max_lags = int(calc_spec_windows(max_lags, config=config))
+    filter_matches = config.filter_matches
     if filter_matches is None:
         filter_matches = 0.0
+    locality = config.locality
     if locality is not None:
-        locality = int(calc_spec_windows(locality, sample_rate, technique))
+        max_lags = int(calc_spec_windows(max_lags, config=config))
+    locality_filter_prop = config.locality_filter_prop
     if locality_filter_prop is None:
         locality_filter_prop = DEFAULT_LOCALITY_FILTER_PROP
     elif locality_filter_prop > 1.0:
@@ -71,23 +69,21 @@ def correcognize(
         locality_filter_prop = 0.0
 
     sos = signal.butter(
-        10, fingerprint.threshold, "highpass", fs=sample_rate, output="sos"
+        10, config.freq_threshold, "highpass", fs=config.sample_rate, output="sos"
     )
     # sos = signal.butter(10, 0.125, "hp", fs=sample_rate, output="sos")
     target_array = get_array(
         target_file_path,
-        start_end=start_end_target,
-        sample_rate=sample_rate,
+        start_end=config.start_end,
+        sample_rate=config.sample_rate,
         _file_audsegs=None,
-        technique=technique,
         sos=sos,
     )
     against_array = get_array(
         against_file_path,
-        start_end=start_end_against,
-        sample_rate=sample_rate,
+        start_end=config.start_end_against,
+        sample_rate=config.sample_rate,
         _file_audsegs=None,
-        technique=technique,
         sos=sos,
     )
 
@@ -98,13 +94,10 @@ def correcognize(
         against_array=against_array,
         against_file_path=against_file_path,
         filter_matches=filter_matches,
-        match_len_filter=match_len_filter,
         locality=locality,
         locality_filter_prop=locality_filter_prop,
-        sample_rate=sample_rate,
         max_lags=max_lags,
-        plot=plot,
-        technique=technique,
+        config=config,
         **kwargs,
     )
     t = time.time() - t
@@ -121,60 +114,49 @@ def correcognize(
 def correcognize_directory(
     target_file_path: str,
     against_directory: str,
-    start_end: tuple = None,
-    filter_matches: float = None,
-    sample_rate: int = fingerprint.DEFAULT_FS,
-    match_len_filter: int = None,
-    locality: float = None,
-    locality_filter_prop: float = None,
-    plot: bool = False,
-    max_lags: float = None,
+    config: CorrelationSpectrogramConfig,
     _file_audsegs: dict = None,
     _include_filename: bool = False,
-    technique: str = "correlation",
-    use_multiprocessing: bool = True,
-    num_processes: int = None,
     **kwargs,
 ):
     """Called from audalign correcognize_directory"""
     assert (
-        sample_rate < 200000
+        config.sample_rate < 200000
     )  # I accidentally used 441000 once... not good, big crash
-    if technique not in ["correlation", "correlation_spectrogram"]:
-        raise ValueError(
-            "technique must be either 'correlation' or 'correlation_spectrogram"
-        )
 
     t = time.time()
 
+    max_lags = config.max_lags
     if max_lags is not None:
-        max_lags = int(calc_spec_windows(max_lags, sample_rate, technique))
+        max_lags = int(calc_spec_windows(max_lags, config=config))
+    filter_matches = config.filter_matches
+    if filter_matches is None:
+        filter_matches = 0.0
+    locality = config.locality
     if locality is not None:
-        locality = int(calc_spec_windows(locality, sample_rate, technique))
+        max_lags = int(calc_spec_windows(max_lags, config=config))
+    locality_filter_prop = config.locality_filter_prop
     if locality_filter_prop is None:
         locality_filter_prop = DEFAULT_LOCALITY_FILTER_PROP
     elif locality_filter_prop > 1.0:
         locality_filter_prop = 1.0
     elif locality_filter_prop < 0:
         locality_filter_prop = 0.0
-    if _file_audsegs is not None and filter_matches is None:
-        filter_matches = 0.0
-    elif filter_matches is None:
+    if (_file_audsegs is not None and filter_matches is None) or filter_matches is None:
         filter_matches = 0.0
 
-    if fingerprint.threshold <= 0:
-        fingerprint.threshold = 1
+    if config.freq_threshold <= 0:
+        config.freq_threshold = 1
     sos = signal.butter(
-        10, fingerprint.threshold, "highpass", fs=sample_rate, output="sos"
+        10, config.freq_threshold, "highpass", fs=config.sample_rate, output="sos"
     )
 
-    if use_multiprocessing is False:
+    if config.multiprocessing is False:
         target_array = get_array(
             target_file_path,
-            start_end,
-            sample_rate=sample_rate,
+            config.start_end,
+            sample_rate=config.sample_rate,
             _file_audsegs=_file_audsegs,
-            technique=technique,
             sos=sos,
         )
         target_file_path = (target_file_path, target_array)
@@ -187,27 +169,22 @@ def correcognize_directory(
     _correcognize_dir_ = partial(
         _correcognize_dir,
         target_file_path=target_file_path,
-        start_end=start_end,
         _file_audsegs=_file_audsegs,
-        sample_rate=sample_rate,
-        technique=technique,
         sos_filter=sos,
-        filter_matches=filter_matches,
-        match_len_filter=match_len_filter,
         locality=locality,
         locality_filter_prop=locality_filter_prop,
         max_lags=max_lags,
-        plot=plot,
+        config=config,
         **kwargs,
     )
 
-    if use_multiprocessing == False:
+    if config.multiprocessing == False:
         results_list = []
         for file_path in against_files:
             results_list += [_correcognize_dir_(file_path)]
     else:
         try:
-            nprocesses = num_processes or multiprocessing.cpu_count()
+            nprocesses = config.num_processes or multiprocessing.cpu_count()
         except NotImplementedError:
             nprocesses = 1
         else:
@@ -246,10 +223,8 @@ def _correcognize(
     match_len_filter: int = None,
     locality: float = None,
     locality_filter_prop: float = None,
-    sample_rate: int = fingerprint.DEFAULT_FS,
     max_lags: float = None,
-    plot: bool = False,
-    technique: str = "correlation",
+    config: CorrelationSpectrogramConfig = None,
     **kwargs,
 ):
     print(
@@ -266,7 +241,6 @@ def _correcognize(
         against_array,
         target_array,
         locality=locality,
-        technique=technique,
         indexes=indexes,
     )
 
@@ -279,30 +253,28 @@ def _correcognize(
         max_lags=max_lags,
         locality_filter_prop=locality_filter_prop,
         locality=locality,
-        technique=technique,
         indexes_len=len(indexes),
         **kwargs,
     )
 
-    if plot and locality is None:
+    if config.plot and locality is None:
         plot_cor(
             array_a=target_array,
             array_b=against_array,
             corr_array=correlation,
-            sample_rate=sample_rate,
+            config=config,
             arr_a_title=target_file_path,
             arr_b_title=against_file_path,
             scaling_factor=scaling_factor,
             peaks=results_list_tuple,
-            technique=technique,
         )
-    elif plot:
+    elif config.plot:
         print("\nCorrelation Plot not compatible with locality")
         plot_cor(
             array_a=target_array,
             array_b=against_array,
             corr_array=None,
-            sample_rate=sample_rate,
+            config=config,
             arr_a_title=target_file_path,
             arr_b_title=against_file_path,
             scaling_factor=scaling_factor,
@@ -313,35 +285,28 @@ def _correcognize(
         results_list=results_list_tuple,
         file_name=os.path.basename(against_file_path),
         scaling_factor=scaling_factor,
-        sample_rate=sample_rate,
         locality=locality,
-        technique=technique,
+        config=config,
     )
 
 
 def _correcognize_dir(
     against_file_path,
     target_file_path,
-    start_end,
     _file_audsegs,
-    sample_rate,
-    technique,
     sos_filter,
-    filter_matches,
-    match_len_filter,
     locality,
     locality_filter_prop,
     max_lags,
-    plot,
+    config,
     **kwargs,
 ):
     if type(target_file_path) == str:
         target_array = get_array(
             target_file_path,
-            start_end,
-            sample_rate=sample_rate,
+            config.start_end,
+            sample_rate=config.sample_rate,
             _file_audsegs=_file_audsegs,
-            technique=technique,
             sos=sos_filter,
         )
     else:
@@ -355,9 +320,8 @@ def _correcognize_dir(
         against_array = get_array(
             against_file_path,
             start_end=None,
-            sample_rate=sample_rate,
+            sample_rate=config.sample_rate,
             _file_audsegs=_file_audsegs,
-            technique=technique,
             sos=sos_filter,
         )
         return _correcognize(
@@ -365,14 +329,12 @@ def _correcognize_dir(
             target_file_path=target_file_path,
             against_array=against_array,
             against_file_path=against_file_path,
-            filter_matches=filter_matches,
-            match_len_filter=match_len_filter,
+            filter_matches=config.filter_matches,
+            match_len_filter=config.match_len_filter,
             locality=locality,
             locality_filter_prop=locality_filter_prop,
-            sample_rate=sample_rate,
             max_lags=max_lags,
-            plot=plot,
-            technique=technique,
+            config=config,
             **kwargs,
         )
 
@@ -386,7 +348,6 @@ def get_array(
     start_end,
     sample_rate,
     _file_audsegs,
-    technique,
     sos,
 ):
     if _file_audsegs is not None:
@@ -399,11 +360,15 @@ def get_array(
         target_array = read(file_path, start_end=start_end, sample_rate=sample_rate)[0]
     if sos is not None:
         target_array = signal.sosfilt(sos, target_array)
-    if technique == "correlation_spectrogram":
-        target_array = fingerprint.fingerprint(
-            target_array, fs=sample_rate, retspec=True
-        ).T
-        target_array = np.clip(target_array, 0, 500)  # never louder than 500
+
+    fingerprint_config = CorrelationSpectrogramConfig()
+    fingerprint_config.sample_rate = sample_rate
+    target_array = fingerprinter.fingerprint(
+        target_array,
+        fingerprint_config,
+        retspec=True,
+    ).T
+    target_array = np.clip(target_array, 0, 500)  # never louder than 500
     return target_array
 
 
@@ -426,31 +391,28 @@ def calc_array_indexes(array, locality):
     return index_list
 
 
-def frames_to_sec(frames, sample_rate):
+def frames_to_sec(frames, config: CorrelationSpectrogramConfig):
     return round(
         float(frames)
-        / sample_rate
-        * fingerprint.DEFAULT_WINDOW_SIZE
-        * fingerprint.DEFAULT_OVERLAP_RATIO,
+        / config.sample_rate
+        * config.fft_window_size
+        * config.DEFAULT_OVERLAP_RATIO,
         5,
     )
 
 
-def calc_spec_windows(seconds, sample_rate, technique):
-    if technique == "correlation":
-        return seconds * sample_rate
-    elif technique == "correlation_spectrogram":
-        return max(
-            int(
-                seconds
-                // (
-                    fingerprint.DEFAULT_WINDOW_SIZE
-                    / sample_rate
-                    * fingerprint.DEFAULT_OVERLAP_RATIO
-                )
-            ),
-            1,
-        )
+def calc_spec_windows(seconds, config: CorrelationSpectrogramConfig):
+    return max(
+        int(
+            seconds
+            // (
+                config.fft_window_size
+                / config.sample_rate
+                * config.DEFAULT_OVERLAP_RATIO
+            )
+        ),
+        1,
+    )
 
 
 def find_index_arr(against_array, target_array, locality, max_lags):
@@ -578,6 +540,7 @@ def _find_peaks(
     filter_matches: float,
     match_len_filter: int,
     max_lags: float,
+    config: CorrelationSpectrogramConfig,
     index_pair: tuple = None,
     technique: str = "correlation",
     **kwargs,
@@ -588,7 +551,7 @@ def _find_peaks(
         scaling_factor = max_corr / len(correlation) / SCALING_16_BIT
     elif technique == "correlation_spectrogram":
         scaling_factor = (
-            max_corr / len(correlation) / (fingerprint.DEFAULT_WINDOW_SIZE / 2) / 50
+            max_corr / len(correlation) / (config.fft_window_size / 2) / 50
         )  # 200 is about the max of spectrogram
         # *4 because most frequency bands are quite low, especially with butter filter
     correlation = (
@@ -761,6 +724,7 @@ def plot_cor(
     array_b,
     corr_array,
     sample_rate,
+    config: CorrelationSpectrogramConfig,
     title="Comparison",
     arr_a_title=None,
     arr_b_title=None,
@@ -772,10 +736,14 @@ def plot_cor(
     Really nifty plotter, lots of good information here.
     Can get really slow if the sample rate is high and the audio file is long.
     """
-    new_vis_wsize = int(fingerprint.DEFAULT_WINDOW_SIZE / 44100 * sample_rate)
+    new_vis_wsize = int(config.fft_window_size / 44100 * sample_rate)
     fig = plt.figure(title)
 
     if technique == "correlation":
+        fingerprint_config = CorrelationSpectrogramConfig()
+        fingerprint_config.sample_rate = sample_rate
+        fingerprint_config.fft_window_size = new_vis_wsize
+
         fig.add_subplot(3, 2, 1)
         plt.plot(array_a)
         plt.xlabel("Sample Index")
@@ -783,9 +751,7 @@ def plot_cor(
         if arr_a_title:
             plt.title(arr_a_title)
 
-        arr2d_a = fingerprint.fingerprint(
-            array_a, fs=sample_rate, wsize=new_vis_wsize, retspec=True
-        )
+        arr2d_a = fingerprinter.fingerprint(array_a, fingerprint_config, retspec=True)
         fig.add_subplot(3, 2, 2)
         plt.imshow(arr2d_a)  # , cmap=plt.cm.gray)
         plt.gca().invert_yaxis()
@@ -799,8 +765,8 @@ def plot_cor(
         if arr_b_title:
             plt.title(arr_b_title)
 
-            arr2d_b = fingerprint.fingerprint(
-                array_b, fs=sample_rate, wsize=new_vis_wsize, retspec=True
+            arr2d_b = fingerprinter.fingerprint(
+                array_b, fingerprint_config, retspec=True
             )
             fig.add_subplot(3, 2, 4)
             plt.imshow(arr2d_b)
