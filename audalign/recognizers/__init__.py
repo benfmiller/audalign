@@ -3,13 +3,14 @@ This is the base recognizer class that is handed to the recognition methods
 """
 
 from abc import ABC
-
-
-class BaseConfig(ABC):
-    pass
+from audalign.config import BaseConfig
 
 
 class BaseRecognizer(ABC):
-    pass
+    def __init__(self, config: BaseConfig = None):
+        """takes a config object"""
+        pass
 
-    def recognize()
+    def recognize(self, target_file: str, against: str) -> dict:
+        """this recognizes"""
+        pass
