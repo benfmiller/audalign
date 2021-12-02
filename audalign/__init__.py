@@ -16,6 +16,7 @@ from audalign.recognizers.correcognize import CorrelationRecognizer
 from audalign.recognizers.correcognizeSpectrogram import (
     CorrelationSpectrogramRecognizer,
 )
+from audalign.recognizers.visrecognize import VisualRecognizer
 
 
 def add_rankings(func):

@@ -3,6 +3,7 @@ import math
 import multiprocessing
 import os
 from functools import partial
+import typing
 
 import noisereduce
 import numpy as np
@@ -566,9 +567,9 @@ def shift_write_files(
 
 def _shift_files(
     files_shifts: dict,
-    destination_path: str,
+    destination_path: typing.Optional[str],
     names_and_paths: dict,
-    write_extension: str,
+    write_extension: typing.Optional[str],
     sample_rate: int = None,
     return_files: bool = False,
 ):
