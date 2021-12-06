@@ -3,7 +3,7 @@ import os
 import sys
 import time
 from functools import partial
-from audalign.config.visrecognize import VisrecognizeConfig
+from audalign.config.visual import VisualConfig
 
 import audalign.recognizers.fingerprint.fingerprinter as fingerprint
 import matplotlib.pyplot as plt
@@ -21,9 +21,7 @@ upper_clip = 255
 # ------------------------------------------------------------------------------------------
 
 
-def visrecognize(
-    target_file_path: str, against_file_path: str, config: VisrecognizeConfig
-):
+def visrecognize(target_file_path: str, against_file_path: str, config: VisualConfig):
     # With frequency of 44100
     # Each frame is 0.0929 seconds with an overlap ratio of .5,
     # so moving over one frame moves 0.046 seconds
@@ -105,7 +103,7 @@ def visrecognize(
 def _visrecognize_directory(
     file_path: str,
     target_file_path: str,
-    config: VisrecognizeConfig,
+    config: VisualConfig,
     _file_audsegs: dict = None,
 ):
     img_width = get_frame_width(config)
@@ -180,7 +178,7 @@ def _visrecognize_directory(
 def visrecognize_directory(
     target_file_path: str,
     against_directory: str,
-    config: VisrecognizeConfig,
+    config: VisualConfig,
     _file_audsegs: dict = None,
     _include_filename=False,
 ):
@@ -280,7 +278,7 @@ def _visrecognize(
     target_index_list: list,
     against_file_path: str,
     transposed_against_arr2d,
-    config: VisrecognizeConfig,
+    config: VisualConfig,
     img_width=1.0,
     volume_threshold=215.0,
     calc_mse=False,
@@ -366,7 +364,7 @@ def get_arrays(
     vert_scaling: float = 1.0,
     horiz_scaling: float = 1.0,
     start_end: tuple = None,
-    config: VisrecognizeConfig = None,
+    config: VisualConfig = None,
     _file_audsegs: dict = None,
 ):
     if _file_audsegs is not None:
@@ -397,7 +395,7 @@ def get_arrays(
 # ------------------------------------------------------------------------------------------
 
 
-def get_frame_width(config: VisrecognizeConfig):
+def get_frame_width(config: VisualConfig):
     return max(
         int(
             config.img_width
@@ -423,7 +421,7 @@ def find_index_arr(arr2d, threshold, img_width):
 
 
 def pair_index_tuples(
-    target_list, against_list, config: VisrecognizeConfig, max_lags: float = None
+    target_list, against_list, config: VisualConfig, max_lags: float = None
 ):
     index_pairs = []
     if max_lags is None:
@@ -493,7 +491,7 @@ def calculate_comp_values(
 def process_results(
     results_list,
     filename,
-    config: VisrecognizeConfig,
+    config: VisualConfig,
     horiz_scaling: float = 1.0,
 ):
     """processes results from recognition and returns a pretty json

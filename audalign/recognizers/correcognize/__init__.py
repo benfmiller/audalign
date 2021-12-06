@@ -11,6 +11,8 @@ import os
 
 
 class CorrelationRecognizer(BaseRecognizer):
+    config: CorrelationConfig
+
     def __init__(self, config: CorrelationConfig = None):
         # super().__init__(config=config)
         self.config = CorrelationConfig() if config is None else config

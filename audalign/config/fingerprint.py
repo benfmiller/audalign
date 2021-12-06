@@ -110,6 +110,39 @@ class FingerprintConfig(BaseConfig):
     freq_threshold = 200
     set_parameters.add("freq_threshold")
 
+    CONFIDENCE = "confidence"
+    rankings_minus = (
+        (0.95, 4),
+        (0.9, 3),
+        (0.85, 2),
+        (0.8, 1),
+        (0.7, 0),
+        (0.6, -1),
+        (0.45, -2),
+        (0.0, 0),
+    )
+    locality_top_match_tups = (
+        (100, 10),
+        (80, 9),
+        (60, 8),
+        (40, 7),
+        (30, 6),
+        (15, 5),
+        (12, 4),
+        (8, 3),
+        (0, 1),
+    )
+    no_locality_top_match_tups = (
+        (500, 10),
+        (200, 9),
+        (100, 8),
+        (70, 7),
+        (30, 6),
+        (15, 5),
+        (10, 4),
+        (0, 1),
+    )
+
     def set_hash_style(self, hash_style: str) -> None:
         """Sets the hash style. Must be one of ["base", "panako", "panako_mod", "base_three"]
 

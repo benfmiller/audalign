@@ -11,6 +11,8 @@ import os
 
 
 class CorrelationSpectrogramRecognizer(BaseRecognizer):
+    config: CorrelationSpectrogramConfig
+
     def __init__(self, config: CorrelationSpectrogramConfig = None):
         # super().__init__(config=config)
         self.config = CorrelationSpectrogramConfig() if config is None else config

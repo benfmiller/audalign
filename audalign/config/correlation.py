@@ -13,16 +13,12 @@ class CorrelationConfig(BaseConfig):
 
     set_parameters = BaseConfig.set_parameters
     set_parameters.update(
-        "hash_style",
-        "accuracy",
         "filter_matches",
         "locality",
         "locality_filter_prop",
         "extensions",
         "start_end_agaisnt",
     )
-    hash_style = "panako_mod"
-    accuracy = 2
     filter_matches = 1
     locality: typing.Optional[float] = None
     locality_filter_prop: typing.Optional[float] = None
@@ -51,3 +47,35 @@ class CorrelationConfig(BaseConfig):
 
     freq_threshold = 200
     set_parameters.add("freq_threshold")
+
+    rankings_no_locality_top_match_tups = (
+        (8, 10),
+        (6, 9),
+        (4, 8),
+        (3, 7),
+        (2, 6),
+        (1.5, 5),
+        (1, 4),
+        (0, 1),
+    )
+    rankings_locality_top_match_tups = (
+        (15, 10),
+        (12, 9),
+        (9, 8),
+        (7, 7),
+        (5.5, 6),
+        (3, 5),
+        (2, 4),
+        (0, 1),
+    )
+    rankings_minus = (
+        (0.95, 4),
+        (0.9, 3),
+        (0.85, 1),
+        (0.8, 0),
+        (0.75, -1),
+        (0.7, -2),
+        (0.65, -3),
+        (0.1, -4),
+        (0.0, 0),
+    )

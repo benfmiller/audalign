@@ -17,6 +17,7 @@ import json
 
 
 class FingerprintRecognizer(BaseRecognizer):
+    config: FingerprintConfig
     file_names = []
     fingerprinted_files = []
     total_fingerprints = 0
@@ -24,6 +25,7 @@ class FingerprintRecognizer(BaseRecognizer):
     def __init__(self, config: FingerprintConfig = None):
         # super().__init__(config=config)
         self.config = FingerprintConfig() if config is None else config
+        self.last_recognition = None
 
     def clear_fingerprints(self) -> None:
         """
@@ -89,13 +91,15 @@ class FingerprintRecognizer(BaseRecognizer):
                 to_fingerprint += [against_path]
         self.fingerprint_directory(to_fingerprint)
 
-        return recognize.recognize(
+        recognition = recognize.recognize(
             self,
             file_path=file_path,
             config=self.config,
             *args,
             **kwargs,
         )
+
+        return recognition
 
     def fingerprint_directory(self, path: str, _file_audsegs: dict = None) -> None:
         """

@@ -7,6 +7,8 @@ from audalign.config import BaseConfig
 
 
 class BaseRecognizer(ABC):
+    config: BaseConfig
+
     def __init__(self, config: BaseConfig = None):
         """takes a config object"""
         pass

@@ -676,7 +676,6 @@ def plot_cor(
     array_a,
     array_b,
     corr_array,
-    sample_rate,
     config: CorrelationSpectrogramConfig,
     title="Comparison",
     arr_a_title=None,
@@ -689,7 +688,7 @@ def plot_cor(
     Can get really slow if the sample rate is high and the audio file is long.
     """
     # TODO test this plotter
-    new_vis_wsize = int(config.fft_window_size / 44100 * sample_rate)
+    new_vis_wsize = int(config.fft_window_size / 44100 * config.sample_rate)
     fig = plt.figure(title)
 
     fig.add_subplot(3, 2, 1)

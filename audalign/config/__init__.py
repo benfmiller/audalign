@@ -23,6 +23,13 @@ class BaseConfig(ABC):
     LOCALITY = "locality_frames"
     LOCALITY_SECS = "locality_seconds"
 
+    rankings_no_locality_top_match_tups: tuple = ()
+    rankings_locality_top_match_tups: tuple = ()
+    rankings_minus: tuple = ()
+    rankings_second_is_close_add: int = 1
+    rankings_get_top_num_match: typing.Optional[str] = None
+    rankings_num_matches_tups: typing.Optional[tuple] = None
+
     def __init__(self, set_parameters: dict = {}, extra_parameters: dict = {}):
         for param, value in set_parameters.items():
             if param in self.used_parameters:
@@ -30,11 +37,3 @@ class BaseConfig(ABC):
                 self.__dict__[param] = value
             else:
                 self.extra_parameters[param] = value
-
-    def set_freq_threshold(self, threshold: int) -> None:
-        """Sets minimum frequency threshold for fingerprint
-
-        Args
-        ----
-            threshold ([int]): [threshold]
-        """

@@ -1,5 +1,5 @@
 from audalign.recognizers import BaseRecognizer
-from audalign.config.visrecognize import VisrecognizeConfig
+from audalign.config.visual import VisualConfig
 from audalign.recognizers.visrecognize.visrecognize import (
     visrecognize,
     visrecognize_directory,
@@ -10,9 +10,11 @@ import os
 
 
 class VisualRecognizer(BaseRecognizer):
-    def __init__(self, config: VisrecognizeConfig = None):
+    config: VisualConfig
+
+    def __init__(self, config: VisualConfig = None):
         # super().__init__(config=config)
-        self.config = VisrecognizeConfig() if config is None else config
+        self.config = VisualConfig() if config is None else config
         self.last_recognition = None
 
     def recognize(

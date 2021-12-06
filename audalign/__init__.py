@@ -24,7 +24,16 @@ def add_rankings(func):
     def wrapper_decorator(*args, **kwargs):
         results = func(*args, **kwargs)
         if results is not None:
-            results["rankings"] = Audalign.rank_alignment(results)
+            if results.get("rankings") is not None:
+                results["rankings"]["fine_match_info"] = Audalign.rank_alignment(
+                    results, kwargs["recognizer"]
+                )
+            else:
+                results["rankings"] = {}
+                results["rankings"]["match_info"] = Audalign.rank_alignment(
+                    results, kwargs["recognizer"]
+                )
+
         return results
 
     return wrapper_decorator
@@ -56,11 +65,11 @@ class Audalign:
         self,
         target_file: str,
         against_path: str,
-        recognizer_obj: BaseRecognizer = None,
+        recognizer: BaseRecognizer = None,
     ) -> dict:
-        if recognizer_obj is None:
-            recognizer_obj = FingerprintRecognizer()
-        return recognizer_obj.recognize(target_file, against_path)
+        if recognizer is None:
+            recognizer = FingerprintRecognizer()
+        return recognizer.recognize(target_file, against_path)
 
     @add_rankings
     def align(
@@ -129,6 +138,7 @@ class Audalign:
     @staticmethod
     def rank_alignment(
         alignment: dict,
+        recognizer: BaseRecognizer,
     ):
         """
         Ranks alignments and recognitions.
@@ -145,7 +155,7 @@ class Audalign:
             dict: form similar to alignments or matches
 
         """
-        return datalign.rank_alignment(alignment=alignment)
+        return datalign.rank_alignment(alignment=alignment, recognizer=recognizer)
 
     @staticmethod
     def pretty_print_results(results, match_keys="both"):
