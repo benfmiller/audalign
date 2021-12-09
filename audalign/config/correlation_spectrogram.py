@@ -4,25 +4,7 @@ import typing
 
 class CorrelationSpectrogramConfig(BaseConfig):
     """
-    hash style has four options. All fingerprints must be of the same hash style to match.
-
-    'base' hash style consists of two peaks. Two frequencies and a time difference.
-    Creates many matches but is insensitive to noise.
-
-    'panako' hash style consists of three peaks. Two differences in frequency, two frequency
-    bands, one time difference ratio. Creates few matches, very resistant to noise.
-
-    'panako_mod' hash style consists of three peaks. Two differences in frequency and one
-    time difference ratio. Creates less matches than base, more than panako. moderately
-    resistant to noise
-
-    'base_three' hash style consists of three peaks. Three frequencies and two time differences.
-
     multiprocessing is set to True by default
-
-    There are four accuracy levels with 1 being the lowest accuracy but the fastest. 3 is the highest recommended.
-    4 gives the highest accuracy, but can take several gigabytes of memory for a couple files.
-    Accuracy settings are acheived by manipulations in fingerprinting variables.
     """
 
     set_parameters = BaseConfig.set_parameters
