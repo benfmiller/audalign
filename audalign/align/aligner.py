@@ -6,32 +6,18 @@ import os
 from functools import partial
 import tqdm
 import warnings
+import typing
 
 
 def _align(
-    ada_obj,
-    filename_list: str,
-    file_dir: str,
+    recognizer,
+    filename_list: typing.Union[str, list],
+    file_dir: typing.Optional[str],
     destination_path: str = None,
     write_extension: str = None,
-    technique: str = "fingerprints",
-    filter_matches: float = None,
-    locality: float = None,
-    locality_filter_prop: float = None,
-    cor_sample_rate: int = None,
     max_lags: float = None,
     fine_aud_file_dict: dict = None,
     target_aligning: bool = False,
-    target_start_end: tuple = None,
-    alternate_strength_stat: str = None,
-    volume_threshold: float = 216,
-    volume_floor: float = 10.0,
-    vert_scaling: float = 1.0,
-    horiz_scaling: float = 1.0,
-    img_width: float = 1.0,
-    calc_mse: bool = False,
-    load_fingerprints: str = None,
-    **kwargs,
 ):
     if destination_path is not None and not os.path.exists(destination_path):
         raise ValueError(f'destination_path "{destination_path}" does not exist')
