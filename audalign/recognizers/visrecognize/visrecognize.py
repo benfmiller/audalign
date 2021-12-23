@@ -34,6 +34,9 @@ def visrecognize(target_file_path: str, against_file_path: str, config: VisualCo
 
     t = time.time()
 
+    if config.CONFIDENCE == "mse":
+        config.calc_mse = True
+
     img_width = get_frame_width(config.img_width)
 
     target_arr2d, transposed_target_arr2d = get_arrays(
@@ -193,6 +196,9 @@ def visrecognize_directory(
     # volume_threshold -= volume_floor
 
     t = time.time()
+
+    if config.CONFIDENCE == "mse":
+        config.calc_mse = True
 
     img_width = get_frame_width(config)
 

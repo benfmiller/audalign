@@ -4,6 +4,7 @@ from abc import ABC
 
 class BaseConfig(ABC):
     used_parameters = set()
+    passthrough_args = {}  # TODO incorporate this
     set_parameters = set()
     extra_parameters = {}
     freq_threshold = 44100

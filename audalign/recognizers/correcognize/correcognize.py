@@ -15,6 +15,7 @@ from pydub.exceptions import CouldntDecodeError
 # For locality window overlaps
 SCALING_16_BIT = 65536
 # TODO incorporate into config
+# TODO pass the kwargs through
 OVERLAP_RATIO = 0.5
 DEFAULT_LOCALITY_FILTER_PROP = 0.6
 

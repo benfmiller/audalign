@@ -1,3 +1,4 @@
+from audalign import config
 from audalign.recognizers import BaseRecognizer
 from audalign.config.correlation import CorrelationConfig
 from audalign.recognizers.correcognize.correcognize import (
@@ -6,6 +7,9 @@ from audalign.recognizers.correcognize.correcognize import (
 )
 
 import os
+import typing
+import copy
+from functools import partial
 
 # TODO fine align compatibility
 
@@ -31,6 +35,38 @@ class CorrelationRecognizer(BaseRecognizer):
             recognition = correcognize(file_path, against_path, self.config)
         self.last_recognition = recognition
         return recognition
+
+    def check_align_hook(
+        self,
+        file_list,
+        dir_or_list,
+        max_lags: typing.Optional[float],
+        target_aligning: bool,
+        fine_aud_file_dict: typing.Optional[dict],
+    ):
+        if self.config.multiprocessing == True and not target_aligning:
+            return True
+        return False
+
+    def align_hook(
+        self,
+        dir_or_list,
+        fine_aud_file_dict: typing.Optional[dict],
+    ):
+        temp_config = copy.deepcopy(self.config)
+        temp_config.multiprocessing = False
+        temp_config.plot = False
+
+        return partial(
+            correcognize_directory,
+            against_directory=dir_or_list,
+            config=temp_config,
+            _file_audsegs=fine_aud_file_dict,
+            _include_filename=True,
+        )
+
+    def _align(self, file_path, dir_or_list):
+        return correcognize_directory(file_path, dir_or_list, self.config)
 
     # def correcognize_directory(
     #     self,

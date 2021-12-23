@@ -4,7 +4,7 @@ from pprint import PrettyPrinter
 
 from pydub.utils import mediainfo
 
-import audalign.align as align
+import audalign.align.aligner as aligner
 from audalign.config import BaseConfig
 from audalign.config.fingerprint import FingerprintConfig
 import audalign.datalign as datalign
@@ -74,13 +74,214 @@ class Audalign:
     @add_rankings
     def align(
         self,
-        aligner_obj: align.Aligner = None,
-        recognizer_obj: BaseRecognizer = None,
-        # TODO
+        directory_path: str,
+        destination_path: str = None,
+        write_extension: str = None,
+        max_lags: float = None,
+        recognizer: BaseRecognizer = None,
     ):
-        if aligner_obj is None:
-            aligner_obj = Aligner
-        return aligner_obj.align(recognizer_obj)
+        """
+        Finds matches and relative offsets for all files in directory_path, aligns them, and writes them to destination_path
+
+        Args
+        ----
+            directory_path (str): String of directory for alignment
+            destination_path (str): String of path to write alignments to
+            write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
+            max_lags (float, optional): Maximum lags in seconds for correlation.
+            # TODO recognizer
+
+        Returns
+        -------
+            files_shifts (dict{float}): dict of file name with shift as value
+        """
+        if recognizer is None:
+            recognizer = FingerprintRecognizer()
+        return aligner._align(
+            recognizer=recognizer,
+            filename_list=None,
+            file_dir=directory_path,
+            destination_path=destination_path,
+            write_extension=write_extension,
+            max_lags=max_lags,
+        )
+
+    @add_rankings
+    def align_files(
+        self,
+        filename_a,
+        filename_b,
+        *filenames,
+        destination_path: str = None,
+        write_extension: str = None,
+        max_lags: float = None,
+        recognizer: BaseRecognizer = None,
+    ):
+        """
+        Finds matches and relative offsets for all files given, aligns them, and writes them to destination_path if given
+
+        try align_files(*filepath_list) for more concision if desired
+
+        Args
+        ----
+            filename_a (str): String of path for alignment
+            filename_b (str): String of path for alignment
+            *filenames (strs): strings of paths for alignment
+            destination_path (str): String of path to write alignments to
+            write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
+            max_lags (float, optional): Maximum lags in seconds for correlation.
+            # TODO recognizer
+
+        Returns
+        -------
+            files_shifts (dict{float}): dict of file name with shift as value
+        """
+        filename_list = [filename_a, filename_b, *filenames]
+        if recognizer is None:
+            recognizer = FingerprintRecognizer()
+        return aligner._align(
+            recognizer=recognizer,
+            filename_list=filename_list,
+            file_dir=None,
+            destination_path=destination_path,
+            write_extension=write_extension,
+            max_lags=max_lags,
+        )
+
+    @add_rankings
+    def target_align(
+        self,
+        target_file: str,
+        directory_path: str,
+        destination_path: str = None,
+        write_extension: str = None,
+        max_lags: float = None,
+        recognizer: BaseRecognizer = None,
+    ):
+        """matches and relative offsets for all files in directory_path using only target file,
+        aligns them, and writes them to destination_path if given. Uses fingerprinting by defualt,
+        but uses visual recognition if false
+
+        Args
+        ----
+            target_file (str): File to find alignments against
+            directory_path (str): Directory to align against
+            destination_path (str, optional): Directory to write alignments to
+            write_extension (str, optional): audio file format to write to. Defaults to None.
+            max_lags (float, optional): Maximum lags in seconds for correlation.
+            # TODO recognizer
+
+        Returns
+        -------
+            dict: dict of file name with shift as value along with match info
+        """
+
+        if recognizer is None:
+            recognizer = FingerprintRecognizer()
+        return aligner._align(
+            recognizer=recognizer,
+            filename_list=[target_file],
+            file_dir=directory_path,
+            destination_path=destination_path,
+            target_aligning=True,
+            write_extension=write_extension,
+            max_lags=max_lags,
+        )
+
+    @add_rankings
+    def fine_align(
+        self,
+        results,
+        destination_path: str = None,
+        write_extension: str = None,
+        max_lags: float = 2,
+        match_index: int = 0,
+        recognizer: BaseRecognizer = None,
+    ):
+        """
+        Finds matches and relative offsets for all files in directory_path, aligns them, and writes them to destination_path
+
+        Args
+        ----
+            results (dict): results from previous alignments.
+            destination_path (str): String of path to write alignments to
+            write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
+            max_lags (float, optional): Maximum lags in seconds for correlation.
+            match_index (int): reorders the input results to the given match index.
+            recognizer (BaseRecognizer, optional): # TODO
+
+        Returns
+        -------
+            files_shifts (dict{float}): dict of file name with shift as value. Includes match_info, fine_match_info, and names_and_paths
+        """
+
+        if results is None:
+            raise ValueError(f'results "{results}", no results to fine align')
+
+        print("Fine Aligning...")
+
+        if recognizer is None:
+            recognizer = CorrelationRecognizer
+
+        # if results.get("rankings") is not None:
+        #     results.pop("rankings")
+
+        # if recognizer.== "confidence":
+        #     _ = results["match_info"]
+        #     _ = _[list(_.keys())[0]]
+        #     _ = _["match_info"]
+        #     _ = _[list(_.keys())[0]]
+        #     if "confidence" not in _.keys():
+        #         strength_stat = "ssim"
+
+        if match_index != 0:
+            recalc_shifts_results = aligner.recalc_shifts_index(
+                results,
+                key="match_info",
+                match_index=match_index,
+                strength_stat=recognizer.config.CONFIDENCE,
+            )
+            paths_audio = filehandler.shift_get_files(
+                recalc_shifts_results, sample_rate=recognizer.config.sample_rate
+            )
+        else:
+            paths_audio = filehandler.shift_get_files(
+                results, sample_rate=recognizer.config.sample_rate
+            )
+
+        new_results = aligner._align(
+            ada_obj=self,
+            filename_list=None,
+            file_dir=None,
+            max_lags=max_lags,
+            fine_aud_file_dict=paths_audio,
+        )
+        if new_results is None:
+            print("No matches found for fine alignment")
+            return
+        new_results = aligner.combine_fine(results, new_results)
+
+        if destination_path:
+            copy_dict = {}
+            for name, value in new_results.items():
+                if name not in [
+                    "names_and_paths",
+                    "match_info",
+                    "fine_match_info",
+                    "rankings",
+                ]:
+                    copy_dict[name] = value
+            try:
+                self._write_shifted_files(
+                    copy_dict,
+                    destination_path,
+                    new_results["names_and_paths"],
+                    write_extension,
+                )
+            except PermissionError:
+                print("Permission Denied for write fine_align")
+
+        return new_results
 
     @staticmethod
     def write_processed_file(
@@ -339,7 +540,7 @@ class Audalign:
             strength_stat (str, optional): change if using mse for visual *not recommended*.
             fine_strength_stat (str, optional): change if using mse for visual *not recommended*.
         """
-        return align.recalc_shifts_index(
+        return aligner.recalc_shifts_index(
             results,
             key=key,
             match_index=match_index,

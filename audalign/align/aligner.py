@@ -5,12 +5,13 @@ import multiprocessing
 import os
 from functools import partial
 import tqdm
-import warnings
 import typing
+
+from audalign.recognizers import BaseRecognizer
 
 
 def _align(
-    recognizer,
+    recognizer: BaseRecognizer,
     filename_list: typing.Union[str, list],
     file_dir: typing.Optional[str],
     destination_path: str = None,
@@ -20,208 +21,64 @@ def _align(
     target_aligning: bool = False,
 ):
     if destination_path is not None and not os.path.exists(destination_path):
-        raise ValueError(f'destination_path "{destination_path}" does not exist')
-    ada_obj.file_names, temp_file_names = [], ada_obj.file_names
-    ada_obj.fingerprinted_files, temp_fingerprinted_files = (
-        [],
-        ada_obj.fingerprinted_files,
+        # raise ValueError(f'destination_path "{destination_path}" does not exist')
+        raise ValueError
+
+    file_names_to_align = recognizer.align_get_file_names(
+        filename_list=filename_list,
+        file_dir=file_dir,
+        target_aligning=target_aligning,
+        fine_aud_file_dict=fine_aud_file_dict,
     )
-    ada_obj.total_fingerprints, temp_total_fingerprints = 0, ada_obj.total_fingerprints
-    try:
-        ada_obj.calc_mse = calc_mse
-        ada_obj.alternate_strength_stat = alternate_strength_stat
 
-        set_ada_file_names(
-            ada_obj=ada_obj,
-            filename_list=filename_list,
-            file_dir=file_dir,
-            destination_path=destination_path,
-            technique=technique,
-            target_aligning=target_aligning,
-            target_start_end=target_start_end,
-            fine_aud_file_dict=fine_aud_file_dict,
-            load_fingerprints=load_fingerprints,
-        )
+    file_list, dir_or_list = set_list_and_dir(
+        filename_list=filename_list,
+        file_dir=file_dir,
+        target_aligning=target_aligning,
+        fine_aud_file_dict=fine_aud_file_dict,
+    )
 
-        file_list, dir_or_list = set_list_and_dir(
-            filename_list=filename_list,
-            file_dir=file_dir,
-            target_aligning=target_aligning,
-            fine_aud_file_dict=fine_aud_file_dict,
-        )
+    total_alignment, file_names_and_paths = calc_alignments(
+        recognizer=recognizer,
+        file_names_to_align=file_names_to_align,
+        file_list=file_list,
+        dir_or_list=dir_or_list,
+        max_lags=max_lags,
+        target_aligning=target_aligning,
+        fine_aud_file_dict=fine_aud_file_dict,
+    )
 
-        total_alignment, file_names_and_paths = calc_alignments(
-            ada_obj=ada_obj,
-            file_list=file_list,
-            dir_or_list=dir_or_list,
-            technique=technique,
-            filter_matches=filter_matches,
-            locality=locality,
-            locality_filter_prop=locality_filter_prop,
-            max_lags=max_lags,
-            target_start_end=target_start_end,
-            target_aligning=target_aligning,
-            cor_sample_rate=cor_sample_rate,
-            volume_threshold=volume_threshold,
-            volume_floor=volume_floor,
-            vert_scaling=vert_scaling,
-            horiz_scaling=horiz_scaling,
-            img_width=img_width,
-            fine_aud_file_dict=fine_aud_file_dict,
-            **kwargs,
-        )
+    files_shifts = calc_final_alignments(
+        recognizer=recognizer,
+        filename_list=filename_list,
+        file_dir=file_dir,
+        total_alignment=total_alignment,
+        destination_path=destination_path,
+        file_names_and_paths=file_names_and_paths,
+        write_extension=write_extension,
+        target_aligning=target_aligning,
+        fine_aligning=fine_aud_file_dict is not None,
+    )
 
-        files_shifts = calc_final_alignments(
-            ada_obj=ada_obj,
-            filename_list=filename_list,
-            file_dir=file_dir,
-            technique=technique,
-            total_alignment=total_alignment,
-            destination_path=destination_path,
-            file_names_and_paths=file_names_and_paths,
-            write_extension=write_extension,
-            target_aligning=target_aligning,
-            fine_aligning=fine_aud_file_dict is not None,
-        )
+    if not files_shifts:
+        print(f"0 out of {len(file_names_and_paths)} found and aligned")
+        return
 
-        if not files_shifts:
-            return
+    print(f"{len(files_shifts)} out of {len(file_names_and_paths)} found and aligned")
 
-        print(
-            f"{len(files_shifts)} out of {len(file_names_and_paths)} found and aligned"
-        )
+    files_shifts["match_info"] = total_alignment
+    files_shifts["names_and_paths"] = file_names_and_paths
 
-        del ada_obj.calc_mse
-        del ada_obj.alternate_strength_stat
+    recognizer.align_stat_print()
 
-        files_shifts["match_info"] = total_alignment
-        files_shifts["names_and_paths"] = file_names_and_paths
-        if technique == "fingerprints":
-            print()
-            print(f"Total fingerprints: {ada_obj.total_fingerprints}")
-
-        return files_shifts
-
-    finally:
-        ada_obj.file_names = temp_file_names
-        ada_obj.fingerprinted_files = temp_fingerprinted_files
-        ada_obj.total_fingerprints = temp_total_fingerprints
-
-
-def prelim_fingerprint_checks(ada_obj, target_file, directory_path):
-    all_against_files = audalign.filehandler.find_files(directory_path)
-    all_against_files_full = [x[0] for x in all_against_files]
-    all_against_files_base = [os.path.basename(x) for x in all_against_files_full]
-    if (
-        os.path.basename(target_file) in all_against_files_base
-        and target_file not in all_against_files_full
-    ):
-        for i, x in enumerate(all_against_files_full):
-            if os.path.basename(target_file) == os.path.basename(x):
-                all_against_files_full.pop(i)
-                break
-        all_against_files_full.append(target_file)
-    elif os.path.basename(target_file) not in all_against_files_base:
-        all_against_files_full.append(target_file)
-    return all_against_files_full
-
-
-def set_ada_file_names(
-    ada_obj,
-    filename_list,
-    file_dir,
-    destination_path,
-    technique,
-    target_aligning,
-    target_start_end,
-    fine_aud_file_dict,
-    load_fingerprints,
-):
-    # Make target directory
-    if destination_path:
-        if not os.path.exists(destination_path):
-            os.makedirs(destination_path)
-
-    if technique == "fingerprints":
-        if load_fingerprints is not None:
-            if os.path.exists(load_fingerprints):
-                ada_obj.load_fingerprinted_files(load_fingerprints)
-            else:
-                warnings.warn(
-                    f"load fingerprints given and fingerprinting, but load_fingerprints {load_fingerprints} not found"
-                )
-        if target_aligning:
-            if target_start_end is not None:
-                ada_obj.fingerprint_file(filename_list[0], start_end=target_start_end)
-            file_dir = prelim_fingerprint_checks(
-                ada_obj=ada_obj,
-                target_file=filename_list[0],
-                directory_path=file_dir,
-            )
-        if file_dir:
-            ada_obj.fingerprint_directory(file_dir)
-        else:
-            ada_obj.fingerprint_directory(
-                filename_list,
-                _file_audsegs=fine_aud_file_dict,
-            )
-        if load_fingerprints is not None:
-            if type(file_dir) == str:
-                file_names = [
-                    x for x in filehandler.get_audio_files_directory(file_dir)
-                ]
-            elif type(file_dir) == list:
-                file_names = [os.path.basename(x) for x in file_dir]
-            elif file_dir is None and fine_aud_file_dict is not None:
-                file_names = [os.path.basename(x) for x in fine_aud_file_dict.keys()]
-            elif filename_list is not None:
-                file_names = [os.path.basename(x) for x in filename_list]
-
-            ada_obj.file_names, temp_file_names = [], ada_obj.file_names
-            ada_obj.fingerprinted_files, temp_fingerprinted_files = (
-                [],
-                ada_obj.fingerprinted_files,
-            )
-            ada_obj.total_fingerprints, temp_total_fingerprints = (
-                0,
-                ada_obj.total_fingerprints,
-            )
-            for loaded_file in temp_fingerprinted_files:
-                if loaded_file[0] != None and loaded_file[0] in file_names:
-                    ada_obj.fingerprinted_files.append(loaded_file)
-                    ada_obj.file_names.append(loaded_file[0])
-                    ada_obj.total_fingerprints += len(loaded_file[1])
-    elif technique in ["correlation", "visual", "correlation_spectrogram"]:
-        if target_aligning:
-            ada_obj.file_names = [os.path.basename(x) for x in filename_list]
-        elif file_dir:
-            ada_obj.file_names = audalign.filehandler.get_audio_files_directory(
-                file_dir
-            )
-        elif fine_aud_file_dict:
-            ada_obj.file_names = [
-                os.path.basename(x) for x in fine_aud_file_dict.keys()
-            ]
-        else:
-            ada_obj.file_names = [os.path.basename(x) for x in filename_list]
-
-        if technique == "visual":
-            if ada_obj.alternate_strength_stat == "mse":
-                ada_obj.calc_mse = True
-            if ada_obj.alternate_strength_stat == "confidence":
-                ada_obj.alternate_strength_stat = "ssim"
-
-    else:
-        raise ValueError(
-            f'Technique parameter must be fingerprints, visual, correlation_spectrogram, or correlation, not "{technique}"'
-        )
+    return files_shifts
 
 
 def set_list_and_dir(
     filename_list,
     file_dir,
-    target_aligning,
-    fine_aud_file_dict,
+    target_aligning: bool,
+    fine_aud_file_dict: typing.Optional[dict],
 ):
     if target_aligning:  # For target aligning
         file_list = zip(filename_list, ["_"] * len(filename_list))
@@ -229,7 +86,7 @@ def set_list_and_dir(
     elif file_dir:  # For regular aligning
         file_list = audalign.filehandler.find_files(file_dir)
         dir_or_list = file_dir
-    elif fine_aud_file_dict:  # For fine_aligning
+    elif fine_aud_file_dict is not None:  # For fine_aligning
         file_list = zip(fine_aud_file_dict.keys(), ["_"] * len(fine_aud_file_dict))
         dir_or_list = list(fine_aud_file_dict.keys())
     else:  # For align_files
@@ -239,77 +96,35 @@ def set_list_and_dir(
 
 
 def calc_alignments(
-    ada_obj,
+    recognizer: BaseRecognizer,
+    file_names_to_align: list,
     file_list,
     dir_or_list,
-    technique,
-    filter_matches,
-    locality,
-    locality_filter_prop,
-    max_lags,
-    target_start_end,
-    target_aligning,
-    cor_sample_rate,
-    volume_threshold,
-    volume_floor,
-    vert_scaling,
-    horiz_scaling,
-    img_width,
-    fine_aud_file_dict,
-    **kwargs,
+    max_lags: typing.Optional[float],
+    target_aligning: bool,
+    fine_aud_file_dict: typing.Optional[dict],
 ):
     total_alignment = {}
     file_names_and_paths = {}
     # Get matches and paths
 
-    if (
-        ada_obj.multiprocessing == True
-        and technique != "fingerprints"
-        and not target_aligning
+    if recognizer.check_align_hook(
+        file_list=file_list,
+        dir_or_list=dir_or_list,
+        max_lags=max_lags,
+        target_aligning=target_aligning,
+        fine_aud_file_dict=fine_aud_file_dict,
     ):
 
-        if technique == "visual":
-            _calc_alignments = partial(
-                audalign.visrecognize.visrecognize_directory,
-                against_directory=dir_or_list,
-                start_end=target_start_end,
-                img_width=img_width,
-                volume_threshold=volume_threshold,
-                volume_floor=volume_floor,
-                vert_scaling=vert_scaling,
-                horiz_scaling=horiz_scaling,
-                calc_mse=ada_obj.calc_mse,
-                max_lags=max_lags,
-                use_multiprocessing=False,
-                num_processes=1,
-                plot=False,
-                _file_audsegs=fine_aud_file_dict,
-                _include_filename=True,
-            )
-        else:
-            _calc_alignments = partial(
-                audalign.correcognize.correcognize_directory,
-                against_directory=dir_or_list,
-                start_end=target_start_end,
-                filter_matches=filter_matches,
-                sample_rate=cor_sample_rate,
-                locality=locality,
-                locality_filter_prop=locality_filter_prop,
-                max_lags=max_lags,
-                _file_audsegs=fine_aud_file_dict,
-                _include_filename=True,
-                technique=technique,
-                plot=False,
-                use_multiprocessing=False,
-                num_processes=1,
-                **kwargs,
-            )
+        _calc_alignments = recognizer.align_hook(
+            dir_or_list=dir_or_list, fine_aud_file_dict=fine_aud_file_dict
+        )
         temp_file_list = []
         for file_path, _ in file_list:
-            if os.path.basename(file_path) in ada_obj.file_names:
+            if os.path.basename(file_path) in file_names_to_align:
                 temp_file_list += [file_path]
 
-        with multiprocessing.Pool(ada_obj.num_processors) as pool:
+        with multiprocessing.Pool(recognizer.config.num_processors) as pool:
             results_list = pool.map(_calc_alignments, tqdm.tqdm(list(temp_file_list)))
             pool.close()
             pool.join()
@@ -323,59 +138,18 @@ def calc_alignments(
     else:
         for file_path, _ in file_list:
             name = os.path.basename(file_path)
-            if name in ada_obj.file_names:
-                if technique == "fingerprints":
-                    alignment = audalign.recognize.recognize(
-                        ada_obj,
-                        file_path,
-                        filter_matches=filter_matches,
-                        locality=locality,
-                        locality_filter_prop=locality_filter_prop,
-                        start_end=None,
-                        max_lags=max_lags,
-                    )
-                elif technique in ["correlation", "correlation_spectrogram"]:
-                    alignment = audalign.correcognize.correcognize_directory(
-                        file_path,
-                        dir_or_list,
-                        start_end=target_start_end,
-                        filter_matches=filter_matches,
-                        sample_rate=cor_sample_rate,
-                        _file_audsegs=fine_aud_file_dict,
-                        locality=locality,
-                        locality_filter_prop=locality_filter_prop,
-                        max_lags=max_lags,
-                        technique=technique,
-                        use_multiprocessing=ada_obj.get_multiprocessing(),
-                        num_processes=ada_obj.get_num_processors(),
-                        **kwargs,
-                    )
-                elif technique == "visual":
-                    alignment = audalign.visrecognize.visrecognize_directory(
-                        target_file_path=file_path,
-                        against_directory=dir_or_list,
-                        start_end=target_start_end,
-                        img_width=img_width,
-                        volume_threshold=volume_threshold,
-                        volume_floor=volume_floor,
-                        vert_scaling=vert_scaling,
-                        horiz_scaling=horiz_scaling,
-                        calc_mse=ada_obj.calc_mse,
-                        max_lags=max_lags,
-                        use_multiprocessing=ada_obj.get_multiprocessing(),
-                        num_processes=ada_obj.get_num_processors(),
-                        _file_audsegs=fine_aud_file_dict,
-                    )
+            if name in file_names_to_align:
+                alignment = recognizer._align(file_path, dir_or_list)
+                # TODO fingerprinting this might result in tons of already fingerprinted prints
                 file_names_and_paths[name] = file_path
                 total_alignment[name] = alignment
     return total_alignment, file_names_and_paths
 
 
 def calc_final_alignments(
-    ada_obj,
+    recognizer: BaseRecognizer,
     filename_list,
     file_dir,
-    technique,
     total_alignment,
     destination_path,
     file_names_and_paths,
@@ -383,20 +157,16 @@ def calc_final_alignments(
     target_aligning,
     fine_aligning: bool,
 ):
-    if ada_obj.alternate_strength_stat is not None:
-        if technique == "fingerprints":
-            ada_obj.alternate_strength_stat = ada_obj.CONFIDENCE
-        elif technique == "visual":
-            ada_obj.alternate_strength_stat = "ssim"
-        else:
-            ada_obj.alternate_strength_stat = ada_obj.CONFIDENCE
+    # if recognzier.config.alternate_strength_stat is not None:
+    #     else:
+    #         ada_obj.alternate_strength_stat = ada_obj.CONFIDENCE
     files_shifts = find_most_matches(
-        total_alignment, strength_stat=ada_obj.alternate_strength_stat
+        total_alignment, strength_stat=recognizer.config.CONFIDENCE
     )
     if not files_shifts:
         return
     files_shifts = find_matches_not_in_file_shifts(
-        total_alignment, files_shifts, strength_stat=ada_obj.alternate_strength_stat
+        total_alignment, files_shifts, strength_stat=recognizer.config.CONFIDENCE
     )
 
     if target_aligning:
@@ -419,7 +189,7 @@ def calc_final_alignments(
 
     if destination_path:
         try:
-            ada_obj._write_shifted_files(
+            filehandler.shift_write_files(
                 files_shifts,
                 destination_path,
                 file_names_and_paths,
@@ -555,6 +325,7 @@ def recalc_shifts_index(
     strength_stat: str = None,
     fine_strength_stat=None,
 ) -> dict:
+    # TODO make sure this works with keeping regular rankings in fine align
     if key is None:
         if "fine_match_info" in results:
             key = "fine_match_info"

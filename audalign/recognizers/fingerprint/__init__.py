@@ -9,6 +9,7 @@ import multiprocessing
 from functools import partial
 import pickle
 import json
+import typing
 
 # ----------------------------------------------------------------------------------
 
@@ -26,6 +27,78 @@ class FingerprintRecognizer(BaseRecognizer):
         # super().__init__(config=config)
         self.config = FingerprintConfig() if config is None else config
         self.last_recognition = None
+        self.align_stat_print = True
+
+    def align_stat_print_fn(self):
+        print()
+        print(f"Total fingerprints: {self.total_fingerprints}")
+
+    def align_setup_files(
+        self,
+        filename_list: typing.Union[str, list],
+        file_dir: typing.Optional[str],
+        target_aligning: bool,
+        fine_aud_file_dict: typing.Optional[dict],
+    ):
+        if target_aligning:
+            if self.config.target_start_end is not None:
+                self.fingerprint_file(
+                    filename_list[0],
+                )
+            file_dir = self.prelim_fingerprint_checks(
+                target_file=filename_list[0],
+                directory_path=file_dir,
+            )
+        if file_dir:
+            self.fingerprint_directory(file_dir)
+        else:
+            self.fingerprint_directory(
+                filename_list,
+                _file_audsegs=fine_aud_file_dict,
+            )
+        # if load_fingerprints is not None:
+        #     if type(file_dir) == str:
+        #         file_names = [
+        #             x for x in filehandler.get_audio_files_directory(file_dir)
+        #         ]
+        #     elif type(file_dir) == list:
+        #         file_names = [os.path.basename(x) for x in file_dir]
+        #     elif file_dir is None and fine_aud_file_dict is not None:
+        #         file_names = [os.path.basename(x) for x in fine_aud_file_dict.keys()]
+        #     elif filename_list is not None:
+        #         file_names = [os.path.basename(x) for x in filename_list]
+
+        #     ada_obj.file_names, temp_file_names = [], ada_obj.file_names
+        #     ada_obj.fingerprinted_files, temp_fingerprinted_files = (
+        #         [],
+        #         ada_obj.fingerprinted_files,
+        #     )
+        #     ada_obj.total_fingerprints, temp_total_fingerprints = (
+        #         0,
+        #         ada_obj.total_fingerprints,
+        #     )
+        #     for loaded_file in temp_fingerprinted_files:
+        #         if loaded_file[0] != None and loaded_file[0] in file_names:
+        #             ada_obj.fingerprinted_files.append(loaded_file)
+        #             ada_obj.file_names.append(loaded_file[0])
+        #             ada_obj.total_fingerprints += len(loaded_file[1])
+
+    def prelim_fingerprint_checks(self, target_file, directory_path):
+        all_against_files = filehandler.find_files(directory_path)
+        all_against_files_full = [x[0] for x in all_against_files]
+        all_against_files_base = [os.path.basename(x) for x in all_against_files_full]
+        if (
+            os.path.basename(target_file) in all_against_files_base
+            and target_file not in all_against_files_full
+        ):
+            for i, x in enumerate(all_against_files_full):
+                if os.path.basename(target_file) == os.path.basename(x):
+                    all_against_files_full.pop(i)
+                    break
+            all_against_files_full.append(target_file)
+        elif os.path.basename(target_file) not in all_against_files_base:
+            all_against_files_full.append(target_file)
+        return all_against_files_full
 
     def clear_fingerprints(self) -> None:
         """
@@ -47,8 +120,6 @@ class FingerprintRecognizer(BaseRecognizer):
         self,
         file_path: str,
         against_path: str,
-        *args,
-        **kwargs,
     ) -> None:
         """
         Recognizes given file against already fingerprinted files
@@ -95,10 +166,16 @@ class FingerprintRecognizer(BaseRecognizer):
             self,
             file_path=file_path,
             config=self.config,
-            *args,
-            **kwargs,
         )
 
+        return recognition
+
+    def _align(self, file_path, dir_or_list):
+        recognition = recognize.recognize(
+            self,
+            file_path=file_path,
+            config=self.config,
+        )
         return recognition
 
     def fingerprint_directory(self, path: str, _file_audsegs: dict = None) -> None:
