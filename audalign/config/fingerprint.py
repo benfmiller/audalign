@@ -25,17 +25,6 @@ class FingerprintConfig(BaseConfig):
     Accuracy settings are acheived by manipulations in fingerprinting variables.
     """
 
-    set_parameters = BaseConfig.set_parameters
-    set_parameters.update(
-        [
-            "hash_style",
-            "accuracy",
-            "filter_matches",
-            "locality",
-            "locality_filter_prop",
-            "extensions",
-        ]
-    )
     hash_style = "panako_mod"
     accuracy = 2
     filter_matches = 1
@@ -54,20 +43,17 @@ class FingerprintConfig(BaseConfig):
     # Size of the FFT window, affects frequency granularity
     # Which is 0.0929 seconds
     fft_window_size = 4096
-    set_parameters.add("fft_window_size")
 
     ######################################################################
     # Ratio by which each sequential window overlaps the last and the
     # next window. Higher overlap will allow a higher granularity of offset
     # matching, but potentially more fingerprints.
     DEFAULT_OVERLAP_RATIO = 0.5
-    set_parameters.add("DEFAULT_OVERLAP_RATIO")
 
     ######################################################################
     # Degree to which a fingerprint can be paired with its neighbors --
     # higher will cause more fingerprints, but potentially better accuracy.
     default_fan_value = 15
-    set_parameters.add("default_fan_value")
 
     ######################################################################
     # Minimum amplitude in spectrogram in order to be considered a peak.
@@ -75,14 +61,12 @@ class FingerprintConfig(BaseConfig):
     # affect accuracy.
     # 50 roughly cuts number of fingerprints in half compared to 0
     default_amp_min = 65
-    set_parameters.add("default_amp_min")
 
     ######################################################################
     # Number of cells around an amplitude peak in the spectrogram in order
     # for audalign to consider it a spectral peak. Higher values mean less
     # fingerprints and faster matching, but can potentially affect accuracy.
     peak_neighborhood_size = 20
-    set_parameters.add("peak_neighborhood_size")
 
     ######################################################################
     # Thresholds on how close or far fingerprints can be in time in order
@@ -90,25 +74,20 @@ class FingerprintConfig(BaseConfig):
     # default_fan_value may not perform as expected.
     min_hash_time_delta = 10
     max_hash_time_delta = 200
-    set_parameters.add("min_hash_time_delta")
-    set_parameters.add("max_hash_time_delta")
 
     ######################################################################
     # If True, will sort peaks temporally for fingerprinting;
     # not sorting will cut down number of fingerprints, but potentially
     # affect performance.
     peak_sort = True
-    set_parameters.add("peak_sort")
 
     ######################################################################
     # Number of bits to grab from the front of the SHA1 hash in the
     # fingerprint calculation. The more you grab, the more memory storage,
     # with potentially lesser collisions of matches.
     FINGERPRINT_REDUCTION = 20
-    set_parameters.add("FINGERPRINT_REDUCTION")
 
     freq_threshold = 200
-    set_parameters.add("freq_threshold")
 
     CONFIDENCE = "confidence"
     rankings_minus = (
@@ -151,10 +130,9 @@ class FingerprintConfig(BaseConfig):
             hash_style (str): Method to use for hashing of fingerprints
         """
         if hash_style not in ["base", "panako", "panako_mod", "base_three"]:
-            print(
-                'Hash style must be one of ["base", "panako", "panako_mod", "base_three"]'
+            raise ValueError(
+                f'Hash style "{hash_style}" must be one of ["base", "panako", "panako_mod", "base_three"]'
             )
-            return
         self.hash_style = hash_style
 
     def get_hash_style(self) -> str:

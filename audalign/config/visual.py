@@ -8,14 +8,6 @@ class VisualConfig(BaseConfig):
     multiprocessing is set to True by default
     """
 
-    set_parameters = BaseConfig.set_parameters
-    set_parameters.update(
-        "filter_matches",
-        "locality",
-        "locality_filter_prop",
-        "extensions",
-        "start_end_agaisnt",
-    )
     filter_matches = 1
     locality: typing.Optional[float] = None
     locality_filter_prop: typing.Optional[float] = None
@@ -43,17 +35,14 @@ class VisualConfig(BaseConfig):
     # Size of the FFT window, affects frequency granularity
     # Which is 0.0929 seconds
     fft_window_size = 4096
-    set_parameters.add("fft_window_size")
 
     ######################################################################
     # Ratio by which each sequential window overlaps the last and the
     # next window. Higher overlap will allow a higher granularity of offset
     # matching, but potentially more fingerprints.
     DEFAULT_OVERLAP_RATIO = 0.5
-    set_parameters.add("DEFAULT_OVERLAP_RATIO")
 
     freq_threshold = 200
-    set_parameters.add("freq_threshold")
 
     rankings_second_is_close_add: int = 0
     rankings_get_top_num_match = "num_matches"

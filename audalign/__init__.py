@@ -10,7 +10,7 @@ from audalign.config.fingerprint import FingerprintConfig
 import audalign.datalign as datalign
 import audalign.filehandler as filehandler
 from audalign.recognizers import BaseRecognizer
-from audalign.align import Aligner
+import audalign.align.aligner as aligner
 from audalign.recognizers.fingerprint import FingerprintRecognizer
 from audalign.recognizers.correcognize import CorrelationRecognizer
 from audalign.recognizers.correcognizeSpectrogram import (
@@ -40,25 +40,12 @@ def add_rankings(func):
 
 
 class Audalign:
-    """
-    Args
-    ----
-        arg1 (str): Optional file path to load json or pickle file of already fingerprinted files
-        multiprocessing (bool): option to turn off multiprocessing
-        num_processors (int): number of processors or threads to use for multiprocessing. Uses all if not given
-        hash_style (str): which hash style to use : ['base','panako_mod','panako', 'base_three']
-        accuracy (int): which accuracy level 1-4
-        threshold(int): filters fingerprints below threshold
-        noisereduce(bool): runs noise reduce on audio
-    """
+    """"""
 
-    # Names that appear in match information
-    CONFIDENCE = "confidence"
-    MATCH_TIME = "match_time"
-    OFFSET_SAMPLES = "offset_frames"
-    OFFSET_SECS = "offset_seconds"
-    LOCALITY = "locality_frames"
-    LOCALITY_SECS = "locality_seconds"
+    config: BaseConfig
+
+    def __init__(self) -> None:
+        self.config = BaseConfig()
 
     @add_rankings
     def recognize(
@@ -763,8 +750,8 @@ class Audalign:
             width=width,
             overlap_ratio=overlap_ratio,
             exclude_min_db=exclude_min_db,
-            use_multiprocessing=self.multiprocessing,
-            num_processes=self.num_processors,
+            use_multiprocessing=self.config.multiprocessing,
+            num_processes=self.config.num_processors,
         )
 
     @staticmethod
@@ -847,8 +834,8 @@ class Audalign:
             prop_decrease=prop_decrease,
             use_tensorflow=use_tensorflow,
             verbose=verbose,
-            use_multiprocessing=self.multiprocessing,
-            num_processes=self.num_processors,
+            use_multiprocessing=self.config.multiprocessing,
+            num_processes=self.config.num_processors,
             **kwargs,
         )
 
