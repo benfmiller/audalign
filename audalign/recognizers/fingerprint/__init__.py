@@ -23,11 +23,15 @@ class FingerprintRecognizer(BaseRecognizer):
     fingerprinted_files = []
     total_fingerprints = 0
 
-    def __init__(self, config: FingerprintConfig = None):
+    def __init__(
+        self, config: FingerprintConfig = None, load_fingerprints_file: str = None
+    ):
         # super().__init__(config=config)
         self.config = FingerprintConfig() if config is None else config
-        self.last_recognition = None
         self.align_stat_print = True
+
+        if load_fingerprints_file is not None:
+            self.load_fingerprinted_files(load_fingerprints_file)
 
     def align_stat_print_fn(self):
         print()

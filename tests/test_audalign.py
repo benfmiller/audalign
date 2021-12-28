@@ -7,22 +7,24 @@ def test_always_true():
     assert True
 
 
-class TestObject:
+class TestFingerprinter:
 
     test_file = "test_audio/testers/test.mp3"
 
     @pytest.mark.smoke
     def test_initialization(self):
 
-        ada = ad.Audalign()
-        assert ada.total_fingerprints == 0
+        ada_fing = ad.FingerprintRecognizer()
+        assert ada_fing.total_fingerprints == 0
 
-        ada2 = ad.Audalign("tests/test_fingerprints.json")
+        ada2 = ad.FingerprintRecognizer(
+            load_fingerprints_file="tests/test_fingerprints.json"
+        )
         assert ada2.total_fingerprints > 0
         assert len(ada2.fingerprinted_files) > 0
 
     def test_filter_duplicates(self):
-        ada1 = ad.Audalign()
+        ada1 = ad.FingerprintRecognizer()
 
         ada1.load_fingerprinted_files("tests/test_fingerprints.json")
         a = len(ada1.file_names)
@@ -42,7 +44,9 @@ class TestObject:
         assert c == len(ada1.fingerprinted_files)
 
     def test_clear(self):
-        ada = ad.Audalign("tests/test_fingerprints.json")
+        ada = ad.FingerprintRecognizer(
+            load_fingerprints_file="tests/test_fingerprints.json"
+        )
         assert len(ada.fingerprinted_files) > 0
         ada.clear_fingerprints()
         assert len(ada.fingerprinted_files) == 0
@@ -50,32 +54,26 @@ class TestObject:
         assert ada.total_fingerprints == 0
 
     def test_set_accuracy(self):
-        ada = ad.Audalign()
-        assert ada.get_accuracy() == 2
-        assert ad.fingerprint.default_amp_min == 65
-        ada.set_accuracy(3)
-        ada.set_accuracy(4)
-        ada.set_accuracy(1)
-        assert ada.get_accuracy() == 1
-        assert ad.fingerprint.default_amp_min == 80
+        config = ad.FingerprintConfig()
+        assert config.get_accuracy() == 2
+        assert config.default_amp_min == 65
+        config.set_accuracy(3)
+        config.set_accuracy(4)
+        config.set_accuracy(1)
+        assert config.get_accuracy() == 1
+        assert config.default_amp_min == 80
 
-        ada.set_accuracy(0)
-        assert ada.get_accuracy() == 1
-
-    def test_set_num_processors(self):
-        ada = ad.Audalign(num_processors=1)
-        assert ada.num_processors == 1
-        ada.set_num_processors(80)
-        assert ada.num_processors == 80
-
-    def test_freq_threshold(self):
-        ada = ad.Audalign(freq_threshold=0)
-        ada.set_freq_threshold(200)
-        assert ad.fingerprint.threshold == 200
-        assert ada.get_freq_threshold() == 200
+        try:
+            config.set_accuracy(0)
+            assert False
+        except ValueError as e:
+            pass
+        assert config.get_accuracy() == 1
 
     def test_write_and_load(self):
-        ada = ad.Audalign("tests/test_fingerprints.json")
+        ada = ad.FingerprintRecognizer(
+            load_fingerprints_file="tests/test_fingerprints.json"
+        )
         assert len(ada.file_names) > 0
         ada.save_fingerprinted_files("test_save_fingerprints.json")
         ada.save_fingerprinted_files("test_save_fingerprints.pickle")
@@ -122,7 +120,7 @@ class TestUniformLevel:
     test_eig_folder = "test_audio/test_shifts/"
     test_eig = "test_audio/test_shifts/Eigen-song-base.mp3"
     test_eig20 = "test_audio/test_shifts/Eigen-20sec.mp3"
-    ada = ad.Audalign(num_processors=2)
+    ada = ad.Audalign()
 
     def test_uniform_level_dir(self, tmpdir):
         self.ada.uniform_level_directory(self.test_eig_folder, tmpdir)
@@ -153,7 +151,8 @@ class TestRemoveNoise:
         )
 
     def test_remove_noise_directory_single_process(self, tmpdir):
-        ada = ad.Audalign(multiprocessing=False)
+        ada = ad.Audalign()
+        ada.config.multiprocessing = False
         ada.remove_noise_directory(
             "test_audio/testers", "test_audio/testers/pink_noise.mp3", 10, 30, tmpdir
         )
