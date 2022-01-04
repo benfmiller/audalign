@@ -22,18 +22,21 @@ class FingerprintRecognizer(BaseRecognizer):
     file_names = []
     fingerprinted_files = []
     total_fingerprints = 0
+    temp_fingerprints_list = []
 
     def __init__(
         self, config: FingerprintConfig = None, load_fingerprints_file: str = None
     ):
-        # super().__init__(config=config)
         self.config = FingerprintConfig() if config is None else config
-        self.align_stat_print = True
+        self.file_names = []
+        self.fingerprinted_files = []
+        self.total_fingerprints = 0
+        self.temp_fingerprints_list = []
 
         if load_fingerprints_file is not None:
             self.load_fingerprinted_files(load_fingerprints_file)
 
-    def align_stat_print_fn(self):
+    def align_stat_print(self):
         print()
         print(f"Total fingerprints: {self.total_fingerprints}")
 
@@ -120,12 +123,63 @@ class FingerprintRecognizer(BaseRecognizer):
         self.fingerprinted_files = []
         self.total_fingerprints = 0
 
+    def align_get_file_names(
+        self,
+        filename_list: typing.Union[str, list],
+        file_dir: typing.Optional[str],
+        target_aligning: bool,
+        fine_aud_file_dict: typing.Optional[dict],
+    ) -> list:
+        if target_aligning or file_dir:
+            file_names = filehandler.get_audio_files_directory(file_dir, full_path=True)
+        elif fine_aud_file_dict:
+            file_names = fine_aud_file_dict.keys()
+            for name, fingerprints in zip(self.file_names, self.fingerprinted_files):
+                self.temp_fingerprints_list.append([name, fingerprints])
+                self.clear_fingerprints()
+        else:
+            file_names = filename_list
+
+        self.fingerprint_directory(file_names, fine_aud_file_dict)
+
+        if not fine_aud_file_dict:
+            set_file_name_list = set([os.path.basename(x) for x in file_names])
+            self.temp_fingerprints_list = []
+            for name in list(self.file_names):
+                if name not in set_file_name_list:
+                    self.temp_fingerprints_list.append(self.pop_filename(name))
+
+        file_name_list = super().align_get_file_names(
+            filename_list, file_dir, target_aligning, fine_aud_file_dict
+        )
+        return file_name_list
+
+    def align_post_hook(
+        self,
+        file_list,
+        dir_or_list,
+        target_aligning: bool,
+        fine_aud_file_dict: typing.Optional[dict],
+    ):
+        if fine_aud_file_dict:
+
+            self.clear_fingerprints()
+            [
+                self.add_filename(name, fingerprints)
+                for name, fingerprints in self.temp_fingerprints_list
+            ]
+        else:
+            for name, fingerprints in self.temp_fingerprints_list:
+                self.add_filename(name, fingerprints)
+        self.temp_fingerprints_list = []
+
     def recognize(
         self,
         file_path: str,
-        against_path: str,
+        against_path: str = None,
     ) -> None:
         """
+        TODO redo documentation
         Recognizes given file against already fingerprinted files
 
         Offset describes duration that the recognized file aligns after the target file
@@ -155,16 +209,18 @@ class FingerprintRecognizer(BaseRecognizer):
         to_fingerprint = []
         if os.path.basename(file_path) not in self.file_names:
             to_fingerprint += [file_path]
-        if os.path.isdir(against_path):
-            for path in filehandler.get_audio_files_directory(
-                against_path, full_path=True
-            ):
-                if path not in self.file_names and path not in to_fingerprint:
-                    to_fingerprint += [path]
-        elif os.path.isfile(against_path):
-            if filehandler.check_is_audio_file(against_path):
-                to_fingerprint += [against_path]
-        self.fingerprint_directory(to_fingerprint)
+        if against_path is not None:
+            if os.path.isdir(against_path):
+                for path in filehandler.get_audio_files_directory(
+                    against_path, full_path=True
+                ):
+                    if path not in self.file_names and path not in to_fingerprint:
+                        to_fingerprint += [path]
+            elif os.path.isfile(against_path):
+                if filehandler.check_is_audio_file(against_path):
+                    to_fingerprint += [against_path]
+        if len(to_fingerprint) > 0:
+            self.fingerprint_directory(to_fingerprint)
 
         recognition = recognize.recognize(
             self,
@@ -234,7 +290,8 @@ class FingerprintRecognizer(BaseRecognizer):
             file_names = filehandler.find_files(path, self.config.extensions)
         elif type(path) == list:
             file_names = zip(path, ["_"] * len(path))
-        elif path is None and _file_audsegs is not None:
+            # elif path is None and _file_audsegs is not None:
+        elif _file_audsegs is not None:
             file_names = zip(_file_audsegs.keys(), ["_"] * len(_file_audsegs))
 
         one_file_already_fingerprinted = False
@@ -408,6 +465,22 @@ class FingerprintRecognizer(BaseRecognizer):
             self.filter_duplicates()
         except FileNotFoundError:
             print(f'"{filename}" not found')
+
+    def pop_filename(self, filename: str):
+        ...
+        i = 0
+        while i < len(self.file_names):
+            if self.file_names[i] == filename:
+                self.total_fingerprints -= len(self.fingerprinted_files[i][1])
+                return self.file_names.pop(i), self.fingerprinted_files.pop(i)
+            i += 1
+        raise KeyError
+
+    def add_filename(self, filename: str, file_fingerprints: list):
+        if filename not in self.file_names:
+            self.file_names.append(filename)
+            self.fingerprinted_files.append(file_fingerprints)
+            self.total_fingerprints += len(file_fingerprints[1])
 
     def filter_duplicates(self) -> None:
         """

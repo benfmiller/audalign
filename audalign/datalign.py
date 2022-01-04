@@ -41,9 +41,8 @@ def rank_recognition(alignment, recognizer: BaseRecognizer):
     offset_seconds = alignment["offset_seconds"]
     confidences = alignment[recognizer.config.CONFIDENCE]
     top_match_tups = recognizer.config.rankings_no_locality_top_match_tups
-    if recognizer.config.__dict__.get("locality") is not None:
-        if recognizer.config.locality is not None:
-            top_match_tups = recognizer.config.rankings_locality_top_match_tups
+    if recognizer.config.locality is not None:
+        top_match_tups = recognizer.config.rankings_locality_top_match_tups
     if alignment.get("scaling_factor") is not None:
         confidences = [x * alignment["scaling_factor"] for x in confidences]
 

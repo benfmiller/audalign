@@ -37,14 +37,14 @@ def visrecognize(target_file_path: str, against_file_path: str, config: VisualCo
     if config.CONFIDENCE == "mse":
         config.calc_mse = True
 
-    img_width = get_frame_width(config.img_width)
+    img_width = get_frame_width(config)
 
     target_arr2d, transposed_target_arr2d = get_arrays(
         target_file_path,
         volume_floor=config.volume_floor,
         vert_scaling=config.vert_scaling,
         horiz_scaling=config.horiz_scaling,
-        start_end=config.start_end_target,
+        start_end=config.start_end,
         config=config,
     )
 

@@ -14,12 +14,13 @@ class BaseConfig(ABC):
     filter_matches: typing.Optional[int] = None
     sample_rate = 44100
     match_len_filter: typing.Optional[int] = None
+    locality = None  # Not all recognizers have to implement locality
 
     CONFIDENCE = "confidence"
     MATCH_TIME = "match_time"
     OFFSET_SAMPLES = "offset_frames"
     OFFSET_SECS = "offset_seconds"
-    LOCALITY = "locality_frames"
+    LOCALITY_FRAMES = "locality_frames"
     LOCALITY_SECS = "locality_seconds"
 
     rankings_no_locality_top_match_tups: tuple = ()

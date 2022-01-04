@@ -41,7 +41,6 @@ class BaseRecognizer(ABC):
         self,
         file_list,
         dir_or_list,
-        max_lags: typing.Optional[float],
         target_aligning: bool,
         fine_aud_file_dict: typing.Optional[dict],
     ):
@@ -49,11 +48,22 @@ class BaseRecognizer(ABC):
 
     def align_hook(
         self,
+        file_list,
         dir_or_list,
+        target_aligning: bool,
         fine_aud_file_dict: typing.Optional[dict],
     ):
         """Implement this if check align hook can return True"""
         raise NotImplementedError
+
+    def align_post_hook(
+        self,
+        file_list,
+        dir_or_list,
+        target_aligning: bool,
+        fine_aud_file_dict: typing.Optional[dict],
+    ):
+        pass
 
     def _align(
         self,

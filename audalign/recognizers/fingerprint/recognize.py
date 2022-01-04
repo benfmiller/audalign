@@ -34,8 +34,8 @@ def recognize(recognizer, file_path: str, config: FingerprintConfig):
             int(
                 config.locality
                 // (
-                    config.DEFAULT_WINDOW_SIZE
-                    / config.DEFAULT_FS
+                    config.fft_window_size
+                    / config.sample_rate
                     * config.DEFAULT_OVERLAP_RATIO
                 )
             ),
@@ -47,8 +47,8 @@ def recognize(recognizer, file_path: str, config: FingerprintConfig):
             int(
                 config.max_lags
                 // (
-                    config.DEFAULT_WINDOW_SIZE
-                    / config.DEFAULT_FS
+                    config.fft_window_size
+                    / config.sample_rate
                     * config.DEFAULT_OVERLAP_RATIO
                 )
             ),
@@ -58,9 +58,7 @@ def recognize(recognizer, file_path: str, config: FingerprintConfig):
     t = time.time()
     matches = find_matches(recognizer, file_path)
     if config.locality:
-        rough_match = locality_align_matches(
-            matches, config._locality_frames, locality_filter_prop
-        )
+        rough_match = locality_align_matches(matches, locality, locality_filter_prop)
     else:
         rough_match = align_matches(matches)
 
@@ -371,9 +369,9 @@ def process_results(
         complete_match_info[file_name] = {}
         complete_match_info[file_name][config.CONFIDENCE] = offset_count
         complete_match_info[file_name][config.OFFSET_SAMPLES] = offset_diff
-        complete_match_info[file_name][config.LOCALITY] = offset_loc
+        complete_match_info[file_name][config.LOCALITY_FRAMES] = offset_loc
         if locality:
-            complete_match_info[file_name][config.LOCALITY + "_setting"] = round(
+            complete_match_info[file_name][config.LOCALITY_FRAMES + "_setting"] = round(
                 float(locality)
                 / config.sample_rate
                 * config.fft_window_size
@@ -382,7 +380,7 @@ def process_results(
             )
 
         else:
-            complete_match_info[file_name][config.LOCALITY + "_setting"] = None
+            complete_match_info[file_name][config.LOCALITY_FRAMES + "_setting"] = None
 
         # calculate seconds
         complete_match_info[file_name][config.OFFSET_SECS] = []

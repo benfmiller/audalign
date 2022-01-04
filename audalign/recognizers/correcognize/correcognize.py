@@ -12,19 +12,11 @@ import tqdm
 from audalign.filehandler import find_files, get_shifted_file, read
 from pydub.exceptions import CouldntDecodeError
 
-# For locality window overlaps
-SCALING_16_BIT = 65536
-# TODO incorporate into config
-# TODO pass the kwargs through
-OVERLAP_RATIO = 0.5
-DEFAULT_LOCALITY_FILTER_PROP = 0.6
-
 
 def correcognize(
     target_file_path: str,
     against_file_path: str,
     config: CorrelationConfig,
-    **kwargs,
 ):
     """Called from audalign correcognize
 
@@ -57,7 +49,7 @@ def correcognize(
         locality = int(locality * config.sample_rate)
     locality_filter_prop = config.locality_filter_prop
     if locality_filter_prop is None:
-        locality_filter_prop = DEFAULT_LOCALITY_FILTER_PROP
+        locality_filter_prop = config.DEFAULT_LOCALITY_FILTER_PROP
     elif locality_filter_prop > 1.0:
         locality_filter_prop = 1.0
     elif locality_filter_prop < 0:
@@ -93,7 +85,7 @@ def correcognize(
         locality_filter_prop=locality_filter_prop,
         max_lags=max_lags,
         config=config,
-        **kwargs,
+        **config.passthrough_args,
     )
     t = time.time() - t
 
@@ -112,7 +104,6 @@ def correcognize_directory(
     config: CorrelationConfig,
     _file_audsegs: dict = None,
     _include_filename: bool = False,
-    **kwargs,
 ):
     """Called from audalign correcognize_directory"""
     assert (
@@ -125,6 +116,8 @@ def correcognize_directory(
     if max_lags is not None:
         max_lags = int(max_lags * config.sample_rate)
     filter_matches = config.filter_matches
+    if (_file_audsegs is not None and filter_matches is None) or filter_matches is None:
+        filter_matches = 0.0
     if filter_matches is None:
         filter_matches = 0.0
     locality = config.locality
@@ -132,13 +125,11 @@ def correcognize_directory(
         locality = int(locality * config.sample_rate)
     locality_filter_prop = config.locality_filter_prop
     if locality_filter_prop is None:
-        locality_filter_prop = DEFAULT_LOCALITY_FILTER_PROP
+        locality_filter_prop = config.DEFAULT_LOCALITY_FILTER_PROP
     elif locality_filter_prop > 1.0:
         locality_filter_prop = 1.0
     elif locality_filter_prop < 0:
         locality_filter_prop = 0.0
-    if (_file_audsegs is not None and filter_matches is None) or filter_matches is None:
-        filter_matches = 0.0
 
     if config.freq_threshold <= 0:
         config.freq_threshold = 1
@@ -166,11 +157,13 @@ def correcognize_directory(
         target_file_path=target_file_path,
         _file_audsegs=_file_audsegs,
         sos_filter=sos,
+        filter_matches=filter_matches,
+        match_len_filter=config.match_len_filter,
         locality=locality,
         locality_filter_prop=locality_filter_prop,
         max_lags=max_lags,
         config=config,
-        **kwargs,
+        **config.passthrough_args,
     )
 
     if config.multiprocessing == False:
@@ -228,7 +221,13 @@ def _correcognize(
 
     print("Calculating correlation... ", end="")
     indexes = (
-        find_index_arr(against_array, target_array, locality, max_lags)
+        find_index_arr(
+            against_array,
+            target_array,
+            locality,
+            max_lags,
+            config.LOCALITY_OVERLAP_RATIO,
+        )
         if locality is not None
         else []
     )
@@ -246,6 +245,7 @@ def _correcognize(
         filter_matches=filter_matches,
         match_len_filter=match_len_filter,
         max_lags=max_lags,
+        SCALING_16_BIT=config.SCALING_16_BIT,
         locality_filter_prop=locality_filter_prop,
         locality=locality,
         indexes_len=len(indexes),
@@ -281,10 +281,12 @@ def _correcognize_dir(
     target_file_path,
     _file_audsegs,
     sos_filter,
-    locality,
-    locality_filter_prop,
-    max_lags,
-    config,
+    filter_matches: float,
+    match_len_filter: int,
+    locality: float,
+    locality_filter_prop: float,
+    max_lags: float,
+    config: CorrelationConfig,
     **kwargs,
 ):
     if type(target_file_path) == str:
@@ -315,8 +317,8 @@ def _correcognize_dir(
             target_file_path=target_file_path,
             against_array=against_array,
             against_file_path=against_file_path,
-            filter_matches=config.filter_matches,
-            match_len_filter=config.match_len_filter,
+            filter_matches=filter_matches,
+            match_len_filter=match_len_filter,
             locality=locality,
             locality_filter_prop=locality_filter_prop,
             max_lags=max_lags,
@@ -349,7 +351,7 @@ def get_array(
     return target_array
 
 
-def calc_array_indexes(array, locality):
+def calc_array_indexes(array, locality, LOCALITY_OVERLAP_RATIO):
     index_list = []
     if locality > len(array):
         index_list += [0]
@@ -357,7 +359,9 @@ def calc_array_indexes(array, locality):
         [
             index_list.append(i)
             for i in range(
-                0, len(array) - int(locality), int(locality * (1 - OVERLAP_RATIO))
+                0,
+                len(array) - int(locality),
+                int(locality * (1 - LOCALITY_OVERLAP_RATIO)),
             )
         ]
         if (
@@ -368,9 +372,15 @@ def calc_array_indexes(array, locality):
     return index_list
 
 
-def find_index_arr(against_array, target_array, locality, max_lags):
-    index_list_against = calc_array_indexes(against_array, locality)
-    index_list_target = calc_array_indexes(target_array, locality)
+def find_index_arr(
+    against_array, target_array, locality, max_lags, LOCALITY_OVERLAP_RATIO
+):
+    index_list_against = calc_array_indexes(
+        against_array, locality, LOCALITY_OVERLAP_RATIO=LOCALITY_OVERLAP_RATIO
+    )
+    index_list_target = calc_array_indexes(
+        target_array, locality, LOCALITY_OVERLAP_RATIO=LOCALITY_OVERLAP_RATIO
+    )
     index_pairs = []
     if max_lags is None:
         for i in index_list_against:
@@ -416,6 +426,7 @@ def find_maxes(
     filter_matches: float,
     match_len_filter: int,
     max_lags: float,
+    SCALING_16_BIT: int,
     locality_filter_prop: float,
     locality: float,
     indexes_len: int,
@@ -429,6 +440,7 @@ def find_maxes(
             filter_matches=filter_matches,
             match_len_filter=match_len_filter,
             max_lags=max_lags,
+            SCALING_16_BIT=SCALING_16_BIT,
             **kwargs,
         )
     else:
@@ -441,6 +453,7 @@ def find_maxes(
                     filter_matches=0,
                     match_len_filter=match_len_filter,
                     max_lags=max_lags,
+                    SCALING_16_BIT=SCALING_16_BIT,
                     index_pair=i[1],
                     **kwargs,
                 ),
@@ -461,6 +474,7 @@ def _find_peaks(
     filter_matches: float,
     match_len_filter: int,
     max_lags: float,
+    SCALING_16_BIT: int,
     index_pair: tuple = None,
     **kwargs,
 ):

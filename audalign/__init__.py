@@ -30,8 +30,14 @@ def add_rankings(func):
                 )
             else:
                 results["rankings"] = {}
+                recognizer = kwargs.get("recognizer")
+                if recognizer is None:
+                    if results.get("fine_match_info") is None:
+                        recognizer = FingerprintRecognizer()
+                    else:
+                        recognizer = CorrelationRecognizer()
                 results["rankings"]["match_info"] = Audalign.rank_alignment(
-                    results, kwargs["recognizer"]
+                    results, recognizer
                 )
 
         return results
@@ -47,24 +53,23 @@ class Audalign:
     def __init__(self) -> None:
         self.config = BaseConfig()
 
+    @staticmethod
     @add_rankings
     def recognize(
-        self,
         target_file: str,
-        against_path: str,
+        against_path: str = None,
         recognizer: BaseRecognizer = None,
     ) -> dict:
         if recognizer is None:
             recognizer = FingerprintRecognizer()
         return recognizer.recognize(target_file, against_path)
 
+    @staticmethod
     @add_rankings
     def align(
-        self,
         directory_path: str,
         destination_path: str = None,
         write_extension: str = None,
-        max_lags: float = None,
         recognizer: BaseRecognizer = None,
     ):
         """
@@ -75,7 +80,6 @@ class Audalign:
             directory_path (str): String of directory for alignment
             destination_path (str): String of path to write alignments to
             write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
-            max_lags (float, optional): Maximum lags in seconds for correlation.
             # TODO recognizer
 
         Returns
@@ -90,18 +94,16 @@ class Audalign:
             file_dir=directory_path,
             destination_path=destination_path,
             write_extension=write_extension,
-            max_lags=max_lags,
         )
 
+    @staticmethod
     @add_rankings
     def align_files(
-        self,
         filename_a,
         filename_b,
         *filenames,
         destination_path: str = None,
         write_extension: str = None,
-        max_lags: float = None,
         recognizer: BaseRecognizer = None,
     ):
         """
@@ -116,7 +118,6 @@ class Audalign:
             *filenames (strs): strings of paths for alignment
             destination_path (str): String of path to write alignments to
             write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
-            max_lags (float, optional): Maximum lags in seconds for correlation.
             # TODO recognizer
 
         Returns
@@ -132,17 +133,15 @@ class Audalign:
             file_dir=None,
             destination_path=destination_path,
             write_extension=write_extension,
-            max_lags=max_lags,
         )
 
+    @staticmethod
     @add_rankings
     def target_align(
-        self,
         target_file: str,
         directory_path: str,
         destination_path: str = None,
         write_extension: str = None,
-        max_lags: float = None,
         recognizer: BaseRecognizer = None,
     ):
         """matches and relative offsets for all files in directory_path using only target file,
@@ -155,7 +154,6 @@ class Audalign:
             directory_path (str): Directory to align against
             destination_path (str, optional): Directory to write alignments to
             write_extension (str, optional): audio file format to write to. Defaults to None.
-            max_lags (float, optional): Maximum lags in seconds for correlation.
             # TODO recognizer
 
         Returns
@@ -172,16 +170,14 @@ class Audalign:
             destination_path=destination_path,
             target_aligning=True,
             write_extension=write_extension,
-            max_lags=max_lags,
         )
 
+    @staticmethod
     @add_rankings
     def fine_align(
-        self,
         results,
         destination_path: str = None,
         write_extension: str = None,
-        max_lags: float = 2,
         match_index: int = 0,
         recognizer: BaseRecognizer = None,
     ):
@@ -193,7 +189,6 @@ class Audalign:
             results (dict): results from previous alignments.
             destination_path (str): String of path to write alignments to
             write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
-            max_lags (float, optional): Maximum lags in seconds for correlation.
             match_index (int): reorders the input results to the given match index.
             recognizer (BaseRecognizer, optional): # TODO
 
@@ -208,18 +203,7 @@ class Audalign:
         print("Fine Aligning...")
 
         if recognizer is None:
-            recognizer = CorrelationRecognizer
-
-        # if results.get("rankings") is not None:
-        #     results.pop("rankings")
-
-        # if recognizer.== "confidence":
-        #     _ = results["match_info"]
-        #     _ = _[list(_.keys())[0]]
-        #     _ = _["match_info"]
-        #     _ = _[list(_.keys())[0]]
-        #     if "confidence" not in _.keys():
-        #         strength_stat = "ssim"
+            recognizer = CorrelationRecognizer()
 
         if match_index != 0:
             recalc_shifts_results = aligner.recalc_shifts_index(
@@ -236,13 +220,18 @@ class Audalign:
                 results, sample_rate=recognizer.config.sample_rate
             )
 
+        max_lags_not_set = False
+        if recognizer.config.max_lags is None:
+            recognizer.config.max_lags = 2
+            max_lags_set = True
         new_results = aligner._align(
-            ada_obj=self,
+            recognizer=recognizer,
             filename_list=None,
             file_dir=None,
-            max_lags=max_lags,
             fine_aud_file_dict=paths_audio,
         )
+        if max_lags_not_set is True:
+            recognizer.config.max_lags = None
         if new_results is None:
             print("No matches found for fine alignment")
             return
@@ -259,7 +248,7 @@ class Audalign:
                 ]:
                     copy_dict[name] = value
             try:
-                self._write_shifted_files(
+                Audalign._write_shifted_files(
                     copy_dict,
                     destination_path,
                     new_results["names_and_paths"],
@@ -442,8 +431,9 @@ class Audalign:
                     else:
                         print(f"{section}, {info}")
             if not _in_alignment:
-                print()
-                PrettyPrinter().pprint(results["rankings"])
+                if results.get("rankings") is not None:
+                    print()
+                    PrettyPrinter().pprint(results["rankings"])
                 print()
                 for name, result in results["match_info"].items():
                     print(f"{name} : {result['offset_seconds'][0]}")
@@ -483,8 +473,9 @@ class Audalign:
                     )
                     min_conf_list += [min_conf]
                     max_conf_list += [max_conf]
-            print("\nRankings")
-            PrettyPrinter().pprint(results["rankings"])
+            if results.get("rankings") is not None:
+                print("\nRankings")
+                PrettyPrinter().pprint(results["rankings"])
             print()
             for match in results.keys():
                 if match not in [

@@ -536,6 +536,9 @@ def level_by_ave(audiofile_data, index_list, overlap_array, width, exclude_min_d
 def shift_get_files(results: dict, sample_rate: int = None):
     names_and_paths = results.pop("names_and_paths")
     temp_a = results.pop("match_info")
+    temp_rankings = None
+    if results.get("rankings") is not None:
+        temp_rankings = results.pop("rankings")
 
     shifts_files = _shift_files(
         results,
@@ -547,6 +550,8 @@ def shift_get_files(results: dict, sample_rate: int = None):
     )
     results["names_and_paths"] = names_and_paths
     results["match_info"] = temp_a
+    if temp_rankings is not None:
+        results["rankings"] = temp_rankings
     return shifts_files
 
 

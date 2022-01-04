@@ -16,7 +16,6 @@ def _align(
     file_dir: typing.Optional[str],
     destination_path: str = None,
     write_extension: str = None,
-    max_lags: float = None,
     fine_aud_file_dict: dict = None,
     target_aligning: bool = False,
 ):
@@ -43,7 +42,6 @@ def _align(
         file_names_to_align=file_names_to_align,
         file_list=file_list,
         dir_or_list=dir_or_list,
-        max_lags=max_lags,
         target_aligning=target_aligning,
         fine_aud_file_dict=fine_aud_file_dict,
     )
@@ -58,6 +56,13 @@ def _align(
         write_extension=write_extension,
         target_aligning=target_aligning,
         fine_aligning=fine_aud_file_dict is not None,
+    )
+
+    recognizer.align_post_hook(
+        file_list=file_list,
+        dir_or_list=dir_or_list,
+        target_aligning=target_aligning,
+        fine_aud_file_dict=fine_aud_file_dict,
     )
 
     if not files_shifts:
@@ -100,7 +105,6 @@ def calc_alignments(
     file_names_to_align: list,
     file_list,
     dir_or_list,
-    max_lags: typing.Optional[float],
     target_aligning: bool,
     fine_aud_file_dict: typing.Optional[dict],
 ):
@@ -111,13 +115,15 @@ def calc_alignments(
     if recognizer.check_align_hook(
         file_list=file_list,
         dir_or_list=dir_or_list,
-        max_lags=max_lags,
         target_aligning=target_aligning,
         fine_aud_file_dict=fine_aud_file_dict,
     ):
 
         _calc_alignments = recognizer.align_hook(
-            dir_or_list=dir_or_list, fine_aud_file_dict=fine_aud_file_dict
+            file_list=file_list,
+            dir_or_list=dir_or_list,
+            target_aligning=target_aligning,
+            fine_aud_file_dict=fine_aud_file_dict,
         )
         temp_file_list = []
         for file_path, _ in file_list:
@@ -253,7 +259,7 @@ def find_most_matches(
     files_shifts[most_matches_file["most_matches"]] = 0
 
     for name, file_match in most_matches_file["match_info"].items():
-        files_shifts[name] = file_match[audalign.Audalign.OFFSET_SECS][match_index]
+        files_shifts[name] = file_match[audalign.BaseConfig.OFFSET_SECS][match_index]
 
     return files_shifts
 
@@ -313,6 +319,8 @@ def combine_fine(results: dict, new_results: dict):
         new_results[name] = new_results[name] - min_shift
     new_results["fine_match_info"] = fine_match_info
     new_results["match_info"] = results["match_info"]
+    if results.get("rankings") is not None:
+        new_results["rankings"] = results["rankings"]
     new_results["names_and_paths"] = temp_names_and_paths
     return new_results
 

@@ -11,7 +11,7 @@ class CorrelationConfig(BaseConfig):
     Accuracy settings are acheived by manipulations in fingerprinting variables.
     """
 
-    filter_matches = 1
+    filter_matches = 0.0
     locality: typing.Optional[float] = None
     locality_filter_prop: typing.Optional[float] = None
     start_end_against: typing.Optional[tuple] = None
@@ -36,6 +36,10 @@ class CorrelationConfig(BaseConfig):
     DEFAULT_OVERLAP_RATIO = 0.5
 
     freq_threshold = 200
+
+    SCALING_16_BIT = 65536
+    LOCALITY_OVERLAP_RATIO = 0.5
+    DEFAULT_LOCALITY_FILTER_PROP = 0.6
 
     rankings_no_locality_top_match_tups = (
         (8, 10),

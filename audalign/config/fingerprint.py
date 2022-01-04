@@ -100,7 +100,7 @@ class FingerprintConfig(BaseConfig):
         (0.45, -2),
         (0.0, 0),
     )
-    locality_top_match_tups = (
+    rankings_locality_top_match_tups = (
         (100, 10),
         (80, 9),
         (60, 8),
@@ -111,7 +111,7 @@ class FingerprintConfig(BaseConfig):
         (8, 3),
         (0, 1),
     )
-    no_locality_top_match_tups = (
+    rankings_no_locality_top_match_tups = (
         (500, 10),
         (200, 9),
         (100, 8),

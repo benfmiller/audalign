@@ -39,7 +39,6 @@ class VisualRecognizer(BaseRecognizer):
         self,
         file_list,
         dir_or_list,
-        max_lags: typing.Optional[float],
         target_aligning: bool,
         fine_aud_file_dict: typing.Optional[dict],
     ):
@@ -49,7 +48,9 @@ class VisualRecognizer(BaseRecognizer):
 
     def align_hook(
         self,
+        file_list,
         dir_or_list,
+        target_aligning: bool,
         fine_aud_file_dict: typing.Optional[dict],
     ):
 
