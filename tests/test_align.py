@@ -1,5 +1,4 @@
 import audalign as ad
-from audalign import Audalign
 import pytest
 import pickle
 
@@ -17,19 +16,19 @@ class TestAlign:
 
     @pytest.mark.smoke
     def test_align_fingerprint(self, tmpdir):
-        result = Audalign.align("test_audio/test_shifts", tmpdir)
+        result = ad.align("test_audio/test_shifts", tmpdir)
         assert result
-        result = Audalign.align(
+        result = ad.align(
             "test_audio/test_shifts",
             tmpdir,
             write_extension=".wav",
             recognizer=self.fingerprint_recognizer,
         )
         assert result
-        Audalign.pretty_print_results(result)
+        ad.pretty_print_results(result)
 
     def test_align_cor(self, tmpdir):
-        result = Audalign.align(
+        result = ad.align(
             "test_audio/test_shifts", tmpdir, recognizer=ad.CorrelationRecognizer()
         )
         assert result
@@ -39,21 +38,21 @@ class TestAlign:
         recognizer.config.sample_rate = 4000
         recognizer.config.filter_matches = 0.3
         recognizer.config.locality = 30
-        result = Audalign.align(
+        result = ad.align(
             "test_audio/test_shifts",
             tmpdir,
             recognizer=recognizer,
         )
         assert result
-        Audalign.pretty_print_alignment(result, match_keys="match_info")
+        ad.pretty_print_alignment(result, match_keys="match_info")
 
     def test_align_cor_spec(self, tmpdir):
-        result = Audalign.align(
+        result = ad.align(
             "test_audio/test_shifts",
             tmpdir,
         )
         assert result
-        Audalign.pretty_print_alignment(result)
+        ad.pretty_print_alignment(result)
 
     def test_align_cor_spec_options(self, tmpdir):
         recognizer = ad.CorrelationSpectrogramRecognizer()
@@ -61,34 +60,34 @@ class TestAlign:
         recognizer.config.filter_matches = 0.3
         recognizer.config.locality = 30
         recognizer.config.max_lags = 10
-        result = Audalign.align(
+        result = ad.align(
             "test_audio/test_shifts",
             tmpdir,
             recognizer=recognizer,
         )
         assert result
         recognizer.config.multiprocessing = False
-        result = Audalign.align(
+        result = ad.align(
             "test_audio/test_shifts",
             destination_path=tmpdir,
             write_extension=".wav",
             recognizer=recognizer,
         )
         assert result is not None
-        Audalign.pretty_print_alignment(result)
+        ad.pretty_print_alignment(result)
 
     def test_align_vis(self, tmpdir):
         recognizer = ad.VisualRecognizer()
         recognizer.config.volume_threshold = 215
         recognizer.config.img_width = 0.5
-        result = Audalign.align("test_audio/test_shifts", tmpdir, recognizer=recognizer)
+        result = ad.align("test_audio/test_shifts", tmpdir, recognizer=recognizer)
         assert result is not None
         recognizer.config.multiprocessing = False
-        result = Audalign.align("test_audio/test_shifts", tmpdir, recognizer=recognizer)
+        result = ad.align("test_audio/test_shifts", tmpdir, recognizer=recognizer)
         assert result is not None
 
     def test_align_badish_options(self, tmpdir):
-        result = Audalign.align(
+        result = ad.align(
             "test_audio/test_shifts",
             tmpdir,
             write_extension="mov",
@@ -99,7 +98,7 @@ class TestAlign:
         recognizer = ad.FingerprintRecognizer(
             load_fingerprints_file="tests/test_fingerprints.json"
         )
-        result = Audalign.align(
+        result = ad.align(
             "test_audio/test_shifts",
             recognizer=recognizer,
         )
@@ -108,7 +107,7 @@ class TestAlign:
 
 class TestAlignFiles:
     def test_align_files_fingerprints(self, tmpdir):
-        result = Audalign.align_files(
+        result = ad.align_files(
             "test_audio/test_shifts/Eigen-20sec.mp3",
             "test_audio/test_shifts/Eigen-song-base.mp3",
             destination_path=tmpdir,
@@ -119,7 +118,7 @@ class TestAlignFiles:
         recognizer = ad.FingerprintRecognizer(
             load_fingerprints_file="tests/test_fingerprints.json"
         )
-        result = Audalign.align_files(
+        result = ad.align_files(
             "test_audio/test_shifts/Eigen-20sec.mp3",
             "test_audio/test_shifts/Eigen-song-base.mp3",
             recognizer=recognizer,
@@ -130,7 +129,7 @@ class TestAlignFiles:
         recognizer = ad.VisualRecognizer()
         recognizer.config.volume_threshold = 215
         recognizer.config.img_width = 0.5
-        result = Audalign.align_files(
+        result = ad.align_files(
             "test_audio/test_shifts/Eigen-20sec.mp3",
             "test_audio/test_shifts/Eigen-song-base.mp3",
             destination_path=tmpdir,
@@ -138,7 +137,7 @@ class TestAlignFiles:
         )
         assert result is not None
         recognizer.config.multiprocessing = False
-        result = Audalign.align_files(
+        result = ad.align_files(
             "test_audio/test_shifts/Eigen-20sec.mp3",
             "test_audio/test_shifts/Eigen-song-base.mp3",
             destination_path=tmpdir,
@@ -148,7 +147,7 @@ class TestAlignFiles:
 
     def test_align_files_cor(self, tmpdir):
         recognizer = ad.CorrelationRecognizer()
-        result = Audalign.align_files(
+        result = ad.align_files(
             "test_audio/test_shifts/Eigen-20sec.mp3",
             "test_audio/test_shifts/Eigen-song-base.mp3",
             destination_path=tmpdir,
@@ -157,7 +156,7 @@ class TestAlignFiles:
         )
         assert result is not None
         recognizer.config.multiprocessing = False
-        result = Audalign.align_files(
+        result = ad.align_files(
             "test_audio/test_shifts/Eigen-20sec.mp3",
             "test_audio/test_shifts/Eigen-song-base.mp3",
             destination_path=tmpdir,
@@ -172,7 +171,7 @@ class TestTargetAlign:
         recognizer = ad.VisualRecognizer()
         recognizer.config.volume_threshold = 215
         recognizer.config.img_width = 0.5
-        result = Audalign.target_align(
+        result = ad.target_align(
             "test_audio/test_shifts/Eigen-song-base.mp3",
             "test_audio/test_shifts",
             destination_path=tmpdir,
@@ -180,7 +179,7 @@ class TestTargetAlign:
         )
         assert result is not None
         recognizer.config.multiprocessing = False
-        result = Audalign.target_align(
+        result = ad.target_align(
             "test_audio/test_shifts/Eigen-song-base.mp3",
             "test_audio/test_shifts",
             destination_path=tmpdir,
@@ -194,7 +193,7 @@ class TestTargetAlign:
         recognizer.config.img_width = 0.5
         recognizer.config.calc_mse = True
         recognizer.config.start_end = (0, -1)
-        result = Audalign.target_align(
+        result = ad.target_align(
             "test_audio/test_shifts/Eigen-song-base.mp3",
             "test_audio/test_shifts",
             destination_path=tmpdir,
@@ -203,7 +202,7 @@ class TestTargetAlign:
         assert result
 
     def test_target_align_cor(self, tmpdir):
-        result = Audalign.target_align(
+        result = ad.target_align(
             "test_audio/test_shifts/Eigen-song-base.mp3",
             "test_audio/test_shifts",
             destination_path=tmpdir,
@@ -212,7 +211,7 @@ class TestTargetAlign:
         assert result
 
     def test_target_align_cor_spec(self, tmpdir):
-        result = Audalign.target_align(
+        result = ad.target_align(
             "test_audio/test_shifts/Eigen-song-base.mp3",
             "test_audio/test_shifts",
             destination_path=tmpdir,
@@ -221,7 +220,7 @@ class TestTargetAlign:
         assert result
 
     def test_target_align_fingerprints(self, tmpdir):
-        result = Audalign.target_align(
+        result = ad.target_align(
             "test_audio/test_shifts/Eigen-song-base.mp3",
             "test_audio/test_shifts",
             destination_path=tmpdir,
@@ -233,7 +232,7 @@ class TestTargetAlign:
         recognizer = ad.FingerprintRecognizer(
             load_fingerprints_file="tests/test_fingerprints.json"
         )
-        result = Audalign.target_align(
+        result = ad.target_align(
             "test_audio/test_shifts/Eigen-song-base.mp3",
             "test_audio/test_shifts",
             recognizer=recognizer,
@@ -244,24 +243,24 @@ class TestTargetAlign:
 class TestFineAlign:
     with open("tests/align_test.pickle", "rb") as f:
         align_fing_results = pickle.load(f)
-    align_fing_results = Audalign.recalc_shifts(align_fing_results)
+    align_fing_results = ad.recalc_shifts(align_fing_results)
 
     @pytest.mark.smoke
     def test_fine_align(self):
-        result = Audalign.fine_align(
+        result = ad.fine_align(
             self.align_fing_results,
         )
         assert result is not None
 
     def test_fine_align_spec(self):
         recognizer = ad.CorrelationSpectrogramRecognizer()
-        result = Audalign.fine_align(
+        result = ad.fine_align(
             self.align_fing_results,
             recognizer=recognizer,
         )
         assert result is not None
         recognizer.config.multiprocessing = False
-        result = Audalign.fine_align(
+        result = ad.fine_align(
             self.align_fing_results,
         )
         assert result is not None
@@ -269,21 +268,21 @@ class TestFineAlign:
     def test_fine_align_locality(self):
         recognizer = ad.CorrelationRecognizer()
         recognizer.config.locality = 10
-        result = Audalign.fine_align(self.align_fing_results, recognizer=recognizer)
+        result = ad.fine_align(self.align_fing_results, recognizer=recognizer)
         assert result is not None
-        Audalign.pretty_print_alignment(result, match_keys="match_info")
+        ad.pretty_print_alignment(result, match_keys="match_info")
 
     def test_fine_align_fingerprints(self, tmpdir):
         recognizer = ad.FingerprintRecognizer()
         recognizer.config.locality = 5
         recognizer.config.locality_filter_prop = 0.5
-        result = Audalign.fine_align(
+        result = ad.fine_align(
             self.align_fing_results,
             destination_path=tmpdir,
             recognizer=recognizer,
         )
         assert result is not None
-        Audalign.pretty_print_alignment(result, match_keys="match_info")
+        ad.pretty_print_alignment(result, match_keys="match_info")
 
     def test_fine_align_load_fingerprints(self):
         recognizer = ad.FingerprintRecognizer(
@@ -291,38 +290,38 @@ class TestFineAlign:
         )
         recognizer.config.locality = 5
         recognizer.config.locality_filter_prop = 0.5
-        result = Audalign.fine_align(
+        result = ad.fine_align(
             self.align_fing_results,
             recognizer=recognizer,
         )
         assert result is not None
-        Audalign.pretty_print_alignment(result, match_keys="match_info")
+        ad.pretty_print_alignment(result, match_keys="match_info")
 
     def test_fine_align_visual(self, tmpdir):
         recognizer = ad.VisualRecognizer()
         recognizer.config.volume_threshold = 214
         recognizer.config.img_width = 0.5
-        result = Audalign.fine_align(
+        result = ad.fine_align(
             self.align_fing_results,
             destination_path=tmpdir,
             recognizer=recognizer,
         )
         assert result is not None
         recognizer.config.multiprocessing = False
-        result = Audalign.fine_align(
+        result = ad.fine_align(
             self.align_fing_results,
             destination_path=tmpdir,
             recognizer=recognizer,
         )
         assert result is not None
-        Audalign.pretty_print_alignment(result, match_keys="fine_match_info")
+        ad.pretty_print_alignment(result, match_keys="fine_match_info")
 
     def test_fine_align_options(self, tmpdir):
         recognizer = ad.CorrelationRecognizer()
         recognizer.config.sample_rate = 8000
         recognizer.config.max_lags = 5
         recognizer.config.filter_matches = 0.1
-        result = Audalign.fine_align(
+        result = ad.fine_align(
             self.align_fing_results,
             destination_path=tmpdir,
             match_index=1,
@@ -330,54 +329,52 @@ class TestFineAlign:
             recognizer=recognizer,
         )
         assert result is not None
-        Audalign.pretty_print_results(result)
+        ad.pretty_print_results(result)
 
 
 class TestRecalcWriteShifts:
     with open("tests/align_test.pickle", "rb") as f:
         align_fing_results = pickle.load(f)
-    align_fing_results = Audalign.recalc_shifts(align_fing_results)
-    full_results = Audalign.fine_align(
+    align_fing_results = ad.recalc_shifts(align_fing_results)
+    full_results = ad.fine_align(
         align_fing_results,
     )
 
     def test_recalc_shifts(self):
-        temp_results = Audalign.recalc_shifts(self.align_fing_results)
+        temp_results = ad.recalc_shifts(self.align_fing_results)
         assert temp_results is not None
 
-        temp_results = Audalign.recalc_shifts(self.full_results)
+        temp_results = ad.recalc_shifts(self.full_results)
         assert temp_results is not None
-        temp_results = Audalign.recalc_shifts(self.full_results, key="match_info")
+        temp_results = ad.recalc_shifts(self.full_results, key="match_info")
         assert temp_results is not None
-        temp_results = Audalign.recalc_shifts(
-            self.full_results, key="only_fine_match_info"
-        )
+        temp_results = ad.recalc_shifts(self.full_results, key="only_fine_match_info")
         assert temp_results is not None
 
     def test_recalc_shifts_indexes(self):
-        temp_results = Audalign.recalc_shifts(self.align_fing_results, match_index=1)
+        temp_results = ad.recalc_shifts(self.align_fing_results, match_index=1)
         assert temp_results is not None
 
-        temp_results = Audalign.recalc_shifts(self.full_results, match_index=1)
+        temp_results = ad.recalc_shifts(self.full_results, match_index=1)
         assert temp_results is not None
-        temp_results = Audalign.recalc_shifts(
+        temp_results = ad.recalc_shifts(
             self.full_results, key="match_info", match_index=1
         )
         assert temp_results is not None
-        temp_results = Audalign.recalc_shifts(
+        temp_results = ad.recalc_shifts(
             self.full_results, key="only_fine_match_info", match_index=1
         )
         assert temp_results is not None
 
-        temp_results = Audalign.recalc_shifts(
+        temp_results = ad.recalc_shifts(
             self.full_results, match_index=1, fine_match_index=1
         )
         assert temp_results is not None
-        temp_results = Audalign.recalc_shifts(
+        temp_results = ad.recalc_shifts(
             self.full_results, key="match_info", match_index=1, fine_match_index=1
         )
         assert temp_results is not None
-        temp_results = Audalign.recalc_shifts(
+        temp_results = ad.recalc_shifts(
             self.full_results,
             key="only_fine_match_info",
             match_index=1,
@@ -386,16 +383,16 @@ class TestRecalcWriteShifts:
         assert temp_results is not None
 
     def test_write_from_results(self, tmpdir):
-        Audalign.write_shifts_from_results(self.full_results, test_folder_eig, tmpdir)
-        Audalign.write_shifts_from_results(
+        ad.write_shifts_from_results(self.full_results, test_folder_eig, tmpdir)
+        ad.write_shifts_from_results(
             self.full_results, test_folder_eig, tmpdir, write_extension=".mp3"
         )
 
         # sources from original file location
-        Audalign.write_shifts_from_results(
+        ad.write_shifts_from_results(
             self.full_results, None, tmpdir, write_extension=".mp3"
         )
 
-        Audalign.write_shifts_from_results(
+        ad.write_shifts_from_results(
             self.full_results, "no errors just prints", tmpdir, write_extension=".mp3"
         )

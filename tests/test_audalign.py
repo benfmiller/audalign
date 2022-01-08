@@ -91,16 +91,15 @@ class TestFingerprinter:
         ada.load_fingerprinted_files("file_not_there.json")
 
     def test_get_metadata(self):
-        metatdata = ad.Audalign.get_metadata(file_path=self.test_file)
+        metatdata = ad.get_metadata(file_path=self.test_file)
         assert metatdata != {}
 
     def test_write_processed_file(self, tmpdir):
-        ad.Audalign.write_processed_file(self.test_file, tmpdir.join("test.wav"))
+        ad.write_processed_file(self.test_file, tmpdir.join("test.wav"))
 
 
 class TestFilehandler:
 
-    ada = ad.Audalign()
     test_file = "test_audio/testers/test.mp3"
 
     def test_read(self):
@@ -112,31 +111,27 @@ class TestFilehandler:
         assert len(file_list) == 0
 
     def test_write_shifted_file(self, tmpdir):
-        ada = ad.Audalign()
-        ada.write_shifted_file(self.test_file, tmpdir.join("place.mp3"), 5)
+        ad.write_shifted_file(self.test_file, tmpdir.join("place.mp3"), 5)
 
 
 class TestUniformLevel:
     test_eig_folder = "test_audio/test_shifts/"
     test_eig = "test_audio/test_shifts/Eigen-song-base.mp3"
     test_eig20 = "test_audio/test_shifts/Eigen-20sec.mp3"
-    ada = ad.Audalign()
 
     def test_uniform_level_dir(self, tmpdir):
-        self.ada.uniform_level_directory(self.test_eig_folder, tmpdir)
+        ad.uniform_level_directory(self.test_eig_folder, tmpdir)
 
     def test_uniform_level_dir_average(self, tmpdir):
-        self.ada.uniform_level_directory(self.test_eig_folder, tmpdir, mode="average")
+        ad.uniform_level_directory(self.test_eig_folder, tmpdir, mode="average")
 
     def test_uniform_level_file(self, tmpdir):
-        self.ada.uniform_level_file(self.test_eig, tmpdir)
-        self.ada.uniform_level_file(
-            self.test_eig, os.path.join(tmpdir, "whatever_file.mp3")
-        )
+        ad.uniform_level_file(self.test_eig, tmpdir)
+        ad.uniform_level_file(self.test_eig, os.path.join(tmpdir, "whatever_file.mp3"))
 
     def test_uniform_level_file_average(self, tmpdir):
-        self.ada.uniform_level_file(self.test_eig, tmpdir, mode="average")
-        self.ada.uniform_level_file(
+        ad.uniform_level_file(self.test_eig, tmpdir, mode="average")
+        ad.uniform_level_file(
             self.test_eig, os.path.join(tmpdir, "whatever_file.mp3"), mode="average"
         )
 
@@ -145,27 +140,25 @@ class TestRemoveNoise:
     test_file = "test_audio/testers/test.mp3"
 
     def test_remove_noise_directory(self, tmpdir):
-        ada = ad.Audalign()
-        ada.remove_noise_directory(
+        ad.remove_noise_directory(
             "test_audio/testers", "test_audio/testers/pink_noise.mp3", 10, 30, tmpdir
         )
 
     def test_remove_noise_directory_single_process(self, tmpdir):
-        ada = ad.Audalign()
-        ada.config.multiprocessing = False
-        ada.remove_noise_directory(
+        ad.config.multiprocessing = False
+        ad.remove_noise_directory(
             "test_audio/testers", "test_audio/testers/pink_noise.mp3", 10, 30, tmpdir
         )
 
     def test_remove_noise(self, tmpdir):
-        ad.Audalign.remove_noise_file(
+        ad.remove_noise_file(
             self.test_file,
             10,
             20,
             tmpdir.join("test.mp3"),
         )
 
-        ad.Audalign.remove_noise_file(
+        ad.remove_noise_file(
             self.test_file,
             1,
             3,
@@ -173,13 +166,11 @@ class TestRemoveNoise:
             alt_noise_filepath="test_audio/testers/pink_noise.mp3",
         )
 
-        ad.Audalign.remove_noise_file(
-            self.test_file, 10, 20, tmpdir, write_extension="wav"
-        )
+        ad.remove_noise_file(self.test_file, 10, 20, tmpdir, write_extension="wav")
 
     @pytest.mark.xfail
     def test_remove_noise_bad_file(self):
-        ad.Audalign.remove_noise_file(
+        ad.remove_noise_file(
             "SillyFile.mp3",
         )
 
@@ -187,47 +178,45 @@ class TestRemoveNoise:
 class TestStartEnd:
     test_file = "test_audio/testers/test.mp3"
 
-    ada = ad.Audalign()
-
     def test_start(self, tmpdir):
-        self.ada.convert_audio_file(
+        ad.convert_audio_file(
             self.test_file, tmpdir.join("test_temp.mp3"), start_end=(0, 0)
         )
-        self.ada.convert_audio_file(
+        ad.convert_audio_file(
             self.test_file,
             tmpdir.join("test_temp.mp3"),
             start_end=(10, 0),
         )
-        self.ada.convert_audio_file(
+        ad.convert_audio_file(
             self.test_file,
             tmpdir.join("test_temp.mp3"),
             start_end=(1000, 0),
         )
 
     def test_end(self, tmpdir):
-        self.ada.convert_audio_file(
+        ad.convert_audio_file(
             self.test_file,
             tmpdir.join("test_temp.mp3"),
             start_end=(0, 10),
         )
-        self.ada.convert_audio_file(
+        ad.convert_audio_file(
             self.test_file,
             tmpdir.join("test_temp.mp3"),
             start_end=(0, -10),
         )
-        self.ada.convert_audio_file(
+        ad.convert_audio_file(
             self.test_file,
             tmpdir.join("test_temp.mp3"),
             start_end=(0, 1000),
         )
 
     def test_both(self, tmpdir):
-        self.ada.convert_audio_file(
+        ad.convert_audio_file(
             self.test_file,
             tmpdir.join("test_temp.mp3"),
             start_end=(5, 10),
         )
-        self.ada.convert_audio_file(
+        ad.convert_audio_file(
             self.test_file,
             tmpdir.join("test_temp.mp3"),
             start_end=(5, -10),

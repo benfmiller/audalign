@@ -1,5 +1,4 @@
 import audalign as ad
-from audalign import Audalign
 import os
 import pytest
 
@@ -12,7 +11,6 @@ test_folder_eig = "test_audio/test_shifts/"
 
 class TestFingerprinting:
     test_file = "test_audio/testers/test.mp3"
-    ada = Audalign()
 
     def test_fingerprint_file(self):
         fingerprint_recognizer = ad.FingerprintRecognizer()
@@ -117,11 +115,11 @@ class TestRecognize:
         assert self.fingerprint_recognizer.total_fingerprints > 0
         self.fingerprint_recognizer.config.set_accuracy(4)
 
-        result = Audalign.recognize(test_file, recognizer=self.fingerprint_recognizer)
+        result = ad.recognize(test_file, recognizer=self.fingerprint_recognizer)
         assert len(result) > 1
 
         self.fingerprint_recognizer.config.filter_matches = 20000
-        result2 = Audalign.recognize(test_file, recognizer=self.fingerprint_recognizer)
+        result2 = ad.recognize(test_file, recognizer=self.fingerprint_recognizer)
         self.fingerprint_recognizer.config.filter_matches = (
             ad.FingerprintConfig.filter_matches
         )
@@ -151,18 +149,16 @@ class TestRecognize:
         self.fingerprint_recognizer.config.set_accuracy(4)
 
         self.fingerprint_recognizer.config.locality = 10
-        result = Audalign.recognize(test_file, recognizer=self.fingerprint_recognizer)
+        result = ad.recognize(test_file, recognizer=self.fingerprint_recognizer)
         assert len(result) > 1
-        Audalign.pretty_print_recognition(result)
+        ad.pretty_print_recognition(result)
         self.fingerprint_recognizer.config = ad.FingerprintConfig()
 
     def test_recognize_locality_max_lags(self):
         _max_lags = 4
         self.fingerprint_recognizer.config.max_lags = _max_lags
         self.fingerprint_recognizer.config.locality = 10
-        results = Audalign.recognize(
-            test_file_eig, recognizer=self.fingerprint_recognizer
-        )
+        results = ad.recognize(test_file_eig, recognizer=self.fingerprint_recognizer)
 
         offset_seconds = results["match_info"][os.path.basename(test_file_eig2)][
             "offset_seconds"
@@ -176,7 +172,7 @@ class TestRecognize:
         recognizer = ad.VisualRecognizer()
         recognizer.config.img_width = 0.5
         recognizer.config.volume_threshold = 215
-        results = Audalign.recognize(
+        results = ad.recognize(
             test_file,
             test_file,
             recognizer=recognizer,
@@ -190,7 +186,7 @@ class TestRecognize:
         recognizer.config.volume_threshold = 215
         recognizer.config.multiprocessing = False
         recognizer.config.calc_mse = True
-        results = Audalign.recognize(
+        results = ad.recognize(
             test_file,
             test_file,
             recognizer=recognizer,
@@ -205,7 +201,7 @@ class TestRecognize:
         recognizer.config.vert_scaling = 0.8
         recognizer.config.horiz_scaling = 0.8
 
-        results = Audalign.recognize(
+        results = ad.recognize(
             test_file,
             test_file,
             recognizer=recognizer,
@@ -217,7 +213,7 @@ class TestRecognize:
         recognizer = ad.VisualRecognizer()
         recognizer.config.img_width = 0.5
         recognizer.config.volume_threshold = 215
-        results = Audalign.recognize(
+        results = ad.recognize(
             test_file,
             "test_audio/testers/",
             recognizer=recognizer,
@@ -228,7 +224,7 @@ class TestRecognize:
     def test_correcognize(self):
         recognizer = ad.CorrelationRecognizer()
         # recognizer.config.filter_matches = None
-        results = Audalign.recognize(
+        results = ad.recognize(
             test_file,
             test_file,
             recognizer=recognizer,
@@ -239,7 +235,7 @@ class TestRecognize:
         recognizer = ad.CorrelationRecognizer()
         recognizer.config.locality = 10
         # recognizer.config.filter_matches = None
-        results = Audalign.recognize(
+        results = ad.recognize(
             test_file,
             test_file,
             recognizer=recognizer,
@@ -249,7 +245,7 @@ class TestRecognize:
     def test_correcognize_no_return(self):
         recognizer = ad.CorrelationRecognizer()
         recognizer.config.filter_matches = 2
-        results = Audalign.recognize(
+        results = ad.recognize(
             test_file,
             test_file,
             recognizer=recognizer,
@@ -259,7 +255,7 @@ class TestRecognize:
     def test_correcognize_directory_locality(self):
         recognizer = ad.CorrelationRecognizer()
         recognizer.config.locality = 10
-        results = Audalign.recognize(
+        results = ad.recognize(
             test_file,
             "test_audio/testers/",
             recognizer=recognizer,
@@ -268,7 +264,7 @@ class TestRecognize:
 
     def test_correcognize_directory(self):
         recognizer = ad.CorrelationRecognizer()
-        results = Audalign.recognize(
+        results = ad.recognize(
             test_file,
             "test_audio/testers/",
             recognizer=recognizer,
@@ -278,7 +274,7 @@ class TestRecognize:
     def test_correcognize_directory_single_threaded(self):
         recognizer = ad.CorrelationRecognizer()
         recognizer.config.multiprocessing = False
-        results = Audalign.recognize(
+        results = ad.recognize(
             test_file,
             "test_audio/testers/",
             recognizer=recognizer,
@@ -289,7 +285,7 @@ class TestRecognize:
         _max_lags = 4
         recognizer = ad.CorrelationRecognizer()
         recognizer.config.max_lags = _max_lags
-        results = Audalign.recognize(
+        results = ad.recognize(
             test_file_eig,
             test_file_eig2,
             recognizer=recognizer,
@@ -306,7 +302,7 @@ class TestRecognize:
         recognizer = ad.CorrelationRecognizer()
         recognizer.config.max_lags = _max_lags
         recognizer.config.locality = 10
-        results = Audalign.recognize(
+        results = ad.recognize(
             test_file_eig,
             test_file_eig2,
             recognizer=recognizer,
@@ -320,7 +316,7 @@ class TestRecognize:
 
     def test_correcognize_directory_no_return(self):
         recognizer = ad.CorrelationRecognizer()
-        results = Audalign.recognize(
+        results = ad.recognize(
             test_file,
             "tests/",
             recognizer=recognizer,
@@ -329,18 +325,18 @@ class TestRecognize:
 
     def test_correcognize_spectrogram(self):
         recognizer = ad.CorrelationSpectrogramRecognizer()
-        results = Audalign.recognize(
+        results = ad.recognize(
             test_file_eig,
             test_file_eig2,
             recognizer=recognizer,
         )
         assert results
-        Audalign.pretty_print_results(results)
+        ad.pretty_print_results(results)
 
     def test_correcognize_spectrogram_locality(self):
         recognizer = ad.CorrelationSpectrogramRecognizer()
         recognizer.config.locality = 20
-        results = Audalign.recognize(
+        results = ad.recognize(
             test_file_eig,
             test_file_eig2,
             recognizer=recognizer,
@@ -349,7 +345,7 @@ class TestRecognize:
 
     def test_correcognize_spectrogram_directory(self):
         recognizer = ad.CorrelationSpectrogramRecognizer()
-        results = Audalign.recognize(
+        results = ad.recognize(
             test_file_eig,
             test_folder_eig,
             recognizer=recognizer,
@@ -360,9 +356,7 @@ class TestRecognize:
         _max_lags = 4
         recognizer = ad.CorrelationSpectrogramRecognizer()
         recognizer.config.max_lags = _max_lags
-        results = Audalign.recognize(
-            test_file_eig, test_file_eig2, recognizer=recognizer
-        )
+        results = ad.recognize(test_file_eig, test_file_eig2, recognizer=recognizer)
         assert results
         offset_seconds = results["match_info"][os.path.basename(test_file_eig2)][
             "offset_seconds"
@@ -375,7 +369,7 @@ class TestRecognize:
         recognizer = ad.CorrelationSpectrogramRecognizer()
         recognizer.config.max_lags = _max_lags
         recognizer.config.locality = 10
-        results = Audalign.recognize(
+        results = ad.recognize(
             test_file_eig,
             test_file_eig2,
             recognizer=recognizer,
