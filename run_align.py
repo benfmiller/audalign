@@ -166,35 +166,63 @@ def main(args):
     if args.locality == 0:
         args.locality = None
 
-    ada = ad.Audalign(
-        accuracy=args.accuracy,
-        hash_style=args.hash_style,
-        freq_threshold=args.threshold,
-        num_processors=args.num_processors,
-        multiprocessing=multiprocessing,
-    )
+    if args.technique == "fingerprints":
+        recognizer = ad.FingerprintRecognizer()
+        recognizer.config.set_accuracy(args.accuracy)
+        recognizer.config.set_hash_style(args.hash_style)
+    elif args.technique == "correlation":
+        recognizer = ad.CorrelationRecognizer()
+    elif args.technique == "correlation_spectrogram":
+        recognizer = ad.CorrelationSpectrogramRecognizer()
+    elif args.technique == "visual":
+        recognizer = ad.VisualRecognizer()
+        recognizer.config.volume_threshold = args.volume_threshold
+        recognizer.config.img_width = args.img_width
+    else:
+        raise ValueError(
+            f"technique '{args.technique}' must be 'fingerprints', 'correlation', 'correlation_spectrogram', or 'visual'"
+        )
+
+    recognizer.config.freq_threshold = args.threshold
+    recognizer.config.num_processors = args.num_processors
+    recognizer.config.multiprocessing = multiprocessing
+    recognizer.config.sample_rate = args.sample_rate
+    recognizer.config.locality = args.locality
+
     t = time.time()
 
     try:
         print()
-        results = ada.align(
+        results = ad.align(
             args.files,
-            technique=args.technique,
-            cor_sample_rate=args.sample_rate,
-            locality=args.locality,
-            volume_threshold=args.volume_threshold,
-            img_width=args.img_width,
             destination_path=args.destination,
             write_extension=args.write_extention,
+            recognizer=recognizer,
         )
         if args.fine_align:
-            results = ada.fine_align(
+            if args.fine_technique == "fingerprints":
+                recognizer = ad.FingerprintRecognizer()
+                recognizer.config.set_accuracy(args.accuracy)
+                recognizer.config.set_hash_style(args.hash_style)
+            elif args.fine_technique == "correlation":
+                recognizer = ad.CorrelationRecognizer()
+            elif args.fine_technique == "correlation_spectrogram":
+                recognizer = ad.CorrelationSpectrogramRecognizer()
+            elif args.fine_technique == "visual":
+                recognizer = ad.VisualRecognizer()
+                recognizer.config.volume_threshold = args.fine_volume_threshold
+                recognizer.config.img_width = args.fine_img_width
+            else:
+                raise ValueError(
+                    f"fine_technique '{args.fine_technique}' must be 'fingerprints', 'correlation', 'correlation_spectrogram', or 'visual'"
+                )
+            recognizer.config.freq_threshold = args.threshold
+            recognizer.config.num_processors = args.num_processors
+            recognizer.config.multiprocessing = multiprocessing
+            recognizer.config.sample_rate = args.sample_rate
+            recognizer.config.locality = args.locality
+            results = ad.fine_align(
                 results,
-                technique=args.fine_technique,
-                locality=args.fine_locality,
-                cor_sample_rate=args.fine_sample_rate,
-                img_width=args.fine_img_width,
-                volume_threshold=args.fine_volume_threshold,
                 write_extension=args.write_extention,
                 destination_path=args.destination,
             )
@@ -213,7 +241,7 @@ def main(args):
             json.dump(results, f, cls=NpEncoder)
 
     # --------------------------------------------------------------------------
-    ada.pretty_print_results(results)
+    ad.pretty_print_results(results)
 
     sum_, count, max_, min_ = 0, 0, 0, 9999999999
     if results is not None:
