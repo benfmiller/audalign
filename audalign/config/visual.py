@@ -22,6 +22,12 @@ class VisualConfig(BaseConfig):
     # also calculates mean squared error for each shift if true. If false, uses default mse 20000000
     calc_mse: bool = False
 
+    # cuts off top x rows returned from mlab.specgram in fingerprinter
+    # Those high frequencies are very noisy and disrupt recognitions
+    cutoff_top: int = 200
+
+    freq_threshold: int = 100
+
     filter_matches = 1
     start_end_against: typing.Optional[tuple] = None
 

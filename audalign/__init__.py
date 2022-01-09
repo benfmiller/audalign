@@ -20,7 +20,6 @@ from pydub.utils import mediainfo
 
 import audalign.align.aligner as aligner
 from audalign.config import BaseConfig
-from audalign.config.fingerprint import FingerprintConfig
 import audalign.datalign as datalign
 import audalign.filehandler as filehandler
 from audalign.recognizers import BaseRecognizer
@@ -282,9 +281,6 @@ def write_processed_file(
         start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
         sample_rate (int): sample rate to write file to
 
-    Returns
-    -------
-    None
     """
     filehandler.read(
         filename=file_path,
@@ -299,7 +295,7 @@ def plot_peaks(
     config: BaseConfig = None,
 ) -> None:
     """
-    Plots the file_path's peak chart
+    Plots the file_path's peak chart from fingerprinting
 
     Args
     ----
@@ -310,8 +306,6 @@ def plot_peaks(
     -------
     None
     """
-    if config is None:
-        config = FingerprintConfig()
     fing_rec = FingerprintRecognizer(config)
     fing_rec.config.plot = True
     fing_rec._fingerprint_file(
@@ -653,6 +647,7 @@ def convert_audio_file(
     file_path: str,
     destination_path: str,
     start_end: tuple = None,
+    sample_rate: int = None,
 ):
     """
     Convert audio file to type specified in destination path
@@ -662,9 +657,13 @@ def convert_audio_file(
         file_path (str): file path of file to shift
         destination_path (str): where to write file to and file name
         start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
+        sample_rate (int): sample rate to write file to
     """
     filehandler.read(
-        filename=file_path, wrdestination=destination_path, start_end=start_end
+        filename=file_path,
+        wrdestination=destination_path,
+        start_end=start_end,
+        sample_rate=sample_rate,
     )
 
 

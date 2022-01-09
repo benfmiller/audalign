@@ -2,6 +2,7 @@ import multiprocessing
 import os
 import time
 from functools import partial
+import typing
 
 import audalign.recognizers.fingerprint.fingerprinter as fingerprinter
 from audalign.config.correlation_spectrogram import CorrelationSpectrogramConfig
@@ -62,14 +63,14 @@ def correcognize(
     target_array = get_array(
         target_file_path,
         start_end=config.start_end,
-        sample_rate=config.sample_rate,
+        config=config,
         _file_audsegs=None,
         sos=sos,
     )
     against_array = get_array(
         against_file_path,
         start_end=config.start_end_against,
-        sample_rate=config.sample_rate,
+        config=config,
         _file_audsegs=None,
         sos=sos,
     )
@@ -141,7 +142,7 @@ def correcognize_directory(
         target_array = get_array(
             target_file_path,
             config.start_end,
-            sample_rate=config.sample_rate,
+            config=config,
             _file_audsegs=_file_audsegs,
             sos=sos,
         )
@@ -302,7 +303,7 @@ def _correcognize_dir(
         target_array = get_array(
             target_file_path,
             config.start_end,
-            sample_rate=config.sample_rate,
+            config=config,
             _file_audsegs=_file_audsegs,
             sos=sos_filter,
         )
@@ -317,7 +318,7 @@ def _correcognize_dir(
         against_array = get_array(
             against_file_path,
             start_end=None,
-            sample_rate=config.sample_rate,
+            config=config,
             _file_audsegs=_file_audsegs,
             sos=sos_filter,
         )
@@ -341,28 +342,28 @@ def _correcognize_dir(
 
 
 def get_array(
-    file_path,
-    start_end,
-    sample_rate,
-    _file_audsegs,
+    file_path: str,
+    start_end: typing.Optional[tuple],
+    config: CorrelationSpectrogramConfig,
+    _file_audsegs: typing.Optional[dict],
     sos,
 ):
     if _file_audsegs is not None:
         target_array = get_shifted_file(
             file_path,
             _file_audsegs[file_path],
-            sample_rate=sample_rate,
+            sample_rate=config.sample_rate,
         )
     else:
-        target_array = read(file_path, start_end=start_end, sample_rate=sample_rate)[0]
+        target_array = read(
+            file_path, start_end=start_end, sample_rate=config.sample_rate
+        )[0]
     if sos is not None:
         target_array = signal.sosfilt(sos, target_array)
 
-    fingerprint_config = CorrelationSpectrogramConfig()
-    fingerprint_config.sample_rate = sample_rate
     target_array = fingerprinter.fingerprint(
         target_array,
-        fingerprint_config,
+        config,
         retspec=True,
     ).T
     target_array = np.clip(target_array, 0, 500)  # never louder than 500

@@ -54,7 +54,7 @@ class TestFingerprinter:
         assert ada.total_fingerprints == 0
 
     def test_set_accuracy(self):
-        config = ad.FingerprintConfig()
+        config = ad.config.fingerprint.FingerprintConfig()
         assert config.get_accuracy() == 2
         assert config.default_amp_min == 65
         config.set_accuracy(3)

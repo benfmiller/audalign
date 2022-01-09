@@ -121,21 +121,25 @@ class TestRecognize:
         self.fingerprint_recognizer.config.filter_matches = 20000
         result2 = ad.recognize(test_file, recognizer=self.fingerprint_recognizer)
         self.fingerprint_recognizer.config.filter_matches = (
-            ad.FingerprintConfig.filter_matches
+            ad.config.fingerprint.FingerprintConfig.filter_matches
         )
         assert not result2
 
     def test_recognize_fingerprint(self):
         ada2 = ad.FingerprintRecognizer()
-        ada2.fingerprint_file(test_file)
-        result = ada2.recognize(test_file2)
+        ada2.config.set_accuracy(1)
+
+        ada2.fingerprint_file(test_file_eig)
+        result = ada2.recognize(test_file_eig2)
         assert result
 
     def test_recognize_max_lags(self):
         _max_lags = 4
         self.fingerprint_recognizer.config.max_lags = 4
         results = self.fingerprint_recognizer.recognize(test_file_eig)
-        self.fingerprint_recognizer.config.max_lags = ad.FingerprintConfig.max_lags
+        self.fingerprint_recognizer.config.max_lags = (
+            ad.config.fingerprint.FingerprintConfig.max_lags
+        )
 
         offset_seconds = results["match_info"][os.path.basename(test_file_eig2)][
             "offset_seconds"
@@ -152,7 +156,7 @@ class TestRecognize:
         result = ad.recognize(test_file, recognizer=self.fingerprint_recognizer)
         assert len(result) > 1
         ad.pretty_print_recognition(result)
-        self.fingerprint_recognizer.config = ad.FingerprintConfig()
+        self.fingerprint_recognizer.config = ad.config.fingerprint.FingerprintConfig()
 
     def test_recognize_locality_max_lags(self):
         _max_lags = 4
@@ -165,13 +169,13 @@ class TestRecognize:
         ]
         assert min(offset_seconds) < _max_lags
         assert max(offset_seconds) < _max_lags
-        self.fingerprint_recognizer.config = ad.FingerprintConfig()
+        self.fingerprint_recognizer.config = ad.config.fingerprint.FingerprintConfig()
 
     @pytest.mark.smoke
     def test_visrecognize(self):
         recognizer = ad.VisualRecognizer()
         recognizer.config.img_width = 0.5
-        recognizer.config.volume_threshold = 215
+        recognizer.config.volume_threshold = 200
         results = ad.recognize(
             test_file,
             test_file,
@@ -183,7 +187,7 @@ class TestRecognize:
 
         recognizer = ad.VisualRecognizer()
         recognizer.config.img_width = 0.5
-        recognizer.config.volume_threshold = 215
+        recognizer.config.volume_threshold = 200
         recognizer.config.multiprocessing = False
         recognizer.config.calc_mse = True
         results = ad.recognize(
@@ -196,7 +200,7 @@ class TestRecognize:
     def test_visrecognize_options(self):
         recognizer = ad.VisualRecognizer()
         recognizer.config.img_width = 0.5
-        recognizer.config.volume_threshold = 215
+        recognizer.config.volume_threshold = 200
         recognizer.config.volume_floor = 100
         recognizer.config.vert_scaling = 0.8
         recognizer.config.horiz_scaling = 0.8
@@ -212,7 +216,7 @@ class TestRecognize:
     def test_visrecognize_directory(self):
         recognizer = ad.VisualRecognizer()
         recognizer.config.img_width = 0.5
-        recognizer.config.volume_threshold = 215
+        recognizer.config.volume_threshold = 182
         results = ad.recognize(
             test_file,
             "test_audio/testers/",

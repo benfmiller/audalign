@@ -42,7 +42,7 @@ def _fingerprint_worker(
 
         try:
             channel, _ = audalign.filehandler.read(
-                file_path, start_end=config.start_end
+                file_path, start_end=config.start_end, sample_rate=config.sample_rate
             )
         except FileNotFoundError:
             print(f'"{file_path}" not found')
@@ -92,13 +92,14 @@ def fingerprint(
     """
     # FFT the signal and extract frequency components
     # To get the frequencies of each row, get the second returned component
-    arr2D = mlab.specgram(
+    arr2D, frequencies, _ = mlab.specgram(
         channel_samples,
         NFFT=config.fft_window_size,
         Fs=config.sample_rate,
         window=mlab.window_hanning,
         noverlap=int(config.fft_window_size * config.DEFAULT_OVERLAP_RATIO),
-    )[0]
+    )
+    # )[0]
 
     # apply log transform since specgram() returns linear array
     # print(arr2D)
@@ -110,6 +111,16 @@ def fingerprint(
     # print(max(arr2D[0]))
     # print(f"length of arr2d {len(arr2D)}")
     # print(f"length of arr2d height {len(arr2D[1])}")
+
+    if config.freq_threshold is not None:
+        index = 0
+        for i, frequency in enumerate(frequencies):
+            if frequency > config.freq_threshold - 0.0001:
+                index = i
+                break
+        else:
+            index = len(frequencies)
+        arr2D[0:index] = 0
 
     if retspec:
         return arr2D
@@ -151,9 +162,13 @@ def get_2D_peaks(arr2D, config: FingerprintConfig):
     # filter peaks
     amps = amps.flatten()
     peaks = zip(i, j, amps)
-    # TODO make the frequency actually be the frequency
+
+    # This cuts off by frequency band rather than hertz
+    # peaks_filtered = filter(
+    #     lambda x: x[2] > config.default_amp_min and x[1] > config.freq_threshold, peaks
+    # )  # time, freq, amp
     peaks_filtered = filter(
-        lambda x: x[2] > config.default_amp_min and x[1] > config.freq_threshold, peaks
+        lambda x: x[2] > config.default_amp_min, peaks
     )  # time, freq, amp
     # get indices for frequency and time
     frequency_idx = []

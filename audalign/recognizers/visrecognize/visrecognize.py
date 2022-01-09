@@ -15,7 +15,6 @@ from pydub.exceptions import CouldntDecodeError
 from skimage.metrics import mean_squared_error
 from skimage.metrics import structural_similarity as ssim
 
-lower_clip = 5
 upper_clip = 255
 
 # ------------------------------------------------------------------------------------------
@@ -374,12 +373,27 @@ def get_arrays(
     _file_audsegs: dict = None,
 ):
     if _file_audsegs is not None:
-        samples = get_shifted_file(file_path, _file_audsegs[file_path])
+        samples = get_shifted_file(
+            file_path, _file_audsegs[file_path], sample_rate=config.sample_rate
+        )
     else:
-        samples, _ = read(file_path, start_end=start_end)
+        samples, _ = read(
+            file_path, start_end=start_end, sample_rate=config.sample_rate
+        )
     arr2d = fingerprint.fingerprint(samples, config, retspec=True)
+
     if config.freq_threshold > 0:
-        arr2d = arr2d[0 : -config.freq_threshold]
+        index = 0
+        for i, frequency in enumerate(arr2d):
+            if np.max(frequency) != 0:
+                index = i
+                break
+        else:
+            index = len(arr2d)
+        arr2d = arr2d[index:]
+    if config.freq_threshold > 0:
+        arr2d = arr2d[0 : -config.cutoff_top]
+
     arr2d = np.clip(arr2d, volume_floor, upper_clip)
     if vert_scaling != 1.0 or horiz_scaling != 1.0:
         array_image = Image.fromarray(np.uint8(arr2d))

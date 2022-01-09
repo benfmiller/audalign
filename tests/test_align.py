@@ -78,7 +78,7 @@ class TestAlign:
 
     def test_align_vis(self, tmpdir):
         recognizer = ad.VisualRecognizer()
-        recognizer.config.volume_threshold = 215
+        recognizer.config.volume_threshold = 214
         recognizer.config.img_width = 0.5
         result = ad.align("test_audio/test_shifts", tmpdir, recognizer=recognizer)
         assert result is not None
@@ -127,7 +127,7 @@ class TestAlignFiles:
 
     def test_align_files_vis(self, tmpdir):
         recognizer = ad.VisualRecognizer()
-        recognizer.config.volume_threshold = 215
+        recognizer.config.volume_threshold = 214
         recognizer.config.img_width = 0.5
         result = ad.align_files(
             "test_audio/test_shifts/Eigen-20sec.mp3",
@@ -169,7 +169,7 @@ class TestAlignFiles:
 class TestTargetAlign:
     def test_target_align_vis(self, tmpdir):
         recognizer = ad.VisualRecognizer()
-        recognizer.config.volume_threshold = 215
+        recognizer.config.volume_threshold = 214
         recognizer.config.img_width = 0.5
         result = ad.target_align(
             "test_audio/test_shifts/Eigen-song-base.mp3",
@@ -189,7 +189,7 @@ class TestTargetAlign:
 
     def test_target_align_vis_mse(self, tmpdir):
         recognizer = ad.VisualRecognizer()
-        recognizer.config.volume_threshold = 215
+        recognizer.config.volume_threshold = 214
         recognizer.config.img_width = 0.5
         recognizer.config.calc_mse = True
         recognizer.config.start_end = (0, -1)
@@ -299,7 +299,7 @@ class TestFineAlign:
 
     def test_fine_align_visual(self, tmpdir):
         recognizer = ad.VisualRecognizer()
-        recognizer.config.volume_threshold = 214
+        recognizer.config.volume_threshold = 210
         recognizer.config.img_width = 0.5
         result = ad.fine_align(
             self.align_fing_results,
