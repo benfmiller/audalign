@@ -4,6 +4,8 @@ import typing
 
 class FingerprintConfig(BaseConfig):
     """
+    Set the hash style and accuracy with the given setter methods
+
     hash style has four options. All fingerprints must be of the same hash style to match.
 
     'base' hash style consists of two peaks. Two frequencies and a time difference.
@@ -26,7 +28,7 @@ class FingerprintConfig(BaseConfig):
     """
 
     hash_style = "panako_mod"
-    accuracy = 2
+    _accuracy = 2
     filter_matches = 1
     locality: typing.Optional[float] = None
     locality_filter_prop: typing.Optional[float] = None
@@ -87,9 +89,6 @@ class FingerprintConfig(BaseConfig):
     # with potentially lesser collisions of matches.
     FINGERPRINT_REDUCTION = 20
 
-    freq_threshold = 200
-
-    CONFIDENCE = "confidence"
     rankings_minus = (
         (0.95, 4),
         (0.9, 3),
@@ -156,7 +155,7 @@ class FingerprintConfig(BaseConfig):
         accuracy = int(accuracy)
         if accuracy < 1 or accuracy > 4:
             raise ValueError(f"Accuracy '{accuracy}' must be between 1 and 4")
-        self.accuracy = accuracy
+        self._accuracy = accuracy
         self._set_accuracy(accuracy)
 
     def _set_accuracy(self, accuracy: int) -> None:
@@ -191,4 +190,4 @@ class FingerprintConfig(BaseConfig):
         Returns:
             [int]: Accuracy level
         """
-        return self.accuracy
+        return self._accuracy

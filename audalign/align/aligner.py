@@ -20,11 +20,10 @@ def _align(
     target_aligning: bool = False,
 ):
     if destination_path is not None and not os.path.exists(destination_path):
-        # raise ValueError(f'destination_path "{destination_path}" does not exist')
-        raise ValueError
+        raise ValueError(f'destination_path "{destination_path}" does not exist')
 
     file_names_to_align = recognizer.align_get_file_names(
-        filename_list=filename_list,
+        file_list=filename_list,
         file_dir=file_dir,
         target_aligning=target_aligning,
         fine_aud_file_dict=fine_aud_file_dict,
@@ -146,7 +145,6 @@ def calc_alignments(
             name = os.path.basename(file_path)
             if name in file_names_to_align:
                 alignment = recognizer._align(file_path, dir_or_list)
-                # TODO fingerprinting this might result in tons of already fingerprinted prints
                 file_names_and_paths[name] = file_path
                 total_alignment[name] = alignment
     return total_alignment, file_names_and_paths
@@ -163,9 +161,6 @@ def calc_final_alignments(
     target_aligning,
     fine_aligning: bool,
 ):
-    # if recognzier.config.alternate_strength_stat is not None:
-    #     else:
-    #         ada_obj.alternate_strength_stat = ada_obj.CONFIDENCE
     files_shifts = find_most_matches(
         total_alignment, strength_stat=recognizer.config.CONFIDENCE
     )
@@ -333,7 +328,6 @@ def recalc_shifts_index(
     strength_stat: str = None,
     fine_strength_stat=None,
 ) -> dict:
-    # TODO make sure this works with keeping regular rankings in fine align
     if key is None:
         if "fine_match_info" in results:
             key = "fine_match_info"

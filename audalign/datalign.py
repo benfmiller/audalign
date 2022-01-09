@@ -3,7 +3,6 @@ import numpy as np
 from audalign.recognizers import BaseRecognizer
 
 
-# TODO reuse regular alignment rankings when fine aligning
 def rank_alignment(alignment, recognizer: BaseRecognizer):
     ranks = {}
     if "fine_match_info" in alignment.keys():

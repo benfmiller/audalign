@@ -13,8 +13,6 @@ from pydub.exceptions import CouldntDecodeError
 
 from audalign.config import BaseConfig
 
-# FIXME use given sample rate
-
 cant_write_ext = [".mov", ".mp4", ".m4a"]
 cant_read_ext = [".txt", ".md", ".pkf", ".py", ".pyc"]
 can_read_ext = [
@@ -199,7 +197,6 @@ def noise_remove(
     verbose=False,
     **kwargs,
 ):
-
     audiofile = create_audiosegment(filepath)
     new_data = _floatify_data(audiofile)
 
@@ -663,7 +660,6 @@ def _shift_files(
 
 
 def shift_write_file(file_path, destination_path, offset_seconds):
-
     silence = AudioSegment.silent(
         offset_seconds * 1000, frame_rate=BaseConfig.sample_rate
     )

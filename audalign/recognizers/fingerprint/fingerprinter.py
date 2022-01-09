@@ -104,7 +104,7 @@ def fingerprint(
     # print(arr2D)
     # print(max(arr2D[0]))
     arr2D = 10 * np.log2(arr2D)
-    # TODO test this to see if we should change it back, would have to recalc default settings
+    # got better results with a log2, but this means that nothing is in terms of decibels
     # arr2D = 10 * np.log10(arr2D, out=np.zeros_like(arr2D), where=(arr2D != 0))
     arr2D[arr2D == -np.inf] = 0  # replace infs with zeros
     # print(max(arr2D[0]))

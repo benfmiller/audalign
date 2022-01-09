@@ -31,8 +31,6 @@ class CorrelationSpectrogramConfig(BaseConfig):
     # matching, but potentially more fingerprints.
     DEFAULT_OVERLAP_RATIO = 0.5
 
-    freq_threshold = 200
-
     SCALING_16_BIT = 65536
     LOCALITY_OVERLAP_RATIO = 0.5
     DEFAULT_LOCALITY_FILTER_PROP = 0.6

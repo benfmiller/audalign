@@ -11,11 +11,6 @@ import pickle
 import json
 import typing
 
-# ----------------------------------------------------------------------------------
-
-
-# ------------------------------------------------------------------------------
-
 
 class FingerprintRecognizer(BaseRecognizer):
     config: FingerprintConfig
@@ -63,32 +58,6 @@ class FingerprintRecognizer(BaseRecognizer):
                 filename_list,
                 _file_audsegs=fine_aud_file_dict,
             )
-        # if load_fingerprints is not None:
-        #     if type(file_dir) == str:
-        #         file_names = [
-        #             x for x in filehandler.get_audio_files_directory(file_dir)
-        #         ]
-        #     elif type(file_dir) == list:
-        #         file_names = [os.path.basename(x) for x in file_dir]
-        #     elif file_dir is None and fine_aud_file_dict is not None:
-        #         file_names = [os.path.basename(x) for x in fine_aud_file_dict.keys()]
-        #     elif filename_list is not None:
-        #         file_names = [os.path.basename(x) for x in filename_list]
-
-        #     ada_obj.file_names, temp_file_names = [], ada_obj.file_names
-        #     ada_obj.fingerprinted_files, temp_fingerprinted_files = (
-        #         [],
-        #         ada_obj.fingerprinted_files,
-        #     )
-        #     ada_obj.total_fingerprints, temp_total_fingerprints = (
-        #         0,
-        #         ada_obj.total_fingerprints,
-        #     )
-        #     for loaded_file in temp_fingerprinted_files:
-        #         if loaded_file[0] != None and loaded_file[0] in file_names:
-        #             ada_obj.fingerprinted_files.append(loaded_file)
-        #             ada_obj.file_names.append(loaded_file[0])
-        #             ada_obj.total_fingerprints += len(loaded_file[1])
 
     def prelim_fingerprint_checks(self, target_file, directory_path):
         all_against_files = filehandler.find_files(directory_path)
@@ -125,7 +94,7 @@ class FingerprintRecognizer(BaseRecognizer):
 
     def align_get_file_names(
         self,
-        filename_list: typing.Union[str, list],
+        file_list: typing.Union[str, list],
         file_dir: typing.Optional[str],
         target_aligning: bool,
         fine_aud_file_dict: typing.Optional[dict],
@@ -138,7 +107,7 @@ class FingerprintRecognizer(BaseRecognizer):
                 self.temp_fingerprints_list.append([name, fingerprints])
                 self.clear_fingerprints()
         else:
-            file_names = filename_list
+            file_names = file_list
 
         self.fingerprint_directory(file_names, fine_aud_file_dict)
 
@@ -150,7 +119,7 @@ class FingerprintRecognizer(BaseRecognizer):
                     self.temp_fingerprints_list.append(self.pop_filename(name))
 
         file_name_list = super().align_get_file_names(
-            filename_list, file_dir, target_aligning, fine_aud_file_dict
+            file_list, file_dir, target_aligning, fine_aud_file_dict
         )
         return file_name_list
 
@@ -179,21 +148,11 @@ class FingerprintRecognizer(BaseRecognizer):
         against_path: str = None,
     ) -> None:
         """
-        TODO redo documentation
-        Recognizes given file against already fingerprinted files
+        Recognizes given file against already fingerprinted files. Will fingerprint against_path if not already fingerprinted.
 
-        Offset describes duration that the recognized file aligns after the target file
-        Does not recognize against files with same name and extension
-        Locality option used to only return match results within certain second range
-
-        Args
-        ----
-            file_path (str): file path of target file to recognize.
-            filter_matches (int): filters all matches lower than given argument, 1 is recommended
-            locality (float): filters matches to only count within locality. In seconds
-            locality_filter_prop (int, float,optional): within each offset, filters locality tuples by proportion of highest confidence to tuple confidence
-            start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
-            max_lags (float, optional): Maximum lags in seconds.
+        Offset describes duration that the recognized file aligns after the target file.
+        Does not recognize against files with same name and extension.
+        Locality option used to only return match results within certain second range, doesn't require new fingerprints.
 
         Returns
         -------
@@ -245,8 +204,6 @@ class FingerprintRecognizer(BaseRecognizer):
         Args
         ----
             path (str): path to directory to be fingerprinted
-            plot (boolean): if true, plots the peaks to be fingerprinted on a spectrogram
-            extensions (list[str]): specify which extensions to fingerprint
             _file_audsegs (dict, None): For internal use with fine align
 
         Returns
@@ -279,8 +236,6 @@ class FingerprintRecognizer(BaseRecognizer):
         Args
         ----
             path (str): path to directory to be fingerprinted
-            plot (boolean): if true, plots the peaks to be fingerprinted on a spectrogram
-            extensions (list[str]): specify which extensions to fingerprint
 
         Returns
         -------
@@ -367,9 +322,7 @@ class FingerprintRecognizer(BaseRecognizer):
         Args
         ----
             file_path (str): path of file to be fingerprinted
-            start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
             set_file_name (str): option to set file name manually rather than use file name in file_path
-            plot (boolean): if true, plots the peaks to be fingerprinted on a spectrogram
 
         Returns
         -------
@@ -402,9 +355,7 @@ class FingerprintRecognizer(BaseRecognizer):
         Args
         ----
             file_path (str): path to file to be fingerprinted
-            start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
             set_file_name (str): option to set file name manually rather than use file name in file_path
-            plot (boolean): if true, plots the peaks to be fingerprinted on a spectrogram
 
         Returns
         -------
@@ -467,7 +418,17 @@ class FingerprintRecognizer(BaseRecognizer):
             print(f'"{filename}" not found')
 
     def pop_filename(self, filename: str):
-        ...
+        """Pops filename from already fingerprinted files
+
+        Args:
+            filename (str): filename to pop
+
+        Raises:
+            KeyError: if filename is not fingerprinted
+
+        Returns:
+            [tup]: filename, fingerprinted_files entry
+        """
         i = 0
         while i < len(self.file_names):
             if self.file_names[i] == filename:

@@ -1,3 +1,17 @@
+"""
+This file serves as the host file for all audalign functions.
+
+recognitions and alignments use recognizer objects which can be configured with
+their respective configuration objects. 
+
+There are a number of functions that can be used to enhance the alignments such
+as "uniform leveling" and "remove noise" functions. Writing shifts can also be nifty.
+
+One useful workflow could be to uniform level some files, do a remove noise on them, then
+align and fine align them. Then, to have the shifts applied to the original files, use
+"write_shifts_from_results".
+"""
+
 import os
 from functools import wraps
 from pprint import PrettyPrinter
@@ -69,7 +83,7 @@ def align(
         directory_path (str): String of directory for alignment
         destination_path (str): String of path to write alignments to
         write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
-        # TODO recognizer
+        recognizer (BaseRecognizer, optional): recognizer object
 
     Returns
     -------
@@ -107,7 +121,7 @@ def align_files(
         *filenames (strs): strings of paths for alignment
         destination_path (str): String of path to write alignments to
         write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
-        # TODO recognizer
+        recognizer (BaseRecognizer, optional): recognizer object
 
     Returns
     -------
@@ -143,7 +157,7 @@ def target_align(
         directory_path (str): Directory to align against
         destination_path (str, optional): Directory to write alignments to
         write_extension (str, optional): audio file format to write to. Defaults to None.
-        # TODO recognizer
+        recognizer (BaseRecognizer, optional): recognizer object
 
     Returns
     -------
@@ -179,7 +193,7 @@ def fine_align(
         destination_path (str): String of path to write alignments to
         write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
         match_index (int): reorders the input results to the given match index.
-        recognizer (BaseRecognizer, optional): # TODO
+        recognizer (BaseRecognizer, optional): recognizer object
 
     Returns
     -------
@@ -249,6 +263,9 @@ def fine_align(
     return new_results
 
 
+# --------------------------------------------------------------------------------------
+
+
 def write_processed_file(
     file_path: str,
     destination_file: str,
@@ -263,6 +280,7 @@ def write_processed_file(
         file_path (str): file path of audio file
         destination_file (str): file path and name to write file to
         start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
+        sample_rate (int): sample rate to write file to
 
     Returns
     -------
@@ -428,6 +446,12 @@ def pretty_print_recognition(results, _in_alignment: bool = False):
     else:
         print("No Matches Found")
     return min_conf, max_conf
+
+
+def _recog_sorter(x, result, strength_stat):
+    if strength_stat == "scaling_factor":
+        return result["match_info"][x][strength_stat]
+    return result["match_info"][x][strength_stat][0]
 
 
 def pretty_print_alignment(results, match_keys="both"):
@@ -644,6 +668,9 @@ def convert_audio_file(
     )
 
 
+# -----------------------------------------------------------------------------------------
+
+
 def uniform_level_file(
     file_path: str,
     destination: str,
@@ -714,7 +741,8 @@ def uniform_level_directory(
         width (float): width in seconds for each leveling.
         overlap_ratio (float): between 1 and 0. overlapping windows.
         exclude_min_db (float): less than 0. Doesn't level window with max dBFS lower than this.
-        # TODO Documentation
+        multiprocessing (bool): If true, uses multiprocessing
+        num_processors (int, optional): number of processors to use
 
     Returns
     -------
@@ -802,8 +830,9 @@ def remove_noise_directory(
         prop_decrease (float): between 0 and 1. Proportion to decrease noise
         use_tensorflow (bool, optional): Uses tensorflow to increase speed if available. Defaults to False.
         verbose (bool, optional): Shows several plots of noise removal process. Defaults to False.
+        multiprocessing (bool): If true, uses multiprocessing
+        num_processors (int, optional): number of processors to use
         kwargs : kwargs for noise reduce. Look at noisereduce kwargs in filehandler
-        # TODO Documentation
     """
     filehandler.noise_remove_directory(
         directory,
@@ -821,6 +850,9 @@ def remove_noise_directory(
     )
 
 
+# -----------------------------------------------------------------------------------------
+
+
 def seconds_to_min_hrs(seconds):
     if seconds > 60:
         minutes = seconds // 60
@@ -835,9 +867,3 @@ def seconds_to_min_hrs(seconds):
             return f"{int(minutes)} minutes and {seconds:.3f} seconds"
     else:
         return f"{seconds:.3f} seconds"
-
-
-def _recog_sorter(x, result, strength_stat):
-    if strength_stat == "scaling_factor":
-        return result["match_info"][x][strength_stat]
-    return result["match_info"][x][strength_stat][0]

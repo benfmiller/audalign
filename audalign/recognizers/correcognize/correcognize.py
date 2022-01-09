@@ -638,7 +638,6 @@ def plot_cor(
     Really nifty plotter, lots of good information here.
     Can get really slow if the sample rate is high and the audio file is long.
     """
-    # TODO test this plotter
     new_vis_wsize = int(config.fft_window_size / 44100 * config.sample_rate)
     fig = plt.figure(title)
 

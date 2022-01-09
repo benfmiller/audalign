@@ -11,8 +11,10 @@ class CorrelationConfig(BaseConfig):
     Accuracy settings are acheived by manipulations in fingerprinting variables.
     """
 
+    # filter_matches (float): Filters based on confidence. Ranges between 0 and 1. Defaults to 0
     filter_matches = 0.0
-    locality: typing.Optional[float] = None
+
+    # Within each offset, filters locality tuples by proportion of highest confidence to tuple confidence
     locality_filter_prop: typing.Optional[float] = None
     start_end_against: typing.Optional[tuple] = None
     extensions = ["*"]
@@ -22,7 +24,7 @@ class CorrelationConfig(BaseConfig):
     ######################################################################
     # Sampling rate, related to the Nyquist conditions, which affects
     # the range frequencies we can detect.
-    sample_rate = 44100
+    sample_rate = 8000
 
     ######################################################################
     # Size of the FFT window, affects frequency granularity
@@ -34,8 +36,6 @@ class CorrelationConfig(BaseConfig):
     # next window. Higher overlap will allow a higher granularity of offset
     # matching, but potentially more fingerprints.
     DEFAULT_OVERLAP_RATIO = 0.5
-
-    freq_threshold = 200
 
     SCALING_16_BIT = 65536
     LOCALITY_OVERLAP_RATIO = 0.5

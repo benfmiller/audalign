@@ -2,27 +2,28 @@ from audalign.config import BaseConfig
 import typing
 
 
-# TODO handle set_parameters
 class VisualConfig(BaseConfig):
-    """
-    multiprocessing is set to True by default
-    """
+
+    # width of spectrogram image for recognition in seconds.
+    img_width: float = 1.0
+
+    # doesn't find stats for sections with max volume below threshold.
+    volume_threshold: float = 215.0
+
+    # ignores volume levels below floor.
+    volume_floor: float = 10.0
+
+    # scales vertically to speed up calculations. Smaller numbers have smaller images.
+    vert_scaling: float = 1.0
+
+    # scales horizontally to speed up calculations. Smaller numbers have smaller images. Affects alignment granularity.
+    horiz_scaling: float = 1.0
+
+    # also calculates mean squared error for each shift if true. If false, uses default mse 20000000
+    calc_mse: bool = False
 
     filter_matches = 1
-    locality: typing.Optional[float] = None
-    locality_filter_prop: typing.Optional[float] = None
     start_end_against: typing.Optional[tuple] = None
-    extensions = ["*"]
-    _IDX_FREQ_I = 0
-    _IDX_TIME_J = 1
-
-    # TODO handle this better, set_parameters
-    img_width: float = 1.0
-    volume_threshold: float = 215.0
-    volume_floor: float = 10.0
-    vert_scaling: float = 1.0
-    horiz_scaling: float = 1.0
-    calc_mse: bool = False
 
     CONFIDENCE = "ssim"
 
@@ -41,8 +42,6 @@ class VisualConfig(BaseConfig):
     # next window. Higher overlap will allow a higher granularity of offset
     # matching, but potentially more fingerprints.
     DEFAULT_OVERLAP_RATIO = 0.5
-
-    freq_threshold = 200
 
     rankings_second_is_close_add: int = 0
     rankings_get_top_num_match = "num_matches"
