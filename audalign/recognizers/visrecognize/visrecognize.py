@@ -1,40 +1,26 @@
-import audalign.fingerprint as fingerprint
-from audalign.filehandler import read, find_files, get_shifted_file
-from pydub.exceptions import CouldntDecodeError
-import tqdm
-import time
+import multiprocessing
 import os
 import sys
-from skimage.metrics import structural_similarity as ssim
-from skimage.metrics import mean_squared_error
+import time
+from functools import partial
+from audalign.config.visual import VisualConfig
+
+import audalign.recognizers.fingerprint.fingerprinter as fingerprint
 import matplotlib.pyplot as plt
 import numpy as np
-import multiprocessing
-from functools import partial
+import tqdm
+from audalign.filehandler import find_files, get_shifted_file, read
 from PIL import Image
+from pydub.exceptions import CouldntDecodeError
+from skimage.metrics import mean_squared_error
+from skimage.metrics import structural_similarity as ssim
 
-lower_clip = 5
 upper_clip = 255
 
 # ------------------------------------------------------------------------------------------
 
 
-def visrecognize(
-    target_file_path: str,
-    against_file_path: str,
-    start_end_target: tuple = None,
-    start_end_against: tuple = None,
-    img_width=1.0,
-    volume_threshold=215.0,
-    volume_floor: float = 10.0,
-    vert_scaling: float = 1.0,
-    horiz_scaling: float = 1.0,
-    calc_mse=False,
-    max_lags: float = None,
-    use_multiprocessing=True,
-    num_processes=None,
-    plot=False,
-):
+def visrecognize(target_file_path: str, against_file_path: str, config: VisualConfig):
     # With frequency of 44100
     # Each frame is 0.0929 seconds with an overlap ratio of .5,
     # so moving over one frame moves 0.046 seconds
@@ -47,26 +33,31 @@ def visrecognize(
 
     t = time.time()
 
-    img_width = get_frame_width(img_width)
+    if config.CONFIDENCE == "mse":
+        config.calc_mse = True
+
+    img_width = get_frame_width(config)
 
     target_arr2d, transposed_target_arr2d = get_arrays(
         target_file_path,
-        volume_floor=volume_floor,
-        vert_scaling=vert_scaling,
-        horiz_scaling=horiz_scaling,
-        start_end=start_end_target,
+        volume_floor=config.volume_floor,
+        vert_scaling=config.vert_scaling,
+        horiz_scaling=config.horiz_scaling,
+        start_end=config.start_end,
+        config=config,
     )
 
     target_index_list = find_index_arr(
-        transposed_target_arr2d, volume_threshold, img_width
+        transposed_target_arr2d, config.volume_threshold, img_width
     )
 
     against_arr2d, transposed_against_arr2d = get_arrays(
         against_file_path,
-        volume_floor=volume_floor,
-        vert_scaling=vert_scaling,
-        horiz_scaling=horiz_scaling,
-        start_end=start_end_against,
+        volume_floor=config.volume_floor,
+        vert_scaling=config.vert_scaling,
+        horiz_scaling=config.horiz_scaling,
+        start_end=config.start_end_against,
+        config=config,
     )
     results_list = _visrecognize(
         transposed_target_arr2d=transposed_target_arr2d,
@@ -74,21 +65,23 @@ def visrecognize(
         target_index_list=target_index_list,
         against_file_path=against_file_path,
         transposed_against_arr2d=transposed_against_arr2d,
+        config=config,
         img_width=img_width,
-        volume_threshold=volume_threshold,
-        calc_mse=calc_mse,
-        use_multiprocessing=use_multiprocessing,
-        num_processes=num_processes,
-        max_lags=max_lags,
+        volume_threshold=config.volume_threshold,
+        calc_mse=config.calc_mse,
+        use_multiprocessing=config.multiprocessing,
+        num_processes=config.num_processors,
+        max_lags=config.max_lags,
     )
     file_match = process_results(
         results_list,
         os.path.basename(against_file_path),
-        horiz_scaling=horiz_scaling,
+        config=config,
+        horiz_scaling=config.horiz_scaling,
     )
     t = time.time() - t
 
-    if plot:
+    if config.plot:
         plot_two_images(
             target_arr2d,
             against_arr2d,
@@ -112,31 +105,23 @@ def visrecognize(
 def _visrecognize_directory(
     file_path: str,
     target_file_path: str,
-    start_end: tuple = None,
-    img_width=1.0,
-    volume_threshold=215.0,
-    volume_floor: float = 10.0,
-    vert_scaling: float = 1.0,
-    horiz_scaling: float = 1.0,
-    calc_mse: bool = False,
-    max_lags: float = None,
-    use_multiprocessing: bool = True,
-    num_processes: int = None,
-    plot: bool = False,
+    config: VisualConfig,
     _file_audsegs: dict = None,
 ):
+    img_width = get_frame_width(config)
     if type(target_file_path) == str:
         target_arr2d, transposed_target_arr2d = get_arrays(
             target_file_path,
-            volume_floor=volume_floor,
-            vert_scaling=vert_scaling,
-            horiz_scaling=horiz_scaling,
-            start_end=start_end,
+            volume_floor=config.volume_floor,
+            vert_scaling=config.vert_scaling,
+            horiz_scaling=config.horiz_scaling,
+            start_end=config.start_end,
+            config=config,
             _file_audsegs=_file_audsegs,
         )
 
         target_index_list = find_index_arr(
-            transposed_target_arr2d, volume_threshold, img_width
+            transposed_target_arr2d, config.volume_threshold, img_width
         )
     else:
         (
@@ -153,9 +138,10 @@ def _visrecognize_directory(
     try:
         against_arr2d, transposed_against_arr2d = get_arrays(
             file_path,
-            volume_floor=volume_floor,
-            vert_scaling=vert_scaling,
-            horiz_scaling=horiz_scaling,
+            volume_floor=config.volume_floor,
+            vert_scaling=config.vert_scaling,
+            horiz_scaling=config.horiz_scaling,
+            config=config,
             _file_audsegs=_file_audsegs,
         )
         results_list = _visrecognize(
@@ -164,19 +150,21 @@ def _visrecognize_directory(
             target_index_list=target_index_list,
             against_file_path=file_path,
             transposed_against_arr2d=transposed_against_arr2d,
+            config=config,
             img_width=img_width,
-            volume_threshold=volume_threshold,
-            calc_mse=calc_mse,
-            use_multiprocessing=use_multiprocessing,
-            num_processes=num_processes,
-            max_lags=max_lags,
+            volume_threshold=config.volume_threshold,
+            calc_mse=config.calc_mse,
+            use_multiprocessing=config.multiprocessing,
+            num_processes=config.num_processors,
+            max_lags=config.max_lags,
         )
         single_file_match = process_results(
             results_list,
             os.path.basename(file_path),
-            horiz_scaling=horiz_scaling,
+            config,
+            horiz_scaling=config.horiz_scaling,
         )
-        if plot:
+        if config.plot:
             plot_two_images(
                 target_arr2d,
                 against_arr2d,
@@ -192,17 +180,7 @@ def _visrecognize_directory(
 def visrecognize_directory(
     target_file_path: str,
     against_directory: str,
-    start_end: tuple = None,
-    img_width=1.0,
-    volume_threshold=215.0,
-    volume_floor: float = 10.0,
-    vert_scaling: float = 1.0,
-    horiz_scaling: float = 1.0,
-    calc_mse: bool = False,
-    max_lags: float = None,
-    use_multiprocessing: bool = True,
-    num_processes: int = None,
-    plot: bool = False,
+    config: VisualConfig,
     _file_audsegs: dict = None,
     _include_filename=False,
 ):
@@ -218,20 +196,24 @@ def visrecognize_directory(
 
     t = time.time()
 
-    img_width = get_frame_width(img_width)
+    if config.CONFIDENCE == "mse":
+        config.calc_mse = True
 
-    if use_multiprocessing == False:
+    img_width = get_frame_width(config)
+
+    if config.multiprocessing is False:
         target_arr2d, transposed_target_arr2d = get_arrays(
             target_file_path,
-            volume_floor=volume_floor,
-            vert_scaling=vert_scaling,
-            horiz_scaling=horiz_scaling,
-            start_end=start_end,
+            volume_floor=config.volume_floor,
+            vert_scaling=config.vert_scaling,
+            horiz_scaling=config.horiz_scaling,
+            start_end=config.start_end,
+            config=config,
             _file_audsegs=_file_audsegs,
         )
 
         target_index_list = find_index_arr(
-            transposed_target_arr2d, volume_threshold, img_width
+            transposed_target_arr2d, config.volume_threshold, img_width
         )
 
         target_file_path = (
@@ -249,27 +231,17 @@ def visrecognize_directory(
     _visrecognize_directory_ = partial(
         _visrecognize_directory,
         target_file_path=target_file_path,
-        start_end=start_end,
-        img_width=img_width,
-        volume_threshold=volume_threshold,
-        volume_floor=volume_floor,
-        vert_scaling=vert_scaling,
-        horiz_scaling=horiz_scaling,
-        calc_mse=calc_mse,
-        max_lags=max_lags,
-        use_multiprocessing=False,
-        num_processes=num_processes,
-        plot=plot,
+        config=config,
         _file_audsegs=_file_audsegs,
     )
 
-    if use_multiprocessing == False:
+    if config.multiprocessing == False:
         results_list = []
         for file_path in against_files:
             results_list += [_visrecognize_directory_(file_path)]
     else:
         try:
-            nprocesses = num_processes or multiprocessing.cpu_count()
+            nprocesses = config.num_processors or multiprocessing.cpu_count()
         except NotImplementedError:
             nprocesses = 1
         else:
@@ -311,6 +283,7 @@ def _visrecognize(
     target_index_list: list,
     against_file_path: str,
     transposed_against_arr2d,
+    config: VisualConfig,
     img_width=1.0,
     volume_threshold=215.0,
     calc_mse=False,
@@ -337,7 +310,7 @@ def _visrecognize(
     )
 
     index_list = pair_index_tuples(
-        target_index_list, against_index_list, max_lags=max_lags
+        target_index_list, against_index_list, config, max_lags=max_lags
     )
 
     # offsets = [x[0] - x[1] for x in index_list]
@@ -396,15 +369,31 @@ def get_arrays(
     vert_scaling: float = 1.0,
     horiz_scaling: float = 1.0,
     start_end: tuple = None,
+    config: VisualConfig = None,
     _file_audsegs: dict = None,
 ):
     if _file_audsegs is not None:
-        samples = get_shifted_file(file_path, _file_audsegs[file_path])
+        samples = get_shifted_file(
+            file_path, _file_audsegs[file_path], sample_rate=config.sample_rate
+        )
     else:
-        samples, _ = read(file_path, start_end=start_end)
-    arr2d = fingerprint.fingerprint(samples, retspec=True)
-    if fingerprint.threshold > 0:
-        arr2d = arr2d[0 : -fingerprint.threshold]
+        samples, _ = read(
+            file_path, start_end=start_end, sample_rate=config.sample_rate
+        )
+    arr2d = fingerprint.fingerprint(samples, config, retspec=True)
+
+    if config.freq_threshold > 0:
+        index = 0
+        for i, frequency in enumerate(arr2d):
+            if np.max(frequency) != 0:
+                index = i
+                break
+        else:
+            index = len(arr2d)
+        arr2d = arr2d[index:]
+    if config.freq_threshold > 0:
+        arr2d = arr2d[0 : -config.cutoff_top]
+
     arr2d = np.clip(arr2d, volume_floor, upper_clip)
     if vert_scaling != 1.0 or horiz_scaling != 1.0:
         array_image = Image.fromarray(np.uint8(arr2d))
@@ -426,14 +415,14 @@ def get_arrays(
 # ------------------------------------------------------------------------------------------
 
 
-def get_frame_width(seconds_width: float):
+def get_frame_width(config: VisualConfig):
     return max(
         int(
-            seconds_width
+            config.img_width
             // (
-                fingerprint.DEFAULT_WINDOW_SIZE
-                / fingerprint.DEFAULT_FS
-                * fingerprint.DEFAULT_OVERLAP_RATIO
+                config.fft_window_size
+                / config.sample_rate
+                * config.DEFAULT_OVERLAP_RATIO
             )
         ),
         1,
@@ -451,7 +440,9 @@ def find_index_arr(arr2d, threshold, img_width):
     return index_list
 
 
-def pair_index_tuples(target_list, against_list, max_lags: float = None):
+def pair_index_tuples(
+    target_list, against_list, config: VisualConfig, max_lags: float = None
+):
     index_pairs = []
     if max_lags is None:
         for i in target_list:
@@ -462,9 +453,9 @@ def pair_index_tuples(target_list, against_list, max_lags: float = None):
             int(
                 max_lags
                 // (
-                    fingerprint.DEFAULT_WINDOW_SIZE
-                    / fingerprint.DEFAULT_FS
-                    * fingerprint.DEFAULT_OVERLAP_RATIO
+                    config.fft_window_size
+                    / config.sample_rate
+                    * config.DEFAULT_OVERLAP_RATIO
                 )
             ),
             1,
@@ -517,7 +508,12 @@ def calculate_comp_values(
 # ------------------------------------------------------------------------------------------
 
 
-def process_results(results_list, filename, horiz_scaling: float = 1.0):
+def process_results(
+    results_list,
+    filename,
+    config: VisualConfig,
+    horiz_scaling: float = 1.0,
+):
     """processes results from recognition and returns a pretty json
     If you want to mess with the weighting of num matches vs score, this is the place to do it.
     Current weighting seems to work the best, though.
@@ -591,9 +587,9 @@ def process_results(results_list, filename, horiz_scaling: float = 1.0):
     for i in offset_diff:
         nseconds = round(
             float(i)
-            / fingerprint.DEFAULT_FS
-            * fingerprint.DEFAULT_WINDOW_SIZE
-            * fingerprint.DEFAULT_OVERLAP_RATIO
+            / config.sample_rate
+            * config.fft_window_size
+            * config.DEFAULT_OVERLAP_RATIO
             / horiz_scaling,
             5,
         )

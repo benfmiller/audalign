@@ -11,108 +11,135 @@ test_folder_eig = "test_audio/test_shifts/"
 
 class TestFingerprinting:
     test_file = "test_audio/testers/test.mp3"
-    ada = ad.Audalign()
 
     def test_fingerprint_file(self):
-        self.ada.clear_fingerprints()
-        self.ada.set_accuracy(1)
-        self.ada.fingerprint_file(self.test_file)
-        self.ada.fingerprint_file(self.test_file, set_file_name="Sup", plot=False)
-        assert self.ada.total_fingerprints > 0
-        assert self.ada.file_names[0] == "test.mp3"
-        assert len(self.ada.fingerprinted_files) == 1
+        fingerprint_recognizer = ad.FingerprintRecognizer()
+        fingerprint_recognizer.config.set_accuracy(1)
+        fingerprint_recognizer.fingerprint_file(self.test_file)
+        fingerprint_recognizer.fingerprint_file(self.test_file, set_file_name="Sup")
+        assert fingerprint_recognizer.total_fingerprints > 0
+        assert fingerprint_recognizer.file_names[0] == "test.mp3"
+        assert len(fingerprint_recognizer.fingerprinted_files) == 1
 
-        self.ada.clear_fingerprints()
-        assert self.ada.total_fingerprints == 0
+        fingerprint_recognizer.clear_fingerprints()
+        assert fingerprint_recognizer.total_fingerprints == 0
 
-        self.ada.fingerprint_file(self.test_file, set_file_name="Sup")
-        assert self.ada.file_names[0] == "Sup"
+        fingerprint_recognizer.fingerprint_file(self.test_file, set_file_name="Sup")
+        assert fingerprint_recognizer.file_names[0] == "Sup"
 
     def test_fingerprint_file_hash_styles(self):
-        self.ada.clear_fingerprints()
-        self.ada.set_accuracy(1)
-        self.ada.set_hash_style("base")
-        self.ada.fingerprint_file(self.test_file)
-        assert self.ada.total_fingerprints > 0
-        self.ada.clear_fingerprints()
+        fingerprint_recognizer = ad.FingerprintRecognizer()
 
-        self.ada.set_hash_style("panako")
-        self.ada.fingerprint_file(self.test_file)
-        assert self.ada.total_fingerprints > 0
-        self.ada.clear_fingerprints()
+        fingerprint_recognizer.clear_fingerprints()
+        fingerprint_recognizer.config.set_accuracy(1)
+        fingerprint_recognizer.config.set_hash_style("base")
+        fingerprint_recognizer.fingerprint_file(self.test_file)
+        assert fingerprint_recognizer.total_fingerprints > 0
+        fingerprint_recognizer.clear_fingerprints()
 
-        self.ada.set_hash_style("panako_mod")
-        self.ada.fingerprint_file(self.test_file)
-        assert self.ada.total_fingerprints > 0
-        self.ada.clear_fingerprints()
+        fingerprint_recognizer.config.set_hash_style("panako")
+        fingerprint_recognizer.fingerprint_file(self.test_file)
+        assert fingerprint_recognizer.total_fingerprints > 0
+        fingerprint_recognizer.clear_fingerprints()
 
-        self.ada.set_hash_style("base_three")
-        self.ada.fingerprint_file(self.test_file)
-        assert self.ada.total_fingerprints > 0
+        fingerprint_recognizer.config.set_hash_style("panako_mod")
+        fingerprint_recognizer.fingerprint_file(self.test_file)
+        assert fingerprint_recognizer.total_fingerprints > 0
+        fingerprint_recognizer.clear_fingerprints()
+
+        fingerprint_recognizer.config.set_hash_style("base_three")
+        fingerprint_recognizer.fingerprint_file(self.test_file)
+        assert fingerprint_recognizer.total_fingerprints > 0
 
     def test_fingerprint_bad_hash_styles(self):
-        ada1 = ad.Audalign(hash_style="bad_hash_style")
-        assert ada1.hash_style == "panako_mod"
-        ada1.hash_style = "bad_hash_style"
-        ada1.fingerprint_file(self.test_file)
-        assert len(ada1.fingerprinted_files) == 0
-        assert len(ada1.file_names) == 0
-        assert ada1.total_fingerprints == 0
+        fingerprint_recognizer = ad.FingerprintRecognizer()
+        try:
+            fingerprint_recognizer.config.set_hash_style("bad_hash_style")
+            assert False
+        except ValueError as e:
+            pass
+        assert fingerprint_recognizer.config.hash_style == "panako_mod"
+        fingerprint_recognizer.config.hash_style = "bad_hash_style"
+        fingerprint_recognizer.fingerprint_file(self.test_file)
+        assert len(fingerprint_recognizer.fingerprinted_files) == 0
+        assert len(fingerprint_recognizer.file_names) == 0
+        assert fingerprint_recognizer.total_fingerprints == 0
 
     @pytest.mark.smoke
     def test_fingerprint_directory_multiprocessing(self):
-        self.ada.clear_fingerprints()
-        self.ada.set_multiprocessing(True)
-        self.ada.fingerprint_directory("test_audio/testers")
-        assert self.ada.total_fingerprints > 0
-        assert len(self.ada.fingerprinted_files) > 0
+        fingerprint_recognizer = ad.FingerprintRecognizer()
+
+        fingerprint_recognizer.clear_fingerprints()
+        fingerprint_recognizer.config.multiprocessing = True
+        fingerprint_recognizer.fingerprint_directory("test_audio/testers")
+        assert fingerprint_recognizer.total_fingerprints > 0
+        assert len(fingerprint_recognizer.fingerprinted_files) > 0
 
     def test_fingerprint_directory_single(self):
-        self.ada.set_multiprocessing(False)
-        self.ada.clear_fingerprints()
-        self.ada.fingerprint_directory("test_audio/testers")
-        assert self.ada.total_fingerprints > 0
-        assert len(self.ada.fingerprinted_files) > 0
+        fingerprint_recognizer = ad.FingerprintRecognizer()
+
+        fingerprint_recognizer.config.multiprocessing = False
+        fingerprint_recognizer.fingerprint_directory("test_audio/testers")
+        assert fingerprint_recognizer.total_fingerprints > 0
+        assert len(fingerprint_recognizer.fingerprinted_files) > 0
 
     def test_fingerprint_directory_not_there_already_done(self):
-        self.ada.fingerprint_directory("test_audio/testers")
-        self.ada.load_fingerprinted_files("tests/test_fingerprints.json")
-        self.ada.fingerprint_directory("test_audio/test_shifts")
+        fingerprint_recognizer = ad.FingerprintRecognizer()
+
+        fingerprint_recognizer.fingerprint_directory("test_audio/testers")
+        fingerprint_recognizer.load_fingerprinted_files("tests/test_fingerprints.json")
+        fingerprint_recognizer.fingerprint_directory("test_audio/test_shifts")
 
     def test_fingerprint_bad_file(self):
-        ada2 = ad.Audalign()
+        fingerprint_recognizer = ad.FingerprintRecognizer()
+        assert len(fingerprint_recognizer.fingerprinted_files) == 0
+        assert len(fingerprint_recognizer.file_names) == 0
+        assert fingerprint_recognizer.total_fingerprints == 0
+
         # both should print something and be just fine
-        ada2.fingerprint_file("filenot_even_there.txt")
-        ada2.fingerprint_file("requirements.txt")
-        assert len(ada2.fingerprinted_files) == 0
-        assert len(ada2.file_names) == 0
-        assert ada2.total_fingerprints == 0
+        fingerprint_recognizer.fingerprint_file("filenot_even_there.txt")
+        fingerprint_recognizer.fingerprint_file("requirements.txt")
+        assert len(fingerprint_recognizer.fingerprinted_files) == 0
+        assert len(fingerprint_recognizer.file_names) == 0
+        assert fingerprint_recognizer.total_fingerprints == 0
 
 
 class TestRecognize:
 
-    ada = ad.Audalign("tests/test_fingerprints.json")
+    fingerprint_recognizer = ad.FingerprintRecognizer(
+        load_fingerprints_file="tests/test_fingerprints.json"
+    )
 
     @pytest.mark.smoke
     def test_recognize(self):
-        assert self.ada.total_fingerprints > 0
-        self.ada.set_accuracy(4)
+        assert self.fingerprint_recognizer.total_fingerprints > 0
+        self.fingerprint_recognizer.config.set_accuracy(4)
 
-        result = self.ada.recognize(test_file)
+        result = ad.recognize(test_file, recognizer=self.fingerprint_recognizer)
         assert len(result) > 1
 
-        result2 = self.ada.recognize(test_file, filter_matches=20000)
+        self.fingerprint_recognizer.config.filter_matches = 20000
+        result2 = ad.recognize(test_file, recognizer=self.fingerprint_recognizer)
+        self.fingerprint_recognizer.config.filter_matches = (
+            ad.config.fingerprint.FingerprintConfig.filter_matches
+        )
         assert not result2
 
     def test_recognize_fingerprint(self):
-        ada2 = ad.Audalign()
-        ada2.fingerprint_file(test_file)
-        result = ada2.recognize(test_file2)
+        ada2 = ad.FingerprintRecognizer()
+        ada2.config.set_accuracy(1)
+
+        ada2.fingerprint_file(test_file_eig)
+        result = ada2.recognize(test_file_eig2)
         assert result
 
     def test_recognize_max_lags(self):
         _max_lags = 4
-        results = self.ada.recognize(test_file_eig, max_lags=4)
+        self.fingerprint_recognizer.config.max_lags = 4
+        results = self.fingerprint_recognizer.recognize(test_file_eig)
+        self.fingerprint_recognizer.config.max_lags = (
+            ad.config.fingerprint.FingerprintConfig.max_lags
+        )
 
         offset_seconds = results["match_info"][os.path.basename(test_file_eig2)][
             "offset_seconds"
@@ -122,126 +149,150 @@ class TestRecognize:
 
     @pytest.mark.smoke
     def test_recognize_locality(self):
-        assert self.ada.total_fingerprints > 0
-        self.ada.set_accuracy(4)
+        assert self.fingerprint_recognizer.total_fingerprints > 0
+        self.fingerprint_recognizer.config.set_accuracy(4)
 
-        result = self.ada.recognize(test_file, locality=10)
+        self.fingerprint_recognizer.config.locality = 10
+        result = ad.recognize(test_file, recognizer=self.fingerprint_recognizer)
         assert len(result) > 1
-        self.ada.pretty_print_recognition(result)
+        ad.pretty_print_recognition(result)
+        self.fingerprint_recognizer.config = ad.config.fingerprint.FingerprintConfig()
 
-    # @pytest.mark.skip(reason="not working for some reason")
     def test_recognize_locality_max_lags(self):
         _max_lags = 4
-        results = self.ada.recognize(test_file_eig, max_lags=4, locality=10)
+        self.fingerprint_recognizer.config.max_lags = _max_lags
+        self.fingerprint_recognizer.config.locality = 10
+        results = ad.recognize(test_file_eig, recognizer=self.fingerprint_recognizer)
 
         offset_seconds = results["match_info"][os.path.basename(test_file_eig2)][
             "offset_seconds"
         ]
         assert min(offset_seconds) < _max_lags
         assert max(offset_seconds) < _max_lags
+        self.fingerprint_recognizer.config = ad.config.fingerprint.FingerprintConfig()
 
     @pytest.mark.smoke
     def test_visrecognize(self):
-        results = self.ada.visrecognize(
+        recognizer = ad.VisualRecognizer()
+        recognizer.config.img_width = 0.5
+        recognizer.config.volume_threshold = 200
+        results = ad.recognize(
             test_file,
             test_file,
-            img_width=0.5,
-            volume_threshold=215,
+            recognizer=recognizer,
         )
         assert results
 
     def test_visrecognize_single_threaded(self):
-        self.ada.set_multiprocessing(False)
-        results = self.ada.visrecognize(
+
+        recognizer = ad.VisualRecognizer()
+        recognizer.config.img_width = 0.5
+        recognizer.config.volume_threshold = 200
+        recognizer.config.multiprocessing = False
+        recognizer.config.calc_mse = True
+        results = ad.recognize(
             test_file,
             test_file,
-            img_width=0.5,
-            volume_threshold=215,
-            calc_mse=True,
+            recognizer=recognizer,
         )
-        self.ada.set_multiprocessing(True)
         assert results
 
     def test_visrecognize_options(self):
-        results = self.ada.visrecognize(
+        recognizer = ad.VisualRecognizer()
+        recognizer.config.img_width = 0.5
+        recognizer.config.volume_threshold = 200
+        recognizer.config.volume_floor = 100
+        recognizer.config.vert_scaling = 0.8
+        recognizer.config.horiz_scaling = 0.8
+
+        results = ad.recognize(
             test_file,
             test_file,
-            img_width=0.5,
-            volume_threshold=216,
-            volume_floor=100,
-            vert_scaling=0.8,
-            horiz_scaling=0.8,
-            calc_mse=False,
+            recognizer=recognizer,
         )
         assert results
         assert results["match_info"]["test.mp3"]["mse"][0] == 20000000.0
 
     def test_visrecognize_directory(self):
-        results = self.ada.visrecognize_directory(
+        recognizer = ad.VisualRecognizer()
+        recognizer.config.img_width = 0.5
+        recognizer.config.volume_threshold = 182
+        results = ad.recognize(
             test_file,
             "test_audio/testers/",
-            img_width=0.5,
-            volume_threshold=215,
+            recognizer=recognizer,
         )
         assert results
 
     @pytest.mark.smoke
     def test_correcognize(self):
-        results = self.ada.correcognize(
+        recognizer = ad.CorrelationRecognizer()
+        # recognizer.config.filter_matches = None
+        results = ad.recognize(
             test_file,
             test_file,
-            filter_matches=None,  # sets to 0.5
+            recognizer=recognizer,
         )
         assert results
 
-    def test_correcognize(self):
-        results = self.ada.correcognize(
+    def test_correcognize_locality(self):
+        recognizer = ad.CorrelationRecognizer()
+        recognizer.config.locality = 10
+        # recognizer.config.filter_matches = None
+        results = ad.recognize(
             test_file,
             test_file,
-            locality=10,
-            filter_matches=None,  # sets to 0.5
+            recognizer=recognizer,
         )
         assert results
 
     def test_correcognize_no_return(self):
-        results = self.ada.correcognize(
+        recognizer = ad.CorrelationRecognizer()
+        recognizer.config.filter_matches = 2
+        results = ad.recognize(
             test_file,
             test_file,
-            filter_matches=2,
+            recognizer=recognizer,
         )
         assert results is None
 
     def test_correcognize_directory_locality(self):
-        results = self.ada.correcognize_directory(
+        recognizer = ad.CorrelationRecognizer()
+        recognizer.config.locality = 10
+        results = ad.recognize(
             test_file,
             "test_audio/testers/",
-            locality=10,
+            recognizer=recognizer,
         )
         assert results
 
     def test_correcognize_directory(self):
-        results = self.ada.correcognize_directory(
+        recognizer = ad.CorrelationRecognizer()
+        results = ad.recognize(
             test_file,
             "test_audio/testers/",
+            recognizer=recognizer,
         )
         assert results
 
     def test_correcognize_directory_single_threaded(self):
-        self.ada.set_multiprocessing(False)
-        results = self.ada.correcognize_directory(
+        recognizer = ad.CorrelationRecognizer()
+        recognizer.config.multiprocessing = False
+        results = ad.recognize(
             test_file,
             "test_audio/testers/",
+            recognizer=recognizer,
         )
-        self.ada.set_multiprocessing(True)
         assert results
 
     def test_correcognize_max_lags(self):
         _max_lags = 4
-        results = self.ada.correcognize(
+        recognizer = ad.CorrelationRecognizer()
+        recognizer.config.max_lags = _max_lags
+        results = ad.recognize(
             test_file_eig,
             test_file_eig2,
-            max_lags=_max_lags,
-            filter_matches=0,
+            recognizer=recognizer,
         )
         assert results
         offset_seconds = results["match_info"][os.path.basename(test_file_eig2)][
@@ -252,12 +303,13 @@ class TestRecognize:
 
     def test_correcognize_locality_max_lags(self):
         _max_lags = 4
-        results = self.ada.correcognize(
+        recognizer = ad.CorrelationRecognizer()
+        recognizer.config.max_lags = _max_lags
+        recognizer.config.locality = 10
+        results = ad.recognize(
             test_file_eig,
             test_file_eig2,
-            max_lags=_max_lags,
-            locality=10,
-            filter_matches=0,
+            recognizer=recognizer,
         )
         assert results
         offset_seconds = results["match_info"][os.path.basename(test_file_eig2)][
@@ -267,43 +319,48 @@ class TestRecognize:
         assert max(offset_seconds) < _max_lags
 
     def test_correcognize_directory_no_return(self):
-        results = self.ada.correcognize_directory(
+        recognizer = ad.CorrelationRecognizer()
+        results = ad.recognize(
             test_file,
             "tests/",
+            recognizer=recognizer,
         )
         assert results is None
 
     def test_correcognize_spectrogram(self):
-        results = self.ada.correcognize_spectrogram(
+        recognizer = ad.CorrelationSpectrogramRecognizer()
+        results = ad.recognize(
             test_file_eig,
             test_file_eig2,
+            recognizer=recognizer,
         )
         assert results
-        self.ada.pretty_print_results(results)
+        ad.pretty_print_results(results)
 
     def test_correcognize_spectrogram_locality(self):
-        results = self.ada.correcognize_spectrogram(
+        recognizer = ad.CorrelationSpectrogramRecognizer()
+        recognizer.config.locality = 20
+        results = ad.recognize(
             test_file_eig,
             test_file_eig2,
-            locality=20,
+            recognizer=recognizer,
         )
         assert results
 
     def test_correcognize_spectrogram_directory(self):
-        results = self.ada.correcognize_spectrogram_directory(
+        recognizer = ad.CorrelationSpectrogramRecognizer()
+        results = ad.recognize(
             test_file_eig,
             test_folder_eig,
+            recognizer=recognizer,
         )
         assert results
 
     def test_correcognize_spectrogram_max_lags(self):
         _max_lags = 4
-        results = self.ada.correcognize_spectrogram(
-            test_file_eig,
-            test_file_eig2,
-            max_lags=_max_lags,
-            filter_matches=0,
-        )
+        recognizer = ad.CorrelationSpectrogramRecognizer()
+        recognizer.config.max_lags = _max_lags
+        results = ad.recognize(test_file_eig, test_file_eig2, recognizer=recognizer)
         assert results
         offset_seconds = results["match_info"][os.path.basename(test_file_eig2)][
             "offset_seconds"
@@ -313,12 +370,13 @@ class TestRecognize:
 
     def test_correcognize_spectrogram_locality_max_lags(self):
         _max_lags = 4
-        results = self.ada.correcognize_spectrogram(
+        recognizer = ad.CorrelationSpectrogramRecognizer()
+        recognizer.config.max_lags = _max_lags
+        recognizer.config.locality = 10
+        results = ad.recognize(
             test_file_eig,
             test_file_eig2,
-            max_lags=_max_lags,
-            filter_matches=0,
-            locality=10,
+            recognizer=recognizer,
         )
         assert results
         offset_seconds = results["match_info"][os.path.basename(test_file_eig2)][

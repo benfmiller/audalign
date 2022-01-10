@@ -1,17 +1,10 @@
-import audalign.fingerprint as fingerprint
-import time
 import os
+import time
+
+from audalign.recognizers.fingerprint import FingerprintConfig
 
 
-def recognize(
-    audalign_object,
-    file_path: str,
-    filter_matches: int,
-    locality: float,
-    locality_filter_prop: float,
-    start_end: tuple,
-    max_lags: float = None,
-):
+def recognize(recognizer, file_path: str, config: FingerprintConfig):
     """
     Recognizes given file against already fingerprinted files
 
@@ -27,40 +20,44 @@ def recognize(
 
         None : if no match
     """
+    filter_matches = config.filter_matches
     if filter_matches is None:
         filter_matches = 1
+    locality_filter_prop = config.locality_filter_prop
     if locality_filter_prop is None:
         locality_filter_prop = 0.6
     elif locality_filter_prop > 1.0:
         locality_filter_prop = 1.0
-    if locality is not None:  # convert from seconds to samples
+    locality = None
+    if config.locality is not None:  # convert from seconds to samples
         locality = max(  # turns into frames
             int(
-                locality
+                config.locality
                 // (
-                    fingerprint.DEFAULT_WINDOW_SIZE
-                    / fingerprint.DEFAULT_FS
-                    * fingerprint.DEFAULT_OVERLAP_RATIO
+                    config.fft_window_size
+                    / config.sample_rate
+                    * config.DEFAULT_OVERLAP_RATIO
                 )
             ),
             1,
         )
-    if max_lags is not None:
+    max_lags = None
+    if config.max_lags is not None:
         max_lags = max(  # turns into frames
             int(
-                max_lags
+                config.max_lags
                 // (
-                    fingerprint.DEFAULT_WINDOW_SIZE
-                    / fingerprint.DEFAULT_FS
-                    * fingerprint.DEFAULT_OVERLAP_RATIO
+                    config.fft_window_size
+                    / config.sample_rate
+                    * config.DEFAULT_OVERLAP_RATIO
                 )
             ),
             1,
         )
 
     t = time.time()
-    matches = find_matches(audalign_object, file_path, start_end=start_end)
-    if locality:
+    matches = find_matches(recognizer, file_path)
+    if config.locality:
         rough_match = locality_align_matches(matches, locality, locality_filter_prop)
     else:
         rough_match = align_matches(matches)
@@ -73,11 +70,11 @@ def recognize(
     file_match = None
     if len(rough_match) > 0:
         file_match = process_results(
-            audalign_object,
-            rough_match,
-            locality,
-            filter_matches,
-            filter_set,
+            results=rough_match,
+            locality=locality,
+            config=config,
+            filter_matches=filter_matches,
+            filter_set=filter_set,
             max_lags=max_lags,
         )
     t = time.time() - t
@@ -92,7 +89,10 @@ def recognize(
     return None
 
 
-def find_matches(audalign_object, file_path, start_end):
+def find_matches(
+    recognizer,
+    file_path,
+):
     """
     fingerprints target file, then finds every occurence of exact same hashes in already
     fingerprinted files
@@ -109,11 +109,11 @@ def find_matches(audalign_object, file_path, start_end):
 
     target_mapper = {}
 
-    if file_name not in audalign_object.file_names:
-        fingerprints = audalign_object._fingerprint_file(file_path, start_end=start_end)
+    if file_name not in recognizer.file_names:
+        fingerprints = recognizer._fingerprint_file(file_path)
         target_mapper = fingerprints[1]
     else:
-        for audio_file in audalign_object.fingerprinted_files:
+        for audio_file in recognizer.fingerprinted_files:
             if audio_file[0] == file_name:
                 target_mapper = audio_file[1]
                 break
@@ -121,7 +121,7 @@ def find_matches(audalign_object, file_path, start_end):
     matches = []
 
     print(f"{file_name}: Finding Matches...  ", end="")
-    for audio_file in audalign_object.fingerprinted_files:
+    for audio_file in recognizer.fingerprinted_files:
         if audio_file[0].lower() != file_name.lower():
             already_hashes = audio_file[1]
             for t_hash in target_mapper.keys():
@@ -320,9 +320,9 @@ def find_loc_matches(matches_list: list, locality: int):
 
 
 def process_results(
-    audalign_object,
     results,
     locality,
+    config: FingerprintConfig,
     filter_matches: int = 1,
     filter_set: bool = False,
     max_lags: float = None,
@@ -367,38 +367,36 @@ def process_results(
             offset_diff.append(i[1])
 
         complete_match_info[file_name] = {}
-        complete_match_info[file_name][audalign_object.CONFIDENCE] = offset_count
-        complete_match_info[file_name][audalign_object.OFFSET_SAMPLES] = offset_diff
-        complete_match_info[file_name][audalign_object.LOCALITY] = offset_loc
+        complete_match_info[file_name][config.CONFIDENCE] = offset_count
+        complete_match_info[file_name][config.OFFSET_SAMPLES] = offset_diff
+        complete_match_info[file_name][config.LOCALITY_FRAMES] = offset_loc
         if locality:
-            complete_match_info[file_name][
-                audalign_object.LOCALITY + "_setting"
-            ] = round(
+            complete_match_info[file_name][config.LOCALITY_FRAMES + "_setting"] = round(
                 float(locality)
-                / fingerprint.DEFAULT_FS
-                * fingerprint.DEFAULT_WINDOW_SIZE
-                * fingerprint.DEFAULT_OVERLAP_RATIO,
+                / config.sample_rate
+                * config.fft_window_size
+                * config.DEFAULT_OVERLAP_RATIO,
                 5,
             )
 
         else:
-            complete_match_info[file_name][audalign_object.LOCALITY + "_setting"] = None
+            complete_match_info[file_name][config.LOCALITY_FRAMES + "_setting"] = None
 
         # calculate seconds
-        complete_match_info[file_name][audalign_object.OFFSET_SECS] = []
+        complete_match_info[file_name][config.OFFSET_SECS] = []
         for i in offset_diff:
             nseconds = round(
                 float(i)
-                / fingerprint.DEFAULT_FS
-                * fingerprint.DEFAULT_WINDOW_SIZE
-                * fingerprint.DEFAULT_OVERLAP_RATIO,
+                / config.sample_rate
+                * config.fft_window_size
+                * config.DEFAULT_OVERLAP_RATIO,
                 5,
             )
-            complete_match_info[file_name][audalign_object.OFFSET_SECS].append(nseconds)
+            complete_match_info[file_name][config.OFFSET_SECS].append(nseconds)
 
         # Calculate locality tuples seconds
         new_offset_loc = []
-        complete_match_info[file_name][audalign_object.LOCALITY_SECS] = []
+        complete_match_info[file_name][config.LOCALITY_SECS] = []
         for instance in range(len(offset_loc)):
             if locality:
                 new_offset_loc += [[]]
@@ -407,16 +405,16 @@ def process_results(
                         (
                             round(
                                 float(offset_loc[instance][location][0])
-                                / fingerprint.DEFAULT_FS
-                                * fingerprint.DEFAULT_WINDOW_SIZE
-                                * fingerprint.DEFAULT_OVERLAP_RATIO,
+                                / config.sample_rate
+                                * config.fft_window_size
+                                * config.DEFAULT_OVERLAP_RATIO,
                                 5,
                             ),
                             round(
                                 float(offset_loc[instance][location][1])
-                                / fingerprint.DEFAULT_FS
-                                * fingerprint.DEFAULT_WINDOW_SIZE
-                                * fingerprint.DEFAULT_OVERLAP_RATIO,
+                                / config.sample_rate
+                                * config.fft_window_size
+                                * config.DEFAULT_OVERLAP_RATIO,
                                 5,
                             ),
                             offset_loc[instance][location][2],
@@ -424,15 +422,15 @@ def process_results(
                     ]
             else:
                 new_offset_loc += [None]
-            complete_match_info[file_name][audalign_object.LOCALITY_SECS].append(
+            complete_match_info[file_name][config.LOCALITY_SECS].append(
                 new_offset_loc[instance]
             )
 
     if len(complete_match_info) == 0 and filter_set == False:
         return process_results(
-            audalign_object,
             results,
             locality,
+            config,
             filter_matches=filter_matches - 1,
         )
 
