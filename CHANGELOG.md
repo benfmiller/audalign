@@ -1,5 +1,15 @@
 # Change Log
 
+## [1.0.0] 2022 - 01 - 09
+
+Changed
+
+- Removed Audalign class, changed to module methods
+- Recognitions are done with recognizer objects
+- Configuration is done through config objects held by recognizers
+- Spectrogram freq_threshold works on hertz rather than specgram bands
+- Fingerprint alignments are not independent anymore, so removed load_fingerprints option in alignments
+
 ## [0.7.2] 2021 - 09 - 22
 
 ### Added
