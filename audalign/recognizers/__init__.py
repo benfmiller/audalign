@@ -1,8 +1,9 @@
-from abc import ABC
-from audalign.config import BaseConfig
-import audalign.filehandler as filehandler
 import os
 import typing
+from abc import ABC
+
+import audalign.filehandler as filehandler
+from audalign.config import BaseConfig
 
 
 class BaseRecognizer(ABC):

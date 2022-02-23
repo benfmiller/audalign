@@ -18,17 +18,15 @@ from pprint import PrettyPrinter
 
 from pydub.utils import mediainfo
 
-import audalign.align.aligner as aligner
-from audalign.config import BaseConfig
+import audalign.align as aligner
 import audalign.datalign as datalign
 import audalign.filehandler as filehandler
+from audalign.config import BaseConfig
 from audalign.recognizers import BaseRecognizer
-import audalign.align.aligner as aligner
-from audalign.recognizers.fingerprint import FingerprintRecognizer
 from audalign.recognizers.correcognize import CorrelationRecognizer
-from audalign.recognizers.correcognizeSpectrogram import (
-    CorrelationSpectrogramRecognizer,
-)
+from audalign.recognizers.correcognizeSpectrogram import \
+    CorrelationSpectrogramRecognizer
+from audalign.recognizers.fingerprint import FingerprintRecognizer
 from audalign.recognizers.visrecognize import VisualRecognizer
 
 
