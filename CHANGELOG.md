@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.0.1] 2022 - 02 - 22
+
+### Fixed
+
+- setup.py file
+
 ## [1.0.0] 2022 - 01 - 09
 
 Changed
