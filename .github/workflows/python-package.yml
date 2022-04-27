@@ -4,10 +4,15 @@
 name: Python package
 
 on:
+  schedule:
+    - cron: '0 5 * * 6'
   push:
-    branches: [ working]
+    branches:
+      - working
+      - main
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   build:
