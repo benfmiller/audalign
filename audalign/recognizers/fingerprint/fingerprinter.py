@@ -1,16 +1,12 @@
-from audalign.config.fingerprint import FingerprintConfig
+import hashlib
 
-import numpy as np
 import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
-from scipy.ndimage.filters import maximum_filter
-from scipy.ndimage.morphology import (
-    generate_binary_structure,
-    iterate_structure,
-    binary_erosion,
-)
-import hashlib
+import numpy as np
+from audalign.config.fingerprint import FingerprintConfig
 from pydub.exceptions import CouldntDecodeError
+from scipy.ndimage import (binary_erosion, generate_binary_structure,
+                           iterate_structure, maximum_filter)
 
 np.seterr(divide="ignore")
 
@@ -19,8 +15,9 @@ def _fingerprint_worker(
     file_path: str,
     config: FingerprintConfig,
 ) -> tuple:
-    import audalign
     import os
+
+    import audalign
 
     """
     Runs the file through the fingerprinter and returns file_name and hashes
