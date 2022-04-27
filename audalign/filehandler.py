@@ -2,8 +2,8 @@ import fnmatch
 import math
 import multiprocessing
 import os
-from functools import partial
 import typing
+from functools import partial
 
 import noisereduce
 import numpy as np
@@ -193,8 +193,6 @@ def noise_remove(
     write_extension: str = None,
     alt_noise_filepath=None,
     prop_decrease=1,
-    use_tensorflow=False,
-    verbose=False,
     **kwargs,
 ):
     audiofile = create_audiosegment(filepath)
@@ -217,11 +215,10 @@ def noise_remove(
 
     print(f"Reducing noise: {filepath}")
     reduced_noise_data = noisereduce.reduce_noise(
-        new_data,
-        noisy_part,
+        y=new_data,
+        sr=BaseConfig.sample_rate,
+        y_noise=noisy_part,
         prop_decrease=prop_decrease,
-        use_tensorflow=use_tensorflow,
-        verbose=verbose,
         **kwargs,
     )
 
@@ -252,8 +249,6 @@ def noise_remove_directory(
     destination_directory,
     write_extension: str = None,
     prop_decrease=1,
-    use_tensorflow=False,
-    verbose=False,
     use_multiprocessing=False,
     num_processes=None,
     **kwargs,
@@ -271,8 +266,6 @@ def noise_remove_directory(
         destination_directory=destination_directory,
         prop_decrease=prop_decrease,
         write_extension=write_extension,
-        use_tensorflow=use_tensorflow,
-        verbose=verbose,
         **kwargs,
     )
 
@@ -302,8 +295,6 @@ def _remove_noise(
     write_extension: str = None,
     destination_directory="",
     prop_decrease=1,
-    use_tensorflow=False,
-    verbose=False,
     **kwargs,
 ):
 
@@ -313,11 +304,10 @@ def _remove_noise(
         new_data = _floatify_data(audiofile)
 
         reduced_noise_data = noisereduce.reduce_noise(
-            new_data,
-            noise_section,
+            y=new_data,
+            sr=BaseConfig.sample_rate,
+            y_noise=noise_section,
             prop_decrease=prop_decrease,
-            use_tensorflow=use_tensorflow,
-            verbose=verbose,
             **kwargs,
         )
 

@@ -766,8 +766,6 @@ def remove_noise_file(
     write_extension: str = None,
     alt_noise_filepath: str = None,
     prop_decrease: float = 1,
-    use_tensorflow: bool = False,
-    verbose: bool = False,
     **kwargs,
 ):
     """Remove noise from audio file by specifying start and end seconds of representative sound sections. Writes file to destination
@@ -781,8 +779,6 @@ def remove_noise_file(
         write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
         alt_noise_filepath (str): path of different file for noise sample
         prop_decrease (float): between 0 and 1. Proportion to decrease noise
-        use_tensorflow (bool, optional): Uses tensorflow to increase speed if available. Defaults to False.
-        verbose (bool, optional): Shows several plots of noise removal process. Defaults to False.
         kwargs : kwargs for noise reduce. Look at noisereduce kwargs in filehandler
     """
     filehandler.noise_remove(
@@ -793,8 +789,6 @@ def remove_noise_file(
         write_extension=write_extension,
         alt_noise_filepath=alt_noise_filepath,
         prop_decrease=prop_decrease,
-        use_tensorflow=use_tensorflow,
-        verbose=verbose,
         **kwargs,
     )
 
@@ -807,8 +801,6 @@ def remove_noise_directory(
     destination_directory: str,
     write_extension: str = None,
     prop_decrease: float = 1,
-    use_tensorflow: bool = False,
-    verbose: bool = False,
     multiprocessing: bool = True,
     num_processors: int = None,
     **kwargs,
@@ -825,8 +817,6 @@ def remove_noise_directory(
         destination_directory (str): filepath of destination directory to write to
         write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
         prop_decrease (float): between 0 and 1. Proportion to decrease noise
-        use_tensorflow (bool, optional): Uses tensorflow to increase speed if available. Defaults to False.
-        verbose (bool, optional): Shows several plots of noise removal process. Defaults to False.
         multiprocessing (bool): If true, uses multiprocessing
         num_processors (int, optional): number of processors to use
         kwargs : kwargs for noise reduce. Look at noisereduce kwargs in filehandler
@@ -839,8 +829,6 @@ def remove_noise_directory(
         destination_directory,
         write_extension=write_extension,
         prop_decrease=prop_decrease,
-        use_tensorflow=use_tensorflow,
-        verbose=verbose,
         use_multiprocessing=multiprocessing,
         num_processes=num_processors,
         **kwargs,
