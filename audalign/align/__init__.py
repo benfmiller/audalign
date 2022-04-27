@@ -1,12 +1,12 @@
-from posixpath import basename
-import audalign
-import audalign.filehandler as filehandler
 import multiprocessing
 import os
-from functools import partial
-import tqdm
 import typing
+from functools import partial
+from posixpath import basename
 
+import audalign
+import audalign.filehandler as filehandler
+import tqdm
 from audalign.recognizers import BaseRecognizer
 
 
@@ -287,7 +287,9 @@ def find_matches_not_in_file_shifts(
                     if main_name not in nmatch_wt_most:
                         nmatch_wt_most[main_name] = {}
                         nmatch_wt_most[main_name]["match_strength"] = 0
-                        nmatch_wt_most[main_name][audalign.Audalign.OFFSET_SECS] = None
+                        nmatch_wt_most[main_name][
+                            audalign.BaseConfig.OFFSET_SECS
+                        ] = None
                     if (
                         file_match[strength_stat][match_index]
                         > nmatch_wt_most[main_name]["match_strength"]
@@ -295,8 +297,8 @@ def find_matches_not_in_file_shifts(
                         nmatch_wt_most["match_strength"] = file_match[strength_stat][
                             match_index
                         ]
-                        nmatch_wt_most[audalign.Audalign.OFFSET_SECS] = (
-                            file_match[audalign.Audalign.OFFSET_SECS][match_index]
+                        nmatch_wt_most[audalign.BaseConfig.OFFSET_SECS] = (
+                            file_match[audalign.BaseConfig.OFFSET_SECS][match_index]
                             - files_shifts[match_name]
                         )
 
