@@ -2,13 +2,13 @@ import fnmatch
 import math
 import multiprocessing
 import os
-from functools import partial
 import typing
+from functools import partial
 
 import noisereduce
 import numpy as np
 from numpy.core.defchararray import array
-from pydub import AudioSegment
+from pydub import AudioSegment, effects
 from pydub.exceptions import CouldntDecodeError
 
 from audalign.config import BaseConfig
@@ -71,7 +71,7 @@ def create_audiosegment(
     audiofile = audiofile.set_frame_rate(sample_rate)
     audiofile = audiofile.set_sample_width(2)
     audiofile = audiofile.set_channels(1)
-    audiofile = audiofile.normalize()
+    audiofile = effects.normalize(audiofile)
     if start_end is not None:
 
         # Does the preprocessing and bounds checking
@@ -193,8 +193,6 @@ def noise_remove(
     write_extension: str = None,
     alt_noise_filepath=None,
     prop_decrease=1,
-    use_tensorflow=False,
-    verbose=False,
     **kwargs,
 ):
     audiofile = create_audiosegment(filepath)
@@ -217,11 +215,10 @@ def noise_remove(
 
     print(f"Reducing noise: {filepath}")
     reduced_noise_data = noisereduce.reduce_noise(
-        new_data,
-        noisy_part,
+        y=new_data,
+        sr=BaseConfig.sample_rate,
+        y_noise=noisy_part,
         prop_decrease=prop_decrease,
-        use_tensorflow=use_tensorflow,
-        verbose=verbose,
         **kwargs,
     )
 
@@ -252,8 +249,6 @@ def noise_remove_directory(
     destination_directory,
     write_extension: str = None,
     prop_decrease=1,
-    use_tensorflow=False,
-    verbose=False,
     use_multiprocessing=False,
     num_processes=None,
     **kwargs,
@@ -271,8 +266,6 @@ def noise_remove_directory(
         destination_directory=destination_directory,
         prop_decrease=prop_decrease,
         write_extension=write_extension,
-        use_tensorflow=use_tensorflow,
-        verbose=verbose,
         **kwargs,
     )
 
@@ -302,8 +295,6 @@ def _remove_noise(
     write_extension: str = None,
     destination_directory="",
     prop_decrease=1,
-    use_tensorflow=False,
-    verbose=False,
     **kwargs,
 ):
 
@@ -313,11 +304,10 @@ def _remove_noise(
         new_data = _floatify_data(audiofile)
 
         reduced_noise_data = noisereduce.reduce_noise(
-            new_data,
-            noise_section,
+            y=new_data,
+            sr=BaseConfig.sample_rate,
+            y_noise=noise_section,
             prop_decrease=prop_decrease,
-            use_tensorflow=use_tensorflow,
-            verbose=verbose,
             **kwargs,
         )
 
@@ -458,7 +448,7 @@ def _uniform_level(
             raise ValueError(
                 f'Mode must be either "normalize" or "average", not {mode}'
             )
-        audiofile = audiofile.normalize()
+        audiofile = effects.normalize(audiofile)
 
         file_name = os.path.basename(file_path)
         if len(os.path.splitext(destination_name)[1]) == 0:
@@ -496,7 +486,7 @@ def level_by_normalize(
         silent_audiosegment._data = audiofile_data[index : index + width]
         if silent_audiosegment.max_dBFS < exclude_min_db:
             continue
-        silent_audiosegment = silent_audiosegment.normalize()
+        silent_audiosegment = effects.normalize(silent_audiosegment)
         new_audio_data[index : index + width] += np.frombuffer(
             silent_audiosegment._data, dtype=np.int16
         )
@@ -557,12 +547,23 @@ def shift_write_files(
     destination_path: str,
     names_and_paths: dict,
     write_extension: str,
+    write_multi_channel: bool = False,
 ):
+    """
+    Args
+    ----
+        files_shifts (dict{float}): dict with file path as key and shift as value
+        destination_path (str): folder to write file to
+        names_and_paths (dict{str}): dict with name as key and path as value
+        write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
+        write_multi_channel (bool): If true, only write out combined file with each input audio file being one channel. If false, write out shifted files separately and total combined file
+    """
     _shift_files(
         files_shifts,
         destination_path,
         names_and_paths,
         write_extension,
+        write_multi_channel=write_multi_channel,
         return_files=False,
     )
 
@@ -572,6 +573,7 @@ def _shift_files(
     destination_path: typing.Optional[str],
     names_and_paths: dict,
     write_extension: typing.Optional[str],
+    write_multi_channel: bool = False,
     sample_rate: int = None,
     return_files: bool = False,
 ):
@@ -582,58 +584,60 @@ def _shift_files(
         if write_extension[0] != ".":
             write_extension = "." + write_extension
 
-    audsegs = {}
-    for name in files_shifts.keys():
-        file_path = names_and_paths[name]
-        if return_files:
-            audsegs[file_path] = files_shifts[name]
-        else:
-            silence = AudioSegment.silent(
-                (files_shifts[name]) * 1000, frame_rate=sample_rate
-            )
+    if not write_multi_channel:
+        return _shift_write_separate(
+            files_shifts,
+            destination_path,
+            names_and_paths,
+            write_extension,
+            sample_rate=sample_rate,
+            return_files=return_files,
+        )
+    else:
+        return _shift_write_multichannel(
+            files_shifts,
+            destination_path,
+            names_and_paths,
+            write_extension,
+            sample_rate=sample_rate,
+            return_files=return_files,
+        )
 
-            audiofile = create_audiosegment(file_path, sample_rate=sample_rate)
 
-            file_name = os.path.basename(file_path)
-            audiofile: AudioSegment = silence + audiofile
-            destination_name = os.path.join(destination_path, file_name)
-
-            if os.path.splitext(destination_name)[1] in cant_write_ext:
-                destination_name = os.path.splitext(destination_name)[0] + ".wav"
-
-            if write_extension:
-                destination_name = (
-                    os.path.splitext(destination_name)[0] + write_extension
-                )
-
-                print(f"Writing {destination_name}")
-
-                with open(destination_name, "wb") as file_place:
-                    audiofile.export(
-                        file_place, format=os.path.splitext(destination_name)[1][1:]
-                    )
-
-            else:
-                print(f"Writing {destination_name}")
-
-                with open(destination_name, "wb") as file_place:
-                    audiofile.export(
-                        file_place, format=os.path.splitext(destination_name)[1][1:]
-                    )
-            audsegs[file_path] = audiofile
-
+def _shift_write_separate(
+    files_shifts: dict,
+    destination_path: typing.Optional[str],
+    names_and_paths: dict,
+    write_extension: typing.Optional[str],
+    sample_rate: int = None,
+    return_files: bool = False,
+):
+    audsegs = _shift_prepend_space_audsegs(
+        files_shifts=files_shifts,
+        names_and_paths=names_and_paths,
+        sample_rate=sample_rate,
+        return_files=return_files,
+    )
     if return_files:
         return audsegs
+    for file_path, audseg in audsegs.items():
+        _write_single_shift(
+            audiofile=audseg,
+            file_path=file_path,
+            destination_path=destination_path,
+            write_extension=write_extension,
+        )
 
     audsegs = list(audsegs.values())
 
     # adds silence to end of tracks to make them equally long for total
-    longest_seconds = max(audseg.duration_seconds for audseg in audsegs)
+    longest_bytes = max(len(audseg._data) for audseg in audsegs)
     for i in range(len(audsegs)):
-        audsegs[i] = audsegs[i] + AudioSegment.silent(
-            (longest_seconds - audsegs[i].duration_seconds) * 1000,
-            frame_rate=sample_rate,
-        )
+        data = audsegs[i]._data
+        len_difference = longest_bytes - len(data)
+        if len_difference > 0:
+            new_zeros = bytearray(len_difference)
+            audsegs[i]._data = data + new_zeros
 
     # lower volume so the sum is the same volume
     total_files = audsegs[0] - (3 * math.log(len(files_shifts), 2))
@@ -641,7 +645,7 @@ def _shift_files(
     for i in audsegs[1:]:
         total_files = total_files.overlay(i - (3 * math.log(len(files_shifts), 2)))
 
-    total_files = total_files.normalize()
+    total_files = effects.normalize(total_files)
 
     if write_extension:
         total_name = os.path.join(destination_path, "total") + write_extension
@@ -659,14 +663,106 @@ def _shift_files(
             total_files.export(file_place, format=os.path.splitext(total_name)[1][1:])
 
 
+def _shift_prepend_space_audsegs(
+    files_shifts: dict,
+    names_and_paths: dict,
+    sample_rate: int,
+    return_files: bool = False,
+):
+    audsegs = {}
+    for name in files_shifts.keys():
+        file_path = names_and_paths[name]
+        if return_files:
+            audsegs[file_path] = files_shifts[name]
+        else:
+            silence = AudioSegment.silent(
+                (files_shifts[name]) * 1000, frame_rate=sample_rate
+            )
+            audiofile = create_audiosegment(file_path, sample_rate=sample_rate)
+            audiofile: AudioSegment = silence + audiofile
+            audsegs[file_path] = audiofile
+    return audsegs
+
+
+def _write_single_shift(
+    audiofile: AudioSegment,
+    file_path: str,
+    destination_path: str,
+    write_extension: str,
+):
+
+    file_name = os.path.basename(file_path)
+    destination_name = os.path.join(destination_path, file_name)  # type: ignore
+
+    if os.path.splitext(destination_name)[1] in cant_write_ext:
+        destination_name = os.path.splitext(destination_name)[0] + ".wav"
+
+    if write_extension:
+        destination_name = os.path.splitext(destination_name)[0] + write_extension
+
+        print(f"Writing {destination_name}")
+
+        with open(destination_name, "wb") as file_place:
+            audiofile.export(
+                file_place, format=os.path.splitext(destination_name)[1][1:]
+            )
+
+    else:
+        print(f"Writing {destination_name}")
+
+        with open(destination_name, "wb") as file_place:
+            audiofile.export(
+                file_place, format=os.path.splitext(destination_name)[1][1:]
+            )
+
+
+def _shift_write_multichannel(
+    files_shifts: dict,
+    destination_path: typing.Optional[str],
+    names_and_paths: dict,
+    write_extension: typing.Optional[str],
+    sample_rate: int,
+    return_files: bool = False,
+):
+    audsegs = _shift_prepend_space_audsegs(
+        files_shifts=files_shifts,
+        names_and_paths=names_and_paths,
+        sample_rate=sample_rate,
+        return_files=return_files,
+    )
+    if return_files:
+        return audsegs
+    # sorts channels by filename
+    audsegs = [x[1] for x in sorted(list(audsegs.items()))]
+    # adds silence to end of tracks to make them equally long for total
+    longest_bytes = max(len(audseg._data) for audseg in audsegs)
+    for i in range(len(audsegs)):
+        data = audsegs[i]._data
+        len_difference = longest_bytes - len(data)
+        if len_difference > 0:
+            new_zeros = bytearray(len_difference)
+            audsegs[i]._data = data + new_zeros
+    total_files = AudioSegment.from_mono_audiosegments(*audsegs)
+    total_files = effects.normalize(total_files)
+
+    if write_extension:
+        total_name = os.path.join(destination_path, "multi_channel_total") + write_extension  # type: ignore
+        print(f"Writing {total_name}")
+        with open(total_name, "wb") as file_place:
+            total_files.export(file_place, format=os.path.splitext(total_name)[1][1:])
+    else:
+        total_name = os.path.join(destination_path, "multi_channel_total.wav")  # type: ignore
+        print(f"Writing {total_name}")
+        with open(total_name, "wb") as file_place:
+            total_files.export(file_place, format=os.path.splitext(total_name)[1][1:])
+
+
 def shift_write_file(file_path, destination_path, offset_seconds):
     silence = AudioSegment.silent(
         offset_seconds * 1000, frame_rate=BaseConfig.sample_rate
     )
-
     audiofile = create_audiosegment(file_path)
     audiofile = silence + audiofile
-
     with open(destination_path, "wb") as file_place:
         audiofile.export(file_place, format=os.path.splitext(destination_path)[1][1:])
 

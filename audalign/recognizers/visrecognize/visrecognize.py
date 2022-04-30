@@ -3,12 +3,12 @@ import os
 import sys
 import time
 from functools import partial
-from audalign.config.visual import VisualConfig
 
 import audalign.recognizers.fingerprint.fingerprinter as fingerprint
 import matplotlib.pyplot as plt
 import numpy as np
 import tqdm
+from audalign.config.visual import VisualConfig
 from audalign.filehandler import find_files, get_shifted_file, read
 from PIL import Image
 from pydub.exceptions import CouldntDecodeError
@@ -402,7 +402,7 @@ def get_arrays(
                 int(array_image.size[0] * horiz_scaling),
                 int(array_image.size[1] * vert_scaling),
             ),
-            Image.NEAREST,
+            Image.Resampling.NEAREST,
         )
         arr2d = np.array(array_image)
 

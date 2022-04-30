@@ -1,12 +1,12 @@
-from posixpath import basename
-import audalign
-import audalign.filehandler as filehandler
 import multiprocessing
 import os
-from functools import partial
-import tqdm
 import typing
+from functools import partial
+from posixpath import basename
 
+import audalign
+import audalign.filehandler as filehandler
+import tqdm
 from audalign.recognizers import BaseRecognizer
 
 
@@ -16,6 +16,7 @@ def _align(
     file_dir: typing.Optional[str],
     destination_path: str = None,
     write_extension: str = None,
+    write_multi_channel: bool = False,
     fine_aud_file_dict: dict = None,
     target_aligning: bool = False,
 ):
@@ -53,6 +54,7 @@ def _align(
         destination_path=destination_path,
         file_names_and_paths=file_names_and_paths,
         write_extension=write_extension,
+        write_multi_channel=write_multi_channel,
         target_aligning=target_aligning,
         fine_aligning=fine_aud_file_dict is not None,
     )
@@ -158,9 +160,14 @@ def calc_final_alignments(
     destination_path,
     file_names_and_paths,
     write_extension,
+    write_multi_channel: bool,
     target_aligning,
     fine_aligning: bool,
 ):
+    # TODO: refactor into a recursive/graph alignment finding method
+    # Would allow for overlaps with overlaps with overlaps
+    # Without only relying on most matched file.
+    # Use filter to clear out excess matches
     files_shifts = find_most_matches(
         total_alignment, strength_stat=recognizer.config.CONFIDENCE
     )
@@ -195,6 +202,7 @@ def calc_final_alignments(
                 destination_path,
                 file_names_and_paths,
                 write_extension,
+                write_multi_channel,
             )
         except PermissionError:
             print("Permission Denied for write align")
@@ -287,7 +295,9 @@ def find_matches_not_in_file_shifts(
                     if main_name not in nmatch_wt_most:
                         nmatch_wt_most[main_name] = {}
                         nmatch_wt_most[main_name]["match_strength"] = 0
-                        nmatch_wt_most[main_name][audalign.Audalign.OFFSET_SECS] = None
+                        nmatch_wt_most[main_name][
+                            audalign.BaseConfig.OFFSET_SECS
+                        ] = None
                     if (
                         file_match[strength_stat][match_index]
                         > nmatch_wt_most[main_name]["match_strength"]
@@ -295,8 +305,8 @@ def find_matches_not_in_file_shifts(
                         nmatch_wt_most["match_strength"] = file_match[strength_stat][
                             match_index
                         ]
-                        nmatch_wt_most[audalign.Audalign.OFFSET_SECS] = (
-                            file_match[audalign.Audalign.OFFSET_SECS][match_index]
+                        nmatch_wt_most[audalign.BaseConfig.OFFSET_SECS] = (
+                            file_match[audalign.BaseConfig.OFFSET_SECS][match_index]
                             - files_shifts[match_name]
                         )
 

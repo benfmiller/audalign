@@ -1,7 +1,8 @@
 #! /usr/bin/env python3
-import json
-import numpy as np
 import argparse
+import json
+
+import numpy as np
 
 """A script to run an audalign alignment"""
 
@@ -11,6 +12,7 @@ parser.add_argument(
     "--files",
     type=str,
     help="files to fingerprint",
+    required=True,
 )
 parser.add_argument(
     "--fine-align", action="store_true", help="if present, runs a fine alignment"
@@ -23,6 +25,19 @@ parser.add_argument(
     default=None,
 )
 parser.add_argument("-w", "--write-extention", type=str, required=False, default=None)
+parser.add_argument(
+    "--write-multi-channel",
+    help="If present, only writes a multi-channel file as output",
+    action="store_true",
+)
+
+parser.add_argument(
+    "--write-multi-channel-fine",
+    help="If present, only writes a multi-channel file as output for fine align",
+    action="store_true",
+)
+
+
 parser.add_argument(
     "-t",
     "--technique",
@@ -148,9 +163,9 @@ args = parser.parse_args()
 
 
 def main(args):
-    import pprint
-    import pickle
     import os
+    import pickle
+    import pprint
     import time
 
     import audalign as ad
@@ -197,6 +212,7 @@ def main(args):
             args.files,
             destination_path=args.destination,
             write_extension=args.write_extention,
+            write_multi_channel=args.write_multi_channel,
             recognizer=recognizer,
         )
         if args.fine_align:
@@ -224,6 +240,7 @@ def main(args):
             results = ad.fine_align(
                 results,
                 write_extension=args.write_extention,
+                write_multi_channel=args.write_multi_channel_fine,
                 destination_path=args.destination,
             )
 

@@ -70,6 +70,7 @@ def align(
     directory_path: str,
     destination_path: str = None,
     write_extension: str = None,
+    write_multi_channel: bool = False,
     recognizer: BaseRecognizer = None,
 ):
     """
@@ -81,6 +82,7 @@ def align(
         destination_path (str): String of path to write alignments to
         write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
         recognizer (BaseRecognizer, optional): recognizer object
+        write_multi_channel (bool): If true, only write out combined file with each input audio file being one channel. If false, write out shifted files separately and total combined file
 
     Returns
     -------
@@ -94,6 +96,7 @@ def align(
         file_dir=directory_path,
         destination_path=destination_path,
         write_extension=write_extension,
+        write_multi_channel=write_multi_channel,
     )
 
 
@@ -104,6 +107,7 @@ def align_files(
     *filenames,
     destination_path: str = None,
     write_extension: str = None,
+    write_multi_channel: bool = False,
     recognizer: BaseRecognizer = None,
 ):
     """
@@ -118,6 +122,7 @@ def align_files(
         *filenames (strs): strings of paths for alignment
         destination_path (str): String of path to write alignments to
         write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
+        write_multi_channel (bool): If true, only write out combined file with each input audio file being one channel. If false, write out shifted files separately and total combined file
         recognizer (BaseRecognizer, optional): recognizer object
 
     Returns
@@ -133,6 +138,7 @@ def align_files(
         file_dir=None,
         destination_path=destination_path,
         write_extension=write_extension,
+        write_multi_channel=write_multi_channel,
     )
 
 
@@ -142,6 +148,7 @@ def target_align(
     directory_path: str,
     destination_path: str = None,
     write_extension: str = None,
+    write_multi_channel: bool = False,
     recognizer: BaseRecognizer = None,
 ):
     """matches and relative offsets for all files in directory_path using only target file,
@@ -154,6 +161,7 @@ def target_align(
         directory_path (str): Directory to align against
         destination_path (str, optional): Directory to write alignments to
         write_extension (str, optional): audio file format to write to. Defaults to None.
+        write_multi_channel (bool): If true, only write out combined file with each input audio file being one channel. If false, write out shifted files separately and total combined file
         recognizer (BaseRecognizer, optional): recognizer object
 
     Returns
@@ -170,6 +178,7 @@ def target_align(
         destination_path=destination_path,
         target_aligning=True,
         write_extension=write_extension,
+        write_multi_channel=write_multi_channel,
     )
 
 
@@ -178,6 +187,7 @@ def fine_align(
     results,
     destination_path: str = None,
     write_extension: str = None,
+    write_multi_channel: bool = False,
     match_index: int = 0,
     recognizer: BaseRecognizer = None,
 ):
@@ -189,6 +199,7 @@ def fine_align(
         results (dict): results from previous alignments.
         destination_path (str): String of path to write alignments to
         write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
+        write_multi_channel (bool): If true, only write out combined file with each input audio file being one channel. If false, write out shifted files separately and total combined file
         match_index (int): reorders the input results to the given match index.
         recognizer (BaseRecognizer, optional): recognizer object
 
@@ -253,6 +264,7 @@ def fine_align(
                 destination_path,
                 new_results["names_and_paths"],
                 write_extension,
+                write_multi_channel=write_multi_channel,
             )
         except PermissionError:
             print("Permission Denied for write fine_align")
@@ -535,6 +547,7 @@ def _write_shifted_files(
     destination_path: str,
     names_and_paths: dict,
     write_extension: str,
+    write_multi_channel: bool = False,
 ):
     """
     Writes files to destination_path with specified shift
@@ -544,9 +557,14 @@ def _write_shifted_files(
         files_shifts (dict{float}): dict with file path as key and shift as value
         destination_path (str): folder to write file to
         names_and_paths (dict{str}): dict with name as key and path as value
+        write_multi_channel (bool): If true, only write out combined file with each input audio file being one channel. If false, write out shifted files separately and total combined file
     """
     filehandler.shift_write_files(
-        files_shifts, destination_path, names_and_paths, write_extension
+        files_shifts,
+        destination_path,
+        names_and_paths,
+        write_extension,
+        write_multi_channel=write_multi_channel,
     )
 
 
@@ -580,7 +598,11 @@ def write_shifted_file(file_path: str, destination_path: str, offset_seconds: fl
 
 
 def write_shifts_from_results(
-    results: dict, read_from_dir, destination_path: str, write_extension: str = None
+    results: dict,
+    read_from_dir,
+    destination_path: str,
+    write_extension: str = None,
+    write_multi_channel: bool = False,
 ):
     """
     For writing the results of an alignment with alternate source files.
@@ -597,6 +619,7 @@ def write_shifts_from_results(
         read_from_dir (str, list): source files for writing. or None to use original files.
         destination_path (str): destination to write to.
         write_extension (str, optional): if given, all files writen with given extension
+        write_multi_channel (bool): If true, only write out combined file with each input audio file being one channel. If false, write out shifted files separately and total combined file
     """
     if isinstance(read_from_dir, str):
         print("Finding audio files")
@@ -636,6 +659,7 @@ def write_shifts_from_results(
             destination_path,
             names_and_paths,
             write_extension,
+            write_multi_channel=write_multi_channel,
         )
     except PermissionError:
         print("Permission Denied for write fine_align")
@@ -766,8 +790,6 @@ def remove_noise_file(
     write_extension: str = None,
     alt_noise_filepath: str = None,
     prop_decrease: float = 1,
-    use_tensorflow: bool = False,
-    verbose: bool = False,
     **kwargs,
 ):
     """Remove noise from audio file by specifying start and end seconds of representative sound sections. Writes file to destination
@@ -781,8 +803,6 @@ def remove_noise_file(
         write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
         alt_noise_filepath (str): path of different file for noise sample
         prop_decrease (float): between 0 and 1. Proportion to decrease noise
-        use_tensorflow (bool, optional): Uses tensorflow to increase speed if available. Defaults to False.
-        verbose (bool, optional): Shows several plots of noise removal process. Defaults to False.
         kwargs : kwargs for noise reduce. Look at noisereduce kwargs in filehandler
     """
     filehandler.noise_remove(
@@ -793,8 +813,6 @@ def remove_noise_file(
         write_extension=write_extension,
         alt_noise_filepath=alt_noise_filepath,
         prop_decrease=prop_decrease,
-        use_tensorflow=use_tensorflow,
-        verbose=verbose,
         **kwargs,
     )
 
@@ -807,8 +825,6 @@ def remove_noise_directory(
     destination_directory: str,
     write_extension: str = None,
     prop_decrease: float = 1,
-    use_tensorflow: bool = False,
-    verbose: bool = False,
     multiprocessing: bool = True,
     num_processors: int = None,
     **kwargs,
@@ -825,8 +841,6 @@ def remove_noise_directory(
         destination_directory (str): filepath of destination directory to write to
         write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
         prop_decrease (float): between 0 and 1. Proportion to decrease noise
-        use_tensorflow (bool, optional): Uses tensorflow to increase speed if available. Defaults to False.
-        verbose (bool, optional): Shows several plots of noise removal process. Defaults to False.
         multiprocessing (bool): If true, uses multiprocessing
         num_processors (int, optional): number of processors to use
         kwargs : kwargs for noise reduce. Look at noisereduce kwargs in filehandler
@@ -839,8 +853,6 @@ def remove_noise_directory(
         destination_directory,
         write_extension=write_extension,
         prop_decrease=prop_decrease,
-        use_tensorflow=use_tensorflow,
-        verbose=verbose,
         use_multiprocessing=multiprocessing,
         num_processes=num_processors,
         **kwargs,
