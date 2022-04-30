@@ -71,7 +71,7 @@ def create_audiosegment(
     audiofile = audiofile.set_frame_rate(sample_rate)
     audiofile = audiofile.set_sample_width(2)
     audiofile = audiofile.set_channels(1)
-    audiofile = audiofile.normalize()
+    audiofile = effects.normalize(audiofile)
     if start_end is not None:
 
         # Does the preprocessing and bounds checking
@@ -448,7 +448,7 @@ def _uniform_level(
             raise ValueError(
                 f'Mode must be either "normalize" or "average", not {mode}'
             )
-        audiofile = audiofile.normalize()
+        audiofile = effects.normalize(audiofile)
 
         file_name = os.path.basename(file_path)
         if len(os.path.splitext(destination_name)[1]) == 0:
@@ -486,7 +486,7 @@ def level_by_normalize(
         silent_audiosegment._data = audiofile_data[index : index + width]
         if silent_audiosegment.max_dBFS < exclude_min_db:
             continue
-        silent_audiosegment = silent_audiosegment.normalize()
+        silent_audiosegment = effects.normalize(silent_audiosegment)
         new_audio_data[index : index + width] += np.frombuffer(
             silent_audiosegment._data, dtype=np.int16
         )
@@ -642,8 +642,7 @@ def _shift_write_separate(
     for i in audsegs[1:]:
         total_files = total_files.overlay(i - (3 * math.log(len(files_shifts), 2)))
 
-    # FIXME: change to using effects.normalize
-    total_files = total_files.normalize()
+    total_files = effects.normalize(total_files)
 
     if write_extension:
         total_name = os.path.join(destination_path, "total") + write_extension
