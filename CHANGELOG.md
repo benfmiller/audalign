@@ -1,5 +1,23 @@
 # Change Log
 
+## [1.1.0] 2022 - 02 - 22
+
+### Added
+
+- Multichannel output option from aligners
+
+### Changed
+
+- Updated dependencies
+- API to match new API from noisereduce
+- Removed python 3.7 support, added 3.10
+- using effects module from pydub for normalize
+
+### Fixed
+
+- Bug in making all output audio files the same length
+- Find find_matches_not_in_file_shifts but
+
 ## [1.0.1] 2022 - 02 - 22
 
 ### Fixed
