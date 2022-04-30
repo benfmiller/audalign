@@ -585,7 +585,7 @@ def _shift_files(
             write_extension = "." + write_extension
 
     if not write_multi_channel:
-        _shift_write_separate(
+        return _shift_write_separate(
             files_shifts,
             destination_path,
             names_and_paths,
@@ -594,7 +594,7 @@ def _shift_files(
             return_files=return_files,
         )
     else:
-        _shift_write_multichannel(
+        return _shift_write_multichannel(
             files_shifts,
             destination_path,
             names_and_paths,
@@ -618,6 +618,8 @@ def _shift_write_separate(
         sample_rate=sample_rate,
         return_files=return_files,
     )
+    if return_files:
+        return audsegs
     for file_path, audseg in audsegs.items():
         _write_single_shift(
             audiofile=audseg,
@@ -727,6 +729,8 @@ def _shift_write_multichannel(
         sample_rate=sample_rate,
         return_files=return_files,
     )
+    if return_files:
+        return audsegs
     # sorts channels by filename
     audsegs = [x[1] for x in sorted(list(audsegs.items()))]
     # adds silence to end of tracks to make them equally long for total
@@ -740,12 +744,12 @@ def _shift_write_multichannel(
     total_files = effects.normalize(total_files)
 
     if write_extension:
-        total_name = os.path.join(destination_path, "total") + write_extension  # type: ignore
+        total_name = os.path.join(destination_path, "multi_channel_total") + write_extension  # type: ignore
         print(f"Writing {total_name}")
         with open(total_name, "wb") as file_place:
             total_files.export(file_place, format=os.path.splitext(total_name)[1][1:])
     else:
-        total_name = os.path.join(destination_path, "total.wav")  # type: ignore
+        total_name = os.path.join(destination_path, "multi_channel_total.wav")  # type: ignore
         print(f"Writing {total_name}")
         with open(total_name, "wb") as file_place:
             total_files.export(file_place, format=os.path.splitext(total_name)[1][1:])
