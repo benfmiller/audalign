@@ -666,7 +666,7 @@ def _shift_prepend_space_audsegs(
     names_and_paths: dict,
     sample_rate: int,
     return_files: bool = False,
-) -> dict[str, AudioSegment]:
+):
     audsegs = {}
     for name in files_shifts.keys():
         file_path = names_and_paths[name]
@@ -685,8 +685,8 @@ def _shift_prepend_space_audsegs(
 def _write_single_shift(
     audiofile: AudioSegment,
     file_path: str,
-    destination_path: str | None,
-    write_extension: str | None,
+    destination_path: str,
+    write_extension: str,
 ):
 
     file_name = os.path.basename(file_path)
