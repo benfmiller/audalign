@@ -1,7 +1,7 @@
-import audalign as ad
-import pytest
 import pickle
 
+import audalign as ad
+import pytest
 from audalign import recognizers
 
 test_file_eig = "test_audio/test_shifts/Eigen-20sec.mp3"
@@ -22,6 +22,19 @@ class TestAlign:
             "test_audio/test_shifts",
             tmpdir,
             write_extension=".wav",
+            recognizer=self.fingerprint_recognizer,
+        )
+        assert result
+        ad.pretty_print_results(result)
+
+    def test_align_fingerprint_write_multi_channel(self, tmpdir):
+        result = ad.align("test_audio/test_shifts", tmpdir)
+        assert result
+        result = ad.align(
+            "test_audio/test_shifts",
+            tmpdir,
+            write_extension=".wav",
+            write_multi_channel=True,
             recognizer=self.fingerprint_recognizer,
         )
         assert result
@@ -249,6 +262,13 @@ class TestFineAlign:
     def test_fine_align(self):
         result = ad.fine_align(
             self.align_fing_results,
+        )
+        assert result is not None
+
+    def test_fine_align(self):
+        result = ad.fine_align(
+            self.align_fing_results,
+            write_multi_channel=True,
         )
         assert result is not None
 
