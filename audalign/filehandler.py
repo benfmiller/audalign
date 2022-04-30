@@ -631,12 +631,13 @@ def _shift_write_separate(
     audsegs = list(audsegs.values())
 
     # adds silence to end of tracks to make them equally long for total
-    longest_seconds = max(audseg.duration_seconds for audseg in audsegs)
+    longest_bytes = max(len(audseg._data) for audseg in audsegs)
     for i in range(len(audsegs)):
-        audsegs[i] = audsegs[i] + AudioSegment.silent(
-            (longest_seconds - audsegs[i].duration_seconds) * 1000,
-            frame_rate=sample_rate,
-        )
+        data = audsegs[i]._data
+        len_difference = longest_bytes - len(data)
+        if len_difference > 0:
+            new_zeros = bytearray(len_difference)
+            audsegs[i]._data = data + new_zeros
 
     # lower volume so the sum is the same volume
     total_files = audsegs[0] - (3 * math.log(len(files_shifts), 2))
@@ -734,12 +735,13 @@ def _shift_write_multichannel(
     # sorts channels by filename
     audsegs = [x[1] for x in sorted(list(audsegs.items()))]
     # adds silence to end of tracks to make them equally long for total
-    longest_seconds = max(audseg.duration_seconds for audseg in audsegs)
+    longest_bytes = max(len(audseg._data) for audseg in audsegs)
     for i in range(len(audsegs)):
-        audsegs[i] = audsegs[i] + AudioSegment.silent(
-            (longest_seconds - audsegs[i].duration_seconds) * 1000,
-            frame_rate=sample_rate,
-        )
+        data = audsegs[i]._data
+        len_difference = longest_bytes - len(data)
+        if len_difference > 0:
+            new_zeros = bytearray(len_difference)
+            audsegs[i]._data = data + new_zeros
     total_files = AudioSegment.from_mono_audiosegments(*audsegs)
     total_files = effects.normalize(total_files)
 
