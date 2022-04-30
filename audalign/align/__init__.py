@@ -16,6 +16,7 @@ def _align(
     file_dir: typing.Optional[str],
     destination_path: str = None,
     write_extension: str = None,
+    write_multi_channel: bool = False,
     fine_aud_file_dict: dict = None,
     target_aligning: bool = False,
 ):
@@ -53,6 +54,7 @@ def _align(
         destination_path=destination_path,
         file_names_and_paths=file_names_and_paths,
         write_extension=write_extension,
+        write_multi_channel=write_multi_channel,
         target_aligning=target_aligning,
         fine_aligning=fine_aud_file_dict is not None,
     )
@@ -158,9 +160,14 @@ def calc_final_alignments(
     destination_path,
     file_names_and_paths,
     write_extension,
+    write_multi_channel: bool,
     target_aligning,
     fine_aligning: bool,
 ):
+    # TODO: refactor into a recursive/graph alignment finding method
+    # Would allow for overlaps with overlaps with overlaps
+    # Without only relying on most matched file.
+    # Use filter to clear out excess matches
     files_shifts = find_most_matches(
         total_alignment, strength_stat=recognizer.config.CONFIDENCE
     )
@@ -195,6 +202,7 @@ def calc_final_alignments(
                 destination_path,
                 file_names_and_paths,
                 write_extension,
+                write_multi_channel,
             )
         except PermissionError:
             print("Permission Denied for write align")
