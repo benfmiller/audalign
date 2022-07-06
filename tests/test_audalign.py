@@ -1,6 +1,8 @@
+import os
+import pickle
+
 import audalign as ad
 import pytest
-import os
 
 
 def test_always_true():
@@ -101,6 +103,9 @@ class TestFingerprinter:
 class TestFilehandler:
 
     test_file = "test_audio/testers/test.mp3"
+    with open("tests/align_test.pickle", "rb") as f:
+        align_fing_results = pickle.load(f)
+    align_fing_results = ad.recalc_shifts(align_fing_results)
 
     def test_read(self):
         array, _ = ad.filehandler.read(self.test_file, sample_rate=None)
@@ -112,6 +117,22 @@ class TestFilehandler:
 
     def test_write_shifted_file(self, tmpdir):
         ad.write_shifted_file(self.test_file, tmpdir.join("place.mp3"), 5)
+
+    def test_write_shifts_from_results(self, tmpdir):
+        ad.write_shifts_from_results(self.align_fing_results, tmpdir)
+
+    def test_write_shifts_from_results_unprocessed(self, tmpdir):
+        ad.write_shifts_from_results(self.align_fing_results, tmpdir, unprocessed=True)
+
+    def test_write_shifts_from_results_multi_channel(self, tmpdir):
+        ad.write_shifts_from_results(
+            self.align_fing_results, tmpdir, write_multi_channel=True
+        )
+
+    def test_write_shifts_from_results_multi_channel_unprocessed(self, tmpdir):
+        ad.write_shifts_from_results(
+            self.align_fing_results, tmpdir, write_multi_channel=True, unprocessed=True
+        )
 
 
 class TestUniformLevel:

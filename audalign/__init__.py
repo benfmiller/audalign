@@ -548,6 +548,7 @@ def _write_shifted_files(
     names_and_paths: dict,
     write_extension: str,
     write_multi_channel: bool = False,
+    unprocessed: bool = False,
 ):
     """
     Writes files to destination_path with specified shift
@@ -558,6 +559,7 @@ def _write_shifted_files(
         destination_path (str): folder to write file to
         names_and_paths (dict{str}): dict with name as key and path as value
         write_multi_channel (bool): If true, only write out combined file with each input audio file being one channel. If false, write out shifted files separately and total combined file
+        unprocessed (bool): If true, writes files without processing. For total files, only doesn't normalize
     """
     filehandler.shift_write_files(
         files_shifts,
@@ -565,6 +567,7 @@ def _write_shifted_files(
         names_and_paths,
         write_extension,
         write_multi_channel=write_multi_channel,
+        unprocessed=unprocessed,
     )
 
 
@@ -599,13 +602,14 @@ def write_shifted_file(file_path: str, destination_path: str, offset_seconds: fl
 
 def write_shifts_from_results(
     results: dict,
-    read_from_dir,
     destination_path: str,
+    read_from_dir: str = None,
     write_extension: str = None,
     write_multi_channel: bool = False,
+    unprocessed: bool = False,
 ):
     """
-    For writing the results of an alignment with alternate source files.
+    For writing the results of an alignment with alternate source files or unprocessed files
     Especially useful if you want to align the original files with the results from noise
     removed or uniform leveled versions.
 
@@ -620,6 +624,7 @@ def write_shifts_from_results(
         destination_path (str): destination to write to.
         write_extension (str, optional): if given, all files writen with given extension
         write_multi_channel (bool): If true, only write out combined file with each input audio file being one channel. If false, write out shifted files separately and total combined file
+        unprocessed (bool): If true, writes files without processing. For total files, only doesn't normalize
     """
     if isinstance(read_from_dir, str):
         print("Finding audio files")
@@ -660,6 +665,7 @@ def write_shifts_from_results(
             names_and_paths,
             write_extension,
             write_multi_channel=write_multi_channel,
+            unprocessed=unprocessed,
         )
     except PermissionError:
         print("Permission Denied for write fine_align")
