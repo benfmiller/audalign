@@ -403,16 +403,16 @@ class TestRecalcWriteShifts:
         assert temp_results is not None
 
     def test_write_from_results(self, tmpdir):
-        ad.write_shifts_from_results(self.full_results, test_folder_eig, tmpdir)
+        ad.write_shifts_from_results(self.full_results, tmpdir, test_folder_eig)
         ad.write_shifts_from_results(
-            self.full_results, test_folder_eig, tmpdir, write_extension=".mp3"
+            self.full_results, tmpdir, test_folder_eig, write_extension=".mp3"
         )
 
         # sources from original file location
         ad.write_shifts_from_results(
-            self.full_results, None, tmpdir, write_extension=".mp3"
+            self.full_results, tmpdir, None, write_extension=".mp3"
         )
 
         ad.write_shifts_from_results(
-            self.full_results, "no errors just prints", tmpdir, write_extension=".mp3"
+            self.full_results, tmpdir, "no errors just prints", write_extension=".mp3"
         )

@@ -56,6 +56,7 @@ def create_audiosegment(
     start_end: tuple = None,
     sample_rate=BaseConfig.sample_rate,
     length=None,
+    unprocessed=False,
 ) -> AudioSegment:
     if sample_rate is None:
         sample_rate = BaseConfig.sample_rate
@@ -68,10 +69,13 @@ def create_audiosegment(
             audiofile = AudioSegment.silent(duration=0, frame_rate=sample_rate)
         else:
             audiofile = AudioSegment.silent(duration=length, frame_rate=sample_rate)
-    audiofile = audiofile.set_frame_rate(sample_rate)
-    audiofile = audiofile.set_sample_width(2)
-    audiofile = audiofile.set_channels(1)
-    audiofile = effects.normalize(audiofile)
+    if not unprocessed:
+        audiofile = audiofile.set_frame_rate(sample_rate)
+        audiofile = audiofile.set_sample_width(2)
+        audiofile = audiofile.set_channels(1)
+        audiofile = effects.normalize(audiofile)
+    else:
+        sample_rate = audiofile.frame_rate
     if start_end is not None:
 
         # Does the preprocessing and bounds checking
@@ -548,6 +552,7 @@ def shift_write_files(
     names_and_paths: dict,
     write_extension: str,
     write_multi_channel: bool = False,
+    unprocessed: bool = False,
 ):
     """
     Args
@@ -557,6 +562,7 @@ def shift_write_files(
         names_and_paths (dict{str}): dict with name as key and path as value
         write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
         write_multi_channel (bool): If true, only write out combined file with each input audio file being one channel. If false, write out shifted files separately and total combined file
+        unprocessed (bool): If true, writes files without processing
     """
     _shift_files(
         files_shifts,
@@ -565,6 +571,7 @@ def shift_write_files(
         write_extension,
         write_multi_channel=write_multi_channel,
         return_files=False,
+        unprocessed=unprocessed,
     )
 
 
@@ -576,6 +583,7 @@ def _shift_files(
     write_multi_channel: bool = False,
     sample_rate: int = None,
     return_files: bool = False,
+    unprocessed: bool = False,
 ):
     if sample_rate is None:
         sample_rate = BaseConfig.sample_rate
@@ -592,6 +600,7 @@ def _shift_files(
             write_extension,
             sample_rate=sample_rate,
             return_files=return_files,
+            unprocessed=unprocessed,
         )
     else:
         return _shift_write_multichannel(
@@ -601,6 +610,7 @@ def _shift_files(
             write_extension,
             sample_rate=sample_rate,
             return_files=return_files,
+            unprocessed=unprocessed,
         )
 
 
@@ -611,12 +621,14 @@ def _shift_write_separate(
     write_extension: typing.Optional[str],
     sample_rate: int = None,
     return_files: bool = False,
+    unprocessed: bool = False,
 ):
     audsegs = _shift_prepend_space_audsegs(
         files_shifts=files_shifts,
         names_and_paths=names_and_paths,
         sample_rate=sample_rate,
         return_files=return_files,
+        unprocessed=unprocessed,
     )
     if return_files:
         return audsegs
@@ -629,6 +641,15 @@ def _shift_write_separate(
         )
 
     audsegs = list(audsegs.values())
+
+    if unprocessed:
+        # Still have to guarantee they'll combine for total file
+        # No normalization
+        for i, audseg in enumerate(audsegs):
+            audseg = audseg.set_frame_rate(sample_rate)
+            audseg = audseg.set_sample_width(2)
+            audseg = audseg.set_channels(1)
+            audsegs[i] = audseg
 
     # adds silence to end of tracks to make them equally long for total
     longest_bytes = max(len(audseg._data) for audseg in audsegs)
@@ -668,6 +689,7 @@ def _shift_prepend_space_audsegs(
     names_and_paths: dict,
     sample_rate: int,
     return_files: bool = False,
+    unprocessed: bool = False,
 ):
     audsegs = {}
     for name in files_shifts.keys():
@@ -675,10 +697,17 @@ def _shift_prepend_space_audsegs(
         if return_files:
             audsegs[file_path] = files_shifts[name]
         else:
+            audiofile = create_audiosegment(
+                file_path, sample_rate=sample_rate, unprocessed=unprocessed
+            )
+            if unprocessed:
+                sample_rate = audiofile.frame_rate
             silence = AudioSegment.silent(
                 (files_shifts[name]) * 1000, frame_rate=sample_rate
             )
-            audiofile = create_audiosegment(file_path, sample_rate=sample_rate)
+            audiofile = create_audiosegment(
+                file_path, sample_rate=sample_rate, unprocessed=unprocessed
+            )
             audiofile: AudioSegment = silence + audiofile
             audsegs[file_path] = audiofile
     return audsegs
@@ -723,15 +752,25 @@ def _shift_write_multichannel(
     write_extension: typing.Optional[str],
     sample_rate: int,
     return_files: bool = False,
+    unprocessed: bool = False,
 ):
     audsegs = _shift_prepend_space_audsegs(
         files_shifts=files_shifts,
         names_and_paths=names_and_paths,
         sample_rate=sample_rate,
         return_files=return_files,
+        unprocessed=unprocessed,
     )
     if return_files:
         return audsegs
+    if unprocessed:
+        # Still have to guarantee they'll combine for total file
+        # No normalization
+        for file_name, audseg in audsegs.items():
+            audseg = audseg.set_frame_rate(sample_rate)
+            audseg = audseg.set_sample_width(2)
+            audseg = audseg.set_channels(1)
+            audsegs[file_name] = audseg
     # sorts channels by filename
     audsegs = [x[1] for x in sorted(list(audsegs.items()))]
     # adds silence to end of tracks to make them equally long for total
@@ -757,11 +796,12 @@ def _shift_write_multichannel(
             total_files.export(file_place, format=os.path.splitext(total_name)[1][1:])
 
 
-def shift_write_file(file_path, destination_path, offset_seconds):
-    silence = AudioSegment.silent(
-        offset_seconds * 1000, frame_rate=BaseConfig.sample_rate
-    )
-    audiofile = create_audiosegment(file_path)
+def shift_write_file(
+    file_path, destination_path, offset_seconds, unprocessed: bool = False
+):
+    audiofile = create_audiosegment(file_path, unprocessed=unprocessed)
+    sample_rate: int = audiofile.frame_rate
+    silence = AudioSegment.silent(offset_seconds * 1000, frame_rate=sample_rate)
     audiofile = silence + audiofile
     with open(destination_path, "wb") as file_place:
         audiofile.export(file_place, format=os.path.splitext(destination_path)[1][1:])
