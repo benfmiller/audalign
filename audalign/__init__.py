@@ -587,7 +587,12 @@ def get_metadata(file_path: str):
     return mediainfo(filepath=file_path)
 
 
-def write_shifted_file(file_path: str, destination_path: str, offset_seconds: float):
+def write_shifted_file(
+    file_path: str,
+    destination_path: str,
+    offset_seconds: float,
+    unprocessed: bool = False,
+):
     """
     Writes file to destination_path with specified shift in seconds
 
@@ -596,8 +601,11 @@ def write_shifted_file(file_path: str, destination_path: str, offset_seconds: fl
         file_path (str): file path of file to shift
         destination_path (str): where to write file to and file name
         offset_seconds (float): how many seconds to shift, can't be negative
+        unprocessed (bool): If true, writes files without processing.
     """
-    filehandler.shift_write_file(file_path, destination_path, offset_seconds)
+    filehandler.shift_write_file(
+        file_path, destination_path, offset_seconds, unprocessed=unprocessed
+    )
 
 
 def write_shifts_from_results(

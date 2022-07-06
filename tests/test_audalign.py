@@ -118,6 +118,11 @@ class TestFilehandler:
     def test_write_shifted_file(self, tmpdir):
         ad.write_shifted_file(self.test_file, tmpdir.join("place.mp3"), 5)
 
+    def test_write_shifted_file_unprocessed(self, tmpdir):
+        ad.write_shifted_file(
+            self.test_file, tmpdir.join("place.mp3"), 5, unprocessed=True
+        )
+
     def test_write_shifts_from_results(self, tmpdir):
         ad.write_shifts_from_results(self.align_fing_results, tmpdir)
 

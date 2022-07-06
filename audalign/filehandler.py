@@ -796,11 +796,12 @@ def _shift_write_multichannel(
             total_files.export(file_place, format=os.path.splitext(total_name)[1][1:])
 
 
-def shift_write_file(file_path, destination_path, offset_seconds):
-    silence = AudioSegment.silent(
-        offset_seconds * 1000, frame_rate=BaseConfig.sample_rate
-    )
-    audiofile = create_audiosegment(file_path)
+def shift_write_file(
+    file_path, destination_path, offset_seconds, unprocessed: bool = False
+):
+    audiofile = create_audiosegment(file_path, unprocessed=unprocessed)
+    sample_rate: int = audiofile.frame_rate
+    silence = AudioSegment.silent(offset_seconds * 1000, frame_rate=sample_rate)
     audiofile = silence + audiofile
     with open(destination_path, "wb") as file_place:
         audiofile.export(file_place, format=os.path.splitext(destination_path)[1][1:])
