@@ -1,6 +1,16 @@
 # Change Log
 
-## [1.1.0] 2022 - 02 - 22
+## [1.2.0] 2022 - 07 - 06
+
+### Added
+
+- unprocessed argument to write_shifts_from_results and write_shifted_file
+
+### Changed
+
+- Order or arguments for write_shifts_from_results
+
+## [1.1.0] 2022 - 04 - 30
 
 ### Added
 
