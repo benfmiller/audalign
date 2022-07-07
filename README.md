@@ -145,7 +145,7 @@ lets you use different source files for alignments too.
 
 ```python
 recalculated_results = ad.recalc_shifts(older_results)
-ad.write_shifts_from_results(recalculated_results, "source_files_folder_or_file_list", "destination")
+ad.write_shifts_from_results(recalculated_results, "destination", "source_files_folder_or_file_list")
 ```
 
 ## Fingerprinting
@@ -168,7 +168,7 @@ fingerprints are stored in fingerprint_rec and can be saved by
 
 ```python
 fingerprint_rec.save_fingerprinted_files("save_file.json") # or .pickle
-# or loaded with 
+# or loaded with
 fingerprint_rec.load_fingerprinted_files("save_file.json") # or .pickle
 ```
 
