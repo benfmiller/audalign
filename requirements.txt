@@ -11,7 +11,7 @@ fonttools==4.33.3
 idna==3.3
 imageio==2.18.0
 iniconfig==1.1.1
-joblib==1.1.0
+joblib==1.2.0
 kiwisolver==1.4.2
 librosa==0.9.1
 llvmlite==0.38.0
