@@ -1,7 +1,7 @@
 appdirs==1.4.4
 attrs==21.4.0
 audioread==2.1.9
-certifi==2021.10.8
+certifi==2022.12.7
 cffi==1.15.0
 charset-normalizer==2.0.12
 cycler==0.11.0
