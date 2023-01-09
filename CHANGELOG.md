@@ -1,5 +1,15 @@
 # Change Log
 
+## [1.2.1] 2023 - 01 - 08
+
+### Changed
+
+- Updated dependencies
+
+### Added
+
+- dockerfiles to run tests
+
 ## [1.2.0] 2022 - 07 - 06
 
 ### Added
