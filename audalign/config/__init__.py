@@ -34,6 +34,9 @@ class BaseConfig(ABC):
     # Decodes audio file to this sample rate
     sample_rate = 44100
 
+    # if true, normalizes all files when read
+    normalize = True
+
     # keys in results dictionaries
     CONFIDENCE = "confidence"
     MATCH_TIME = "match_time"

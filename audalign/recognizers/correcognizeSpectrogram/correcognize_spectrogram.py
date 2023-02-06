@@ -356,7 +356,10 @@ def get_array(
         )
     else:
         target_array = read(
-            file_path, start_end=start_end, sample_rate=config.sample_rate
+            file_path,
+            start_end=start_end,
+            sample_rate=config.sample_rate,
+            normalize=config.normalize,
         )[0]
     if sos is not None:
         target_array = signal.sosfilt(sos, target_array)

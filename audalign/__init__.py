@@ -24,8 +24,9 @@ import audalign.filehandler as filehandler
 from audalign.config import BaseConfig
 from audalign.recognizers import BaseRecognizer
 from audalign.recognizers.correcognize import CorrelationRecognizer
-from audalign.recognizers.correcognizeSpectrogram import \
-    CorrelationSpectrogramRecognizer
+from audalign.recognizers.correcognizeSpectrogram import (
+    CorrelationSpectrogramRecognizer,
+)
 from audalign.recognizers.fingerprint import FingerprintRecognizer
 from audalign.recognizers.visrecognize import VisualRecognizer
 
@@ -224,11 +225,15 @@ def fine_align(
             strength_stat=recognizer.config.CONFIDENCE,
         )
         paths_audio = filehandler.shift_get_files(
-            recalc_shifts_results, sample_rate=recognizer.config.sample_rate
+            recalc_shifts_results,
+            sample_rate=recognizer.config.sample_rate,
+            normalize=recognizer.config.normalize,
         )
     else:
         paths_audio = filehandler.shift_get_files(
-            results, sample_rate=recognizer.config.sample_rate
+            results,
+            sample_rate=recognizer.config.sample_rate,
+            normalize=recognizer.config.normalize,
         )
 
     max_lags_not_set = False
@@ -265,6 +270,7 @@ def fine_align(
                 new_results["names_and_paths"],
                 write_extension,
                 write_multi_channel=write_multi_channel,
+                normalize=recognizer.config.normalize,
             )
         except PermissionError:
             print("Permission Denied for write fine_align")
@@ -280,6 +286,7 @@ def write_processed_file(
     destination_file: str,
     start_end: tuple = None,
     sample_rate: int = BaseConfig.sample_rate,
+    normalize: bool = BaseConfig.normalize,
 ) -> None:
     """
     writes given file to the destination file after processing for fingerprinting
@@ -290,13 +297,14 @@ def write_processed_file(
         destination_file (str): file path and name to write file to
         start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
         sample_rate (int): sample rate to write file to
-
+        normalize (bool): if true, normalizes file when read
     """
     filehandler.read(
         filename=file_path,
         wrdestination=destination_file,
         start_end=start_end,
         sample_rate=sample_rate,
+        normalize=normalize,
     )
 
 
@@ -549,6 +557,7 @@ def _write_shifted_files(
     write_extension: str,
     write_multi_channel: bool = False,
     unprocessed: bool = False,
+    normalize: bool = BaseConfig.normalize,
 ):
     """
     Writes files to destination_path with specified shift
@@ -560,6 +569,7 @@ def _write_shifted_files(
         names_and_paths (dict{str}): dict with name as key and path as value
         write_multi_channel (bool): If true, only write out combined file with each input audio file being one channel. If false, write out shifted files separately and total combined file
         unprocessed (bool): If true, writes files without processing. For total files, only doesn't normalize
+        normalize (bool): if true, normalizes file when read
     """
     filehandler.shift_write_files(
         files_shifts,
@@ -568,6 +578,7 @@ def _write_shifted_files(
         write_extension,
         write_multi_channel=write_multi_channel,
         unprocessed=unprocessed,
+        normalize=normalize,
     )
 
 
@@ -592,6 +603,7 @@ def write_shifted_file(
     destination_path: str,
     offset_seconds: float,
     unprocessed: bool = False,
+    normalize: bool = BaseConfig.normalize,
 ):
     """
     Writes file to destination_path with specified shift in seconds
@@ -602,9 +614,14 @@ def write_shifted_file(
         destination_path (str): where to write file to and file name
         offset_seconds (float): how many seconds to shift, can't be negative
         unprocessed (bool): If true, writes files without processing.
+        normalize (bool): if true, normalizes file when read
     """
     filehandler.shift_write_file(
-        file_path, destination_path, offset_seconds, unprocessed=unprocessed
+        file_path,
+        destination_path,
+        offset_seconds,
+        unprocessed=unprocessed,
+        normalize=normalize,
     )
 
 
@@ -615,6 +632,7 @@ def write_shifts_from_results(
     write_extension: str = None,
     write_multi_channel: bool = False,
     unprocessed: bool = False,
+    normalize: bool = BaseConfig.normalize,
 ):
     """
     For writing the results of an alignment with alternate source files or unprocessed files
@@ -633,6 +651,7 @@ def write_shifts_from_results(
         write_extension (str, optional): if given, all files writen with given extension
         write_multi_channel (bool): If true, only write out combined file with each input audio file being one channel. If false, write out shifted files separately and total combined file
         unprocessed (bool): If true, writes files without processing. For total files, only doesn't normalize
+        normalize (bool): if true, normalizes file when read
     """
     if isinstance(read_from_dir, str):
         print("Finding audio files")
@@ -674,6 +693,7 @@ def write_shifts_from_results(
             write_extension,
             write_multi_channel=write_multi_channel,
             unprocessed=unprocessed,
+            normalize=normalize,
         )
     except PermissionError:
         print("Permission Denied for write fine_align")
@@ -684,6 +704,7 @@ def convert_audio_file(
     destination_path: str,
     start_end: tuple = None,
     sample_rate: int = None,
+    normalize: bool = BaseConfig.normalize,
 ):
     """
     Convert audio file to type specified in destination path
@@ -694,12 +715,14 @@ def convert_audio_file(
         destination_path (str): where to write file to and file name
         start_end (tuple(float, float), optional): Silences before and after start and end. (0, -1) Silences last second, (5.4, 0) silences first 5.4 seconds
         sample_rate (int): sample rate to write file to
+        normalize (bool): if true, normalizes file when read
     """
     filehandler.read(
         filename=file_path,
         wrdestination=destination_path,
         start_end=start_end,
         sample_rate=sample_rate,
+        normalize=normalize,
     )
 
 

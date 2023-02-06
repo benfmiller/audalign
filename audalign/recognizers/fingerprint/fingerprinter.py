@@ -5,8 +5,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from audalign.config.fingerprint import FingerprintConfig
 from pydub.exceptions import CouldntDecodeError
-from scipy.ndimage import (binary_erosion, generate_binary_structure,
-                           iterate_structure, maximum_filter)
+from scipy.ndimage import (
+    binary_erosion,
+    generate_binary_structure,
+    iterate_structure,
+    maximum_filter,
+)
 
 np.seterr(divide="ignore")
 
@@ -39,7 +43,10 @@ def _fingerprint_worker(
 
         try:
             channel, _ = audalign.filehandler.read(
-                file_path, start_end=config.start_end, sample_rate=config.sample_rate
+                file_path,
+                start_end=config.start_end,
+                sample_rate=config.sample_rate,
+                normalize=config.normalize,
             )
         except FileNotFoundError:
             print(f'"{file_path}" not found')

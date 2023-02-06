@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.2.2] 2023 - 02 -05
+
+### Added
+
+- normalize option in BaseConfig, Turns off all normalization if False
+
 ## [1.2.1] 2023 - 01 - 08
 
 ### Changed
