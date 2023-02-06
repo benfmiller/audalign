@@ -65,6 +65,7 @@ def correcognize(
         sample_rate=config.sample_rate,
         _file_audsegs=None,
         sos=sos,
+        normalize=config.normalize,
     )
     against_array = get_array(
         against_file_path,
@@ -72,6 +73,7 @@ def correcognize(
         sample_rate=config.sample_rate,
         _file_audsegs=None,
         sos=sos,
+        normalize=config.normalize,
     )
 
     t = time.time()
@@ -144,6 +146,7 @@ def correcognize_directory(
             sample_rate=config.sample_rate,
             _file_audsegs=_file_audsegs,
             sos=sos,
+            normalize=config.normalize,
         )
         target_file_path = (target_file_path, target_array)
 
@@ -296,6 +299,7 @@ def _correcognize_dir(
             sample_rate=config.sample_rate,
             _file_audsegs=_file_audsegs,
             sos=sos_filter,
+            normalize=config.normalize,
         )
     else:
         target_file_path, target_array = target_file_path
@@ -311,6 +315,7 @@ def _correcognize_dir(
             sample_rate=config.sample_rate,
             _file_audsegs=_file_audsegs,
             sos=sos_filter,
+            normalize=config.normalize,
         )
         return _correcognize(
             target_array=target_array,
@@ -337,15 +342,19 @@ def get_array(
     sample_rate,
     _file_audsegs,
     sos,
+    normalize: bool,
 ):
     if _file_audsegs is not None:
         target_array = get_shifted_file(
             file_path,
             _file_audsegs[file_path],
             sample_rate=sample_rate,
+            normalize=normalize,
         )
     else:
-        target_array = read(file_path, start_end=start_end, sample_rate=sample_rate)[0]
+        target_array = read(
+            file_path, start_end=start_end, sample_rate=sample_rate, normalize=normalize
+        )[0]
     if sos is not None:
         target_array = signal.sosfilt(sos, target_array)
     return target_array

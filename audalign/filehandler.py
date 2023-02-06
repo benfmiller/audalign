@@ -57,6 +57,7 @@ def create_audiosegment(
     sample_rate=BaseConfig.sample_rate,
     length=None,
     unprocessed=False,
+    normalize=BaseConfig.normalize,
 ) -> AudioSegment:
     if sample_rate is None:
         sample_rate = BaseConfig.sample_rate
@@ -73,7 +74,8 @@ def create_audiosegment(
         audiofile = audiofile.set_frame_rate(sample_rate)
         audiofile = audiofile.set_sample_width(2)
         audiofile = audiofile.set_channels(1)
-        audiofile = effects.normalize(audiofile)
+        if normalize:
+            audiofile = effects.normalize(audiofile)
     else:
         sample_rate = audiofile.frame_rate
     if start_end is not None:
@@ -150,6 +152,8 @@ def read(
     wrdestination=None,
     start_end: tuple = None,
     sample_rate=BaseConfig.sample_rate,
+    normalize: bool = BaseConfig.normalize
+    # Root
 ):
     """
     Reads any file supported by pydub (ffmpeg) and returns a numpy array and the bit depth
@@ -167,7 +171,7 @@ def read(
     if os.path.splitext(filename)[1] in cant_read_ext:
         raise CouldntDecodeError
     audiofile = create_audiosegment(
-        filename, start_end=start_end, sample_rate=sample_rate
+        filename, start_end=start_end, sample_rate=sample_rate, normalize=normalize
     )
     data = np.frombuffer(audiofile._data, np.int16)
     if wrdestination:
@@ -524,7 +528,9 @@ def level_by_ave(audiofile_data, index_list, overlap_array, width, exclude_min_d
     return new_audio_data
 
 
-def shift_get_files(results: dict, sample_rate: int = None):
+def shift_get_files(
+    results: dict, sample_rate: int = None, normalize: bool = BaseConfig.normalize
+):
     names_and_paths = results.pop("names_and_paths")
     temp_a = results.pop("match_info")
     temp_rankings = None
@@ -538,6 +544,7 @@ def shift_get_files(results: dict, sample_rate: int = None):
         None,
         sample_rate=sample_rate,
         return_files=True,
+        normalize=normalize,
     )
     results["names_and_paths"] = names_and_paths
     results["match_info"] = temp_a
@@ -553,6 +560,7 @@ def shift_write_files(
     write_extension: str,
     write_multi_channel: bool = False,
     unprocessed: bool = False,
+    normalize: bool = BaseConfig.normalize,
 ):
     """
     Args
@@ -563,6 +571,7 @@ def shift_write_files(
         write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
         write_multi_channel (bool): If true, only write out combined file with each input audio file being one channel. If false, write out shifted files separately and total combined file
         unprocessed (bool): If true, writes files without processing
+        normalize (bool): if true, normalizes file when read
     """
     _shift_files(
         files_shifts,
@@ -572,6 +581,7 @@ def shift_write_files(
         write_multi_channel=write_multi_channel,
         return_files=False,
         unprocessed=unprocessed,
+        normalize=normalize,
     )
 
 
@@ -584,6 +594,7 @@ def _shift_files(
     sample_rate: int = None,
     return_files: bool = False,
     unprocessed: bool = False,
+    normalize: bool = BaseConfig.normalize,
 ):
     if sample_rate is None:
         sample_rate = BaseConfig.sample_rate
@@ -601,6 +612,7 @@ def _shift_files(
             sample_rate=sample_rate,
             return_files=return_files,
             unprocessed=unprocessed,
+            normalize=normalize,
         )
     else:
         return _shift_write_multichannel(
@@ -611,6 +623,7 @@ def _shift_files(
             sample_rate=sample_rate,
             return_files=return_files,
             unprocessed=unprocessed,
+            normalize=normalize,
         )
 
 
@@ -622,6 +635,7 @@ def _shift_write_separate(
     sample_rate: int = None,
     return_files: bool = False,
     unprocessed: bool = False,
+    normalize: bool = BaseConfig.normalize,
 ):
     audsegs = _shift_prepend_space_audsegs(
         files_shifts=files_shifts,
@@ -629,6 +643,7 @@ def _shift_write_separate(
         sample_rate=sample_rate,
         return_files=return_files,
         unprocessed=unprocessed,
+        normalize=normalize,
     )
     if return_files:
         return audsegs
@@ -690,6 +705,7 @@ def _shift_prepend_space_audsegs(
     sample_rate: int,
     return_files: bool = False,
     unprocessed: bool = False,
+    normalize: bool = BaseConfig.normalize,
 ):
     audsegs = {}
     for name in files_shifts.keys():
@@ -698,15 +714,15 @@ def _shift_prepend_space_audsegs(
             audsegs[file_path] = files_shifts[name]
         else:
             audiofile = create_audiosegment(
-                file_path, sample_rate=sample_rate, unprocessed=unprocessed
+                file_path,
+                sample_rate=sample_rate,
+                unprocessed=unprocessed,
+                normalize=normalize,
             )
             if unprocessed:
                 sample_rate = audiofile.frame_rate
             silence = AudioSegment.silent(
                 (files_shifts[name]) * 1000, frame_rate=sample_rate
-            )
-            audiofile = create_audiosegment(
-                file_path, sample_rate=sample_rate, unprocessed=unprocessed
             )
             audiofile: AudioSegment = silence + audiofile
             audsegs[file_path] = audiofile
@@ -753,6 +769,7 @@ def _shift_write_multichannel(
     sample_rate: int,
     return_files: bool = False,
     unprocessed: bool = False,
+    normalize: bool = BaseConfig.normalize,
 ):
     audsegs = _shift_prepend_space_audsegs(
         files_shifts=files_shifts,
@@ -760,6 +777,7 @@ def _shift_write_multichannel(
         sample_rate=sample_rate,
         return_files=return_files,
         unprocessed=unprocessed,
+        normalize=normalize,
     )
     if return_files:
         return audsegs
@@ -797,9 +815,15 @@ def _shift_write_multichannel(
 
 
 def shift_write_file(
-    file_path, destination_path, offset_seconds, unprocessed: bool = False
+    file_path,
+    destination_path,
+    offset_seconds,
+    unprocessed: bool = False,
+    normalize: bool = BaseConfig.normalize,
 ):
-    audiofile = create_audiosegment(file_path, unprocessed=unprocessed)
+    audiofile = create_audiosegment(
+        file_path, unprocessed=unprocessed, normalize=normalize
+    )
     sample_rate: int = audiofile.frame_rate
     silence = AudioSegment.silent(offset_seconds * 1000, frame_rate=sample_rate)
     audiofile = silence + audiofile
@@ -808,10 +832,15 @@ def shift_write_file(
 
 
 def get_shifted_file(
-    file_path, offset_seconds, sample_rate=BaseConfig.sample_rate
+    file_path,
+    offset_seconds,
+    sample_rate=BaseConfig.sample_rate,
+    normalize: bool = BaseConfig.normalize,
 ) -> np.array:
     silence = AudioSegment.silent(offset_seconds * 1000, frame_rate=sample_rate)
 
-    audiofile = create_audiosegment(file_path, sample_rate=sample_rate)
+    audiofile = create_audiosegment(
+        file_path, sample_rate=sample_rate, normalize=normalize
+    )
     audiofile = silence + audiofile
     return np.frombuffer(audiofile._data, np.int16)

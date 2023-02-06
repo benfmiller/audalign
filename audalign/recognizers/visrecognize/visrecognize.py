@@ -378,7 +378,10 @@ def get_arrays(
         )
     else:
         samples, _ = read(
-            file_path, start_end=start_end, sample_rate=config.sample_rate
+            file_path,
+            start_end=start_end,
+            sample_rate=config.sample_rate,
+            normalize=config.normalize,
         )
     arr2d = fingerprint.fingerprint(samples, config, retspec=True)
 

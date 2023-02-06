@@ -248,6 +248,20 @@ class TestStartEnd:
             start_end=(5, -10),
         )
 
+    def test_no_normalize(self, tmpdir):
+        ad.convert_audio_file(
+            self.test_file,
+            tmpdir.join("test_temp.mp3"),
+            start_end=(5, 10),
+            normalize=False,
+        )
+        ad.write_processed_file(
+            self.test_file,
+            tmpdir.join("test_temp.mp3"),
+            start_end=(5, -10),
+            normalize=False,
+        )
+
     def test_bounds_checks(self):
         try:
             ad.filehandler.read(self.test_file, start_end=(5, 4))
