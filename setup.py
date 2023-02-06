@@ -20,7 +20,7 @@ def parse_requirements(requirements):
 
 
 PACKAGE_NAME = "audalign"
-PACKAGE_VERSION = "1.2.1"
+PACKAGE_VERSION = "1.2.2"
 SUMMARY = "Audio Alignment and Recognition in Python"
 
 REQUIREMENTS = parse_requirements("requirements.txt")

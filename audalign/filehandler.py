@@ -152,8 +152,7 @@ def read(
     wrdestination=None,
     start_end: tuple = None,
     sample_rate=BaseConfig.sample_rate,
-    normalize: bool = BaseConfig.normalize
-    # Root
+    normalize: bool = BaseConfig.normalize,
 ):
     """
     Reads any file supported by pydub (ffmpeg) and returns a numpy array and the bit depth
