@@ -324,7 +324,7 @@ def _visrecognize(
     )
 
     # calculate all mse and ssim values
-    if use_multiprocessing == True and sys.platform != "linux":
+    if use_multiprocessing == True and sys.platform not in ["linux", "darwin"]:
 
         try:
             nprocesses = num_processes or multiprocessing.cpu_count()
