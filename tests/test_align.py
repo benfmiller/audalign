@@ -387,7 +387,7 @@ class TestFineAlign:
 
     @pytest.mark.xfail
     def test_fine_align_close_seconds_filter_fail(self):
-        # close_seconds_filter = 10
+        close_seconds_filter = 10
         recognizer = ad.FingerprintRecognizer(
             load_fingerprints_file="tests/test_fingerprints.json"
         )

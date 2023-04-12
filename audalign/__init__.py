@@ -563,14 +563,8 @@ def __filter_close_seconds(results: dict, close_seconds_filter: float):
                 unfiltered_offset_seconds.append(val)
         for key in results_iterable_keys:
             temp_list = against_dict[key]
-            # if temp_list[0] is not None:
-            #     print(f"{key} {sorted(temp_list)}")
-            # else:
-            #     print(f"{key} {temp_list}")
             for i in iter_index_pop[::-1]:
                 temp_list.pop(i)
-            # if temp_list[0] is not None:
-            #     print(f"{key} {sorted(temp_list)}")
             against_dict[key] = temp_list
     return results
 

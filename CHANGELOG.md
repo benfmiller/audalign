@@ -1,6 +1,17 @@
 # Change Log
 
-## [1.2.2] 2023 - 02 -05
+## [1.2.3] 2023 - 04 - 11
+
+### Added
+
+- Added close_seconds_filter option to BaseConfig and decorators on recognize and align functions
+
+### Fixed
+
+- Fingerprint, fine_align, single-threaded bug
+- VisualRecognizer multiprocessing on macs
+
+## [1.2.2] 2023 - 02 - 05
 
 ### Added
 
