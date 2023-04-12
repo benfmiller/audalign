@@ -9,6 +9,15 @@ test_file_eig2 = "test_audio/test_shifts/Eigen-song-base.mp3"
 test_folder_eig = "test_audio/test_shifts/"
 
 
+def ensure_close_seconds_filter(result, close_seconds_filter, initial_filter="match_info"):
+    for target_file in list(result.get(initial_filter).values()):
+        for against_file in list(target_file["match_info"].values()):
+            offset_list = sorted(against_file["offset_seconds"])
+            start = offset_list[0]
+            for i in offset_list[1:]:
+                assert i - start > close_seconds_filter # results within close_seconds_filter
+                start = i
+
 class TestAlign:
     fingerprint_recognizer = ad.FingerprintRecognizer(
         load_fingerprints_file="tests/test_fingerprints.json"
@@ -178,6 +187,31 @@ class TestAlignFiles:
         )
         assert result is not None
 
+    @pytest.mark.xfail
+    def test_align_close_seconds_filter_fail(self, tmpdir):
+        close_seconds_filter = 10
+        recognizer = ad.FingerprintRecognizer()
+        recognizer.config.multiprocessing = False
+        result = ad.align(
+            "test_audio/test_shifts",
+            tmpdir,
+            recognizer=recognizer,
+        )
+        assert result
+        ensure_close_seconds_filter(result, close_seconds_filter)
+
+    def test_align_close_seconds_filter(self, tmpdir):
+        close_seconds_filter = 10
+        recognizer = ad.FingerprintRecognizer()
+        recognizer.config.close_seconds_filter = close_seconds_filter
+        recognizer.config.multiprocessing = False
+        result = ad.align(
+            "test_audio/test_shifts",
+            tmpdir,
+            recognizer=recognizer,
+        )
+        assert result
+        ensure_close_seconds_filter(result, close_seconds_filter)
 
 class TestTargetAlign:
     def test_target_align_vis(self, tmpdir):
@@ -282,6 +316,7 @@ class TestFineAlign:
         recognizer.config.multiprocessing = False
         result = ad.fine_align(
             self.align_fing_results,
+            recognizer=recognizer,
         )
         assert result is not None
 
@@ -335,6 +370,34 @@ class TestFineAlign:
         )
         assert result is not None
         ad.pretty_print_alignment(result, match_keys="fine_match_info")
+
+    def test_fine_align_close_seconds_filter(self):
+        close_seconds_filter = 10
+        recognizer = ad.FingerprintRecognizer(
+            load_fingerprints_file="tests/test_fingerprints.json"
+        )
+        recognizer.config.close_seconds_filter = close_seconds_filter
+        recognizer.config.multiprocessing = False
+        result = ad.fine_align(
+            self.align_fing_results,
+            recognizer=recognizer,
+        )
+        assert result is not None
+        ensure_close_seconds_filter(result, close_seconds_filter, "fine_match_info")
+
+    @pytest.mark.xfail
+    def test_fine_align_close_seconds_filter_fail(self):
+        # close_seconds_filter = 10
+        recognizer = ad.FingerprintRecognizer(
+            load_fingerprints_file="tests/test_fingerprints.json"
+        )
+        recognizer.config.multiprocessing = False
+        result = ad.fine_align(
+            self.align_fing_results,
+            recognizer=recognizer,
+        )
+        assert result is not None
+        ensure_close_seconds_filter(result, close_seconds_filter, "fine_match_info")
 
     def test_fine_align_options(self, tmpdir):
         recognizer = ad.CorrelationRecognizer()

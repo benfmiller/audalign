@@ -27,6 +27,9 @@ class BaseConfig(ABC):
     # Limits number of matches returned. Defaults to 30.
     match_len_filter: typing.Optional[int] = None
 
+    # if set, filters out each result if is within x seconds of a result with a stronger confidence
+    close_seconds_filter: typing.Optional[float] = None
+
     # Filters matches to only count within locality. In seconds
     # Not all recognizers have to implement locality
     locality: typing.Optional[float] = None
