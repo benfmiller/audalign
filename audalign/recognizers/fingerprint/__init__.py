@@ -301,10 +301,11 @@ class FingerprintRecognizer(BaseRecognizer):
             result = []
 
             for filename in filenames_to_fingerprint:
-                file_name = os.path.basename(filename)
-                if file_name in self.file_names:
-                    print(f"{file_name} already fingerprinted, continuing...")
-                    continue
+                if isinstance(filename, str): # fine alignments are tuples with offsets
+                    file_name = os.path.basename(filename)
+                    if file_name in self.file_names:
+                        print(f"{file_name} already fingerprinted, continuing...")
+                        continue
                 file_name, hashes = _fingerprint_worker_directory(filename)
                 if file_name == None:
                     continue

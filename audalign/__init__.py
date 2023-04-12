@@ -2,7 +2,7 @@
 This file serves as the host file for all audalign functions.
 
 recognitions and alignments use recognizer objects which can be configured with
-their respective configuration objects. 
+their respective configuration objects.
 
 There are a number of functions that can be used to enhance the alignments such
 as "uniform leveling" and "remove noise" functions. Writing shifts can also be nifty.
@@ -15,6 +15,7 @@ align and fine align them. Then, to have the shifts applied to the original file
 import os
 from functools import wraps
 from pprint import PrettyPrinter
+from typing import Optional
 
 from pydub.utils import mediainfo
 
@@ -55,6 +56,25 @@ def add_rankings(func):
     return wrapper_decorator
 
 
+def filter_close_seconds(func):
+    @wraps(func)
+    def wrapper_decorator(*args, **kwargs):
+        results = func(*args, **kwargs)
+        if results is None:
+            return results
+        assert results.get("rankings") is not None #This should run after rankings are added
+        close_seconds_filter = BaseConfig.close_seconds_filter
+        if kwargs.get("recognizer") is not None:
+            close_seconds_filter = kwargs.get("recognizer").config.close_seconds_filter
+        if close_seconds_filter is None:
+            return results
+        if "names_and_paths" in results:
+            return __filter_close_seconds_alignment(results, close_seconds_filter)
+        else:
+            return __filter_close_seconds(results, close_seconds_filter)
+    return wrapper_decorator
+
+@filter_close_seconds
 @add_rankings
 def recognize(
     target_file: str,
@@ -66,6 +86,7 @@ def recognize(
     return recognizer.recognize(target_file, against_path)
 
 
+@filter_close_seconds
 @add_rankings
 def align(
     directory_path: str,
@@ -101,6 +122,7 @@ def align(
     )
 
 
+@filter_close_seconds
 @add_rankings
 def align_files(
     filename_a,
@@ -143,6 +165,7 @@ def align_files(
     )
 
 
+@filter_close_seconds
 @add_rankings
 def target_align(
     target_file: str,
@@ -183,6 +206,7 @@ def target_align(
     )
 
 
+@filter_close_seconds
 @add_rankings
 def fine_align(
     results,
@@ -239,7 +263,7 @@ def fine_align(
     max_lags_not_set = False
     if recognizer.config.max_lags is None:
         recognizer.config.max_lags = 2
-        max_lags_set = True
+        max_lags_not_set = True
     new_results = aligner._align(
         recognizer=recognizer,
         filename_list=None,
@@ -514,6 +538,44 @@ def pretty_print_alignment(results, match_keys="both"):
     else:
         print("No Matches Found")
     print()
+
+def __filter_close_seconds(results: dict, close_seconds_filter: float):
+    results_iterable_keys = []
+    # all list items in against_filename dictionary values
+    len_offset_seconds = len(list(results["match_info"].values())[0]["offset_seconds"])
+    for key, value in list(results["match_info"].values())[0].items():
+        if isinstance(value, list) and len(value) == len_offset_seconds:
+            results_iterable_keys.append(key)
+    for against_dict in results["match_info"].values():
+        iter_index_pop = []
+        unfiltered_offset_seconds = []
+        if len(against_dict["offset_seconds"]) > 0:
+            unfiltered_offset_seconds.append(against_dict["offset_seconds"][0])
+        for i, val in enumerate(against_dict["offset_seconds"][1:]):
+            # values are already sorted by confidence
+            match = False
+            for unfiltered_val in unfiltered_offset_seconds:
+                if abs(abs(val) - abs(unfiltered_val)) <= close_seconds_filter:
+                    iter_index_pop.append(i+1)
+                    match = True
+                    break
+            if not match:
+                unfiltered_offset_seconds.append(val)
+        for key in results_iterable_keys:
+            temp_list = against_dict[key]
+            for i in iter_index_pop[::-1]:
+                temp_list.pop(i)
+            against_dict[key] = temp_list
+    return results
+
+def __filter_close_seconds_alignment(results: dict, close_seconds_filter: float):
+    match_keys = ["match_info"]
+    if results.get("fine_match_info") is not None:
+        match_keys += ["fine_match_info"]
+    for match_key in match_keys:
+        for value in results.get(match_key).values():
+            __filter_close_seconds(value, close_seconds_filter)
+    return results
 
 
 def recalc_shifts(
