@@ -20,7 +20,7 @@ llvmlite==0.41.1
 matplotlib==3.6.2
 networkx==3.0
 noisereduce==2.0.1
-numba==0.56.4
+numba==0.58.1
 numpy==1.26.2
 packaging==23.0
 Pillow==9.4.0
