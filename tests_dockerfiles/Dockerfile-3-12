@@ -1,5 +1,5 @@
-# docker build -f tests_dockerfiles/Dockerfile-3-9 .
-FROM python:3.9
+# docker build -f tests_dockerfiles/Dockerfile-3-12 .
+FROM python:3.12
 
 RUN apt-get update && apt-get install ffmpeg -y
 
