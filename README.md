@@ -172,6 +172,13 @@ fingerprint_rec.save_fingerprinted_files("save_file.json") # or .pickle
 fingerprint_rec.load_fingerprinted_files("save_file.json") # or .pickle
 ```
 
+## Resources and Tools
+
+For more tools to align audio and video files, see [forart/HyMPS's collection of alignment resources.](https://github.com/forart/HyMPS/blob/main/A_Tools.md#alignmentsynch-)
+
+[forart/HyMPS](https://github.com/forart/HyMPS/tree/main) also has many other audio/video resources.
+
+
 ## Getting ffmpeg set up
 
 You can use **ffmpeg or libav**.
