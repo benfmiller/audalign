@@ -1,13 +1,17 @@
-# docker build -f tests_dockerfiles/Dockerfile-3-8 .
+# docker build -f tests_dockerfiles/Dockerfile-3-11 .
 FROM python:3.11
 
 RUN apt-get update && apt-get install ffmpeg -y
 
 WORKDIR /tests_dir/
 
+RUN pip install --upgrade pip
+
 COPY requirements.txt /tests_dir
+COPY requirements_dev.txt /tests_dir
 
 RUN pip install -r requirements.txt
+RUN pip install -r requirements_dev.txt
 # RUN pip install noisereduce numpy pytest scipy pydub pytest-xdist scikit-image
 
 COPY audalign /tests_dir/audalign
