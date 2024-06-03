@@ -54,6 +54,11 @@ pip install audalign
 
 in the directory
 
+### Optional dependencies
+
+- visrecognize: additional recognizer based on spectrogram image comparison. `pip install audalign[visrecognize]`
+- noisereduce: wrapper utils around [timsainb/noisereduce](https://github.com/timsainb/noisereduce). `pip install audalign[noisereduce]`
+
 ## Recognizers
 
 There are currently four included recognizers, each with their own config objects.
@@ -64,7 +69,7 @@ import audalign as ad
 fingerprint_rec = ad.FingerprintRecognizer()
 correlation_rec = ad.CorrelationRecognizer()
 cor_spec_rec = ad.CorrelationSpectrogramRecognizer()
-visual_rec = ad.VisualRecognizer()
+visual_rec = ad.VisualRecognizer() # requires installting optional visrecognize dependencies
 
 fingerprint_rec.config.set_accuracy(3)
 # recognizer.config.some_item
@@ -108,7 +113,7 @@ Correlation is more precise than fingerprints and will always give a best alignm
 ## Other Functions
 
 ```python
-# wrapper for timsainb/noisereduce
+# wrapper for timsainb/noisereduce, optional dependency
 ad.remove_noise_file(
     "target/file",
     "5", # noise start in seconds
