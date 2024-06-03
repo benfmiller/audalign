@@ -1,0 +1,56 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "audalign"
+version = "1.2.4"
+description = "Audio Alignment and Recognition in Python"
+readme = "README.md"
+license = "MIT"
+authors = [
+    { name = "Ben Miller", email = "benfmiller132@gmail.com" },
+]
+maintainers = [
+    { name = "Ben Miller", email = "benfmiller132@gmail.com" },
+]
+keywords = [
+    "align",
+    "alignment",
+    "audio",
+    "fingerprinting",
+    "music",
+    "python",
+]
+dependencies = [
+    "matplotlib==3.8.2",
+    "numpy==1.26.4",
+    "pydub==0.25.1",
+    "scipy==1.12.0",
+    "setuptools==59.6.0",
+    "tqdm==4.66.2",
+]
+
+[project.optional-dependencies]
+noisereduce = [
+    "noisereduce==2.0.1",
+    "torch==2.2.0",
+]
+visrecognize = [
+    "Pillow==10.2.0",
+    "scikit-image==0.19.3",
+]
+test = [
+    "pytest==8.0.0",
+    "pytest-xdist==3.1.0",
+]
+
+[project.urls]
+Homepage = "http://github.com/benfmiller/audalign"
+Documentation = "https://github.com/benfmiller/audalign/wiki"
+Changelog = "https://github.com/benfmiller/audalign/blob/main/CHANGELOG.md"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/audalign",
+]
