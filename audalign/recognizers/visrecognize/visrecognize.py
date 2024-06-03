@@ -12,8 +12,12 @@ from audalign.config.visual import VisualConfig
 from audalign.filehandler import find_files, get_shifted_file, read
 from PIL import Image
 from pydub.exceptions import CouldntDecodeError
-from skimage.metrics import mean_squared_error
-from skimage.metrics import structural_similarity as ssim
+try:
+    from skimage.metrics import mean_squared_error
+    from skimage.metrics import structural_similarity as ssim
+except ImportError:
+    # Optional dependency
+    ...
 
 upper_clip = 255
 

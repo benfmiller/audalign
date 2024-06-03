@@ -1,6 +1,10 @@
 import audalign as ad
 import os
 import pytest
+try:
+    import skimage
+except ImportError:
+    skimage = None
 
 test_file = "test_audio/testers/test.mp3"
 test_file2 = "test_audio/testers/pink_noise.mp3"
@@ -172,6 +176,7 @@ class TestRecognize:
         self.fingerprint_recognizer.config = ad.config.fingerprint.FingerprintConfig()
 
     @pytest.mark.smoke
+    @pytest.mark.skipif(skimage is None, reason="visrecognize optional dependencies not installed")
     def test_visrecognize(self):
         recognizer = ad.VisualRecognizer()
         recognizer.config.img_width = 0.5
@@ -183,6 +188,7 @@ class TestRecognize:
         )
         assert results
 
+    @pytest.mark.skipif(skimage is None, reason="visrecognize optional dependencies not installed")
     def test_visrecognize_single_threaded(self):
 
         recognizer = ad.VisualRecognizer()
@@ -197,6 +203,7 @@ class TestRecognize:
         )
         assert results
 
+    @pytest.mark.skipif(skimage is None, reason="visrecognize optional dependencies not installed")
     def test_visrecognize_options(self):
         recognizer = ad.VisualRecognizer()
         recognizer.config.img_width = 0.5
@@ -213,6 +220,7 @@ class TestRecognize:
         assert results
         assert results["match_info"]["test.mp3"]["mse"][0] == 20000000.0
 
+    @pytest.mark.skipif(skimage is None, reason="visrecognize optional dependencies not installed")
     def test_visrecognize_directory(self):
         recognizer = ad.VisualRecognizer()
         recognizer.config.img_width = 0.5

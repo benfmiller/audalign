@@ -9,11 +9,24 @@ import os
 import typing
 import copy
 from functools import partial
+from functools import wraps
 
+def _import_optional_dependencies(func):
+    @wraps(func)
+    def wrapper_decorator(*args, **kwargs):
+        try:
+            import skimage
+        except ImportError:
+            raise ImportError("skimage not found, please install 'visrecognize' module")
+        results = func(*args, **kwargs)
+        return results
+
+    return wrapper_decorator
 
 class VisualRecognizer(BaseRecognizer):
     config: VisualConfig
 
+    @_import_optional_dependencies
     def __init__(self, config: VisualConfig = None):
         self.config = VisualConfig() if config is None else config
         self.last_recognition = None
