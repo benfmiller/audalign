@@ -29,7 +29,7 @@ jobs:
         pip install build wheel twine
     - name: Build and publish
       run: |
-        python -m build --wheel
+        python -m build
     - name: Publish package
       uses: pypa/gh-action-pypi-publish@v1.8.11
       with:
