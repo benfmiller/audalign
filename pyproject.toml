@@ -6,6 +6,7 @@ build-backend = "hatchling.build"
 name = "audalign"
 version = "1.2.4"
 description = "Audio Alignment and Recognition in Python"
+requires-python = ">= 3.8"
 readme = "README.md"
 license = "MIT"
 authors = [
