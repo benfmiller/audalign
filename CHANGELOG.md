@@ -1,5 +1,12 @@
 # Change Log
 
+## [1.3.0] 2024 - 06 - 02
+
+### Changed
+
+- Migrated to pyproject.toml
+- Extracted noisereduce and visrecognize to optional dependencies
+
 ## [1.2.4] 2024 - 01 - 07
 
 ### Added
