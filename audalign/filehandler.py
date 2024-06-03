@@ -4,14 +4,21 @@ import multiprocessing
 import os
 import typing
 from functools import partial
+from functools import wraps
 
-import noisereduce
 import numpy as np
 from numpy.core.defchararray import array
 from pydub import AudioSegment, effects
 from pydub.exceptions import CouldntDecodeError
 
 from audalign.config import BaseConfig
+
+try:
+    import noisereduce
+except ImportError:
+    # Optional dependency
+    ...
+
 
 cant_write_ext = [".mov", ".mp4", ".m4a"]
 cant_read_ext = [".txt", ".md", ".pkf", ".py", ".pyc"]
@@ -29,6 +36,18 @@ can_read_ext = [
     ".wma",
     ".flac",
 ]
+
+def _import_optional_dependencies(func):
+    @wraps(func)
+    def wrapper_decorator(*args, **kwargs):
+        try:
+            import noisereduce
+        except ImportError:
+            raise ImportError("skimage not found, please install 'visrecognize' module")
+        results = func(*args, **kwargs)
+        return results
+
+    return wrapper_decorator
 
 
 def find_files(path, extensions=["*"]):
@@ -192,6 +211,7 @@ def _int16ify_data(data: array):
     return data.astype(np.int16)
 
 
+@_import_optional_dependencies
 def noise_remove(
     filepath,
     noise_start,
@@ -296,6 +316,7 @@ def noise_remove_directory(
             _reduce_noise(i)
 
 
+@_import_optional_dependencies
 def _remove_noise(
     file_path,
     noise_section=[],

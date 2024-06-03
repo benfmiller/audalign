@@ -4,6 +4,10 @@ import pickle
 import audalign as ad
 import pytest
 
+try:
+    import noisereduce
+except ImportError:
+    noisereduce = None
 
 def test_always_true():
     assert True
@@ -162,6 +166,7 @@ class TestUniformLevel:
         )
 
 
+@pytest.mark.skipif(noisereduce is None, reason="noisereduce optional dependencies not installed")
 class TestRemoveNoise:
     test_file = "test_audio/testers/test.mp3"
 

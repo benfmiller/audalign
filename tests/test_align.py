@@ -4,6 +4,11 @@ import audalign as ad
 import pytest
 from audalign import recognizers
 
+try:
+    import skimage
+except ImportError:
+    skimage = None
+
 test_file_eig = "test_audio/test_shifts/Eigen-20sec.mp3"
 test_file_eig2 = "test_audio/test_shifts/Eigen-song-base.mp3"
 test_folder_eig = "test_audio/test_shifts/"
@@ -98,6 +103,7 @@ class TestAlign:
         assert result is not None
         ad.pretty_print_alignment(result)
 
+    @pytest.mark.skipif(skimage is None, reason="visrecognize optional dependencies not installed")
     def test_align_vis(self, tmpdir):
         recognizer = ad.VisualRecognizer()
         recognizer.config.volume_threshold = 214
@@ -147,6 +153,7 @@ class TestAlignFiles:
         )
         assert result
 
+    @pytest.mark.skipif(skimage is None, reason="visrecognize optional dependencies not installed")
     def test_align_files_vis(self, tmpdir):
         recognizer = ad.VisualRecognizer()
         recognizer.config.volume_threshold = 214
@@ -214,6 +221,7 @@ class TestAlignFiles:
         ensure_close_seconds_filter(result, close_seconds_filter)
 
 class TestTargetAlign:
+    @pytest.mark.skipif(skimage is None, reason="visrecognize optional dependencies not installed")
     def test_target_align_vis(self, tmpdir):
         recognizer = ad.VisualRecognizer()
         recognizer.config.volume_threshold = 214
@@ -234,6 +242,7 @@ class TestTargetAlign:
         )
         assert result is not None
 
+    @pytest.mark.skipif(skimage is None, reason="visrecognize optional dependencies not installed")
     def test_target_align_vis_mse(self, tmpdir):
         recognizer = ad.VisualRecognizer()
         recognizer.config.volume_threshold = 214
@@ -352,6 +361,7 @@ class TestFineAlign:
         assert result is not None
         ad.pretty_print_alignment(result, match_keys="match_info")
 
+    @pytest.mark.skipif(skimage is None, reason="visrecognize optional dependencies not installed")
     def test_fine_align_visual(self, tmpdir):
         recognizer = ad.VisualRecognizer()
         recognizer.config.volume_threshold = 210
