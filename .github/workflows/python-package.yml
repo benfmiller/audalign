@@ -64,9 +64,8 @@ jobs:
         sudo apt install libsndfile1-dev
         python -m pip install wheel
         python -m pip install --upgrade pip
-        python -m pip install flake8 pytest
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-        if [ -f requirements_dev.txt ]; then pip install -r requirements_dev.txt; fi
+        python -m pip install flake8
+        pip install -e .[visrecognize,noisereduce,test]
 
     - name: Lint with flake8
       run: |
@@ -78,10 +77,3 @@ jobs:
     - name: Test with pytest
       run: |
         pytest
-
-# replaced with this https://github.com/KyleMayes/install-llvm-action
-# sudo apt install llvm-9
-# sudo -i
-# cd /usr/bin
-# rm llvm-config #if it exists already, which probably it does
-# ln -s llvm-config-10 llvm-config
