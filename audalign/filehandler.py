@@ -212,6 +212,7 @@ def noise_remove(
     write_extension: str = None,
     alt_noise_filepath=None,
     prop_decrease=1,
+    config: BaseConfig = FingerprintConfig(),
     **kwargs,
 ):
     audiofile = create_audiosegment(filepath)
@@ -270,6 +271,7 @@ def noise_remove_directory(
     prop_decrease=1,
     use_multiprocessing=False,
     num_processes=None,
+    config: BaseConfig = FingerprintConfig(),
     **kwargs,
 ):
     noise_data = _floatify_data(create_audiosegment(noise_filepath))[
@@ -285,6 +287,7 @@ def noise_remove_directory(
         destination_directory=destination_directory,
         prop_decrease=prop_decrease,
         write_extension=write_extension,
+        base_config=config,
         **kwargs,
     )
 
@@ -395,6 +398,7 @@ def uniform_level_directory(
     exclude_min_db=-70,
     use_multiprocessing=False,
     num_processes=None,
+    config: BaseConfig = FingerprintConfig(),
 ):
     _uniform_level_ = partial(
         _uniform_level,
@@ -404,6 +408,7 @@ def uniform_level_directory(
         width=width,
         overlap_ratio=overlap_ratio,
         exclude_min_db=exclude_min_db,
+        base_config=config,
     )
 
     if use_multiprocessing == True:

@@ -10,6 +10,7 @@ from functools import partial
 import pickle
 import json
 import typing
+from pydub.exceptions import CouldntDecodeError
 
 
 class FingerprintRecognizer(BaseRecognizer):
@@ -266,6 +267,8 @@ class FingerprintRecognizer(BaseRecognizer):
                 print("All files in directory already fingerprinted")
             else:
                 print("Directory contains 0 files or could not be found")
+                if self.config.fail_on_decode_error:
+                    raise CouldntDecodeError("Directory contains 0 files or could not be found")
             return
 
         if _file_audsegs is not None:

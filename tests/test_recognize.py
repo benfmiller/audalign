@@ -1,6 +1,11 @@
+from pydub.exceptions import CouldntDecodeError
 import audalign as ad
 import os
 import pytest
+from audalign.config.correlation import CorrelationConfig
+
+from audalign.config.fingerprint import FingerprintConfig
+
 try:
     import skimage
 except ImportError:
@@ -94,8 +99,22 @@ class TestFingerprinting:
         fingerprint_recognizer.load_fingerprinted_files("tests/test_fingerprints.json")
         fingerprint_recognizer.fingerprint_directory("test_audio/test_shifts")
 
-    def test_fingerprint_bad_file(self):
+    def test_fingerprint_bad_file_should_fail(self):
         fingerprint_recognizer = ad.FingerprintRecognizer()
+        assert len(fingerprint_recognizer.fingerprinted_files) == 0
+        assert len(fingerprint_recognizer.file_names) == 0
+        assert fingerprint_recognizer.total_fingerprints == 0
+
+        # both should print something and be just fine
+        with pytest.raises(CouldntDecodeError):
+            fingerprint_recognizer.fingerprint_file("filenot_even_there.txt")
+        with pytest.raises(CouldntDecodeError):
+            fingerprint_recognizer.fingerprint_file("requirements.txt")
+
+    def test_fingerprint_bad_file(self):
+        config = FingerprintConfig()
+        config.fail_on_decode_error = False
+        fingerprint_recognizer = ad.FingerprintRecognizer(config)
         assert len(fingerprint_recognizer.fingerprinted_files) == 0
         assert len(fingerprint_recognizer.file_names) == 0
         assert fingerprint_recognizer.total_fingerprints == 0
@@ -326,8 +345,19 @@ class TestRecognize:
         assert min(offset_seconds) < _max_lags
         assert max(offset_seconds) < _max_lags
 
-    def test_correcognize_directory_no_return(self):
+    def test_correcognize_directory_fail_on_decode(self):
         recognizer = ad.CorrelationRecognizer()
+        with pytest.raises(CouldntDecodeError):
+            ad.recognize(
+                test_file,
+                "tests/",
+                recognizer=recognizer,
+            )
+
+    def test_correcognize_directory_no_return(self):
+        config = CorrelationConfig()
+        config.fail_on_decode_error = False
+        recognizer = ad.CorrelationRecognizer(config)
         results = ad.recognize(
             test_file,
             "tests/",

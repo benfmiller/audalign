@@ -807,6 +807,7 @@ def uniform_level_file(
     width: float = 5,
     overlap_ratio: float = 0.5,
     exclude_min_db: float = -70,
+    config: BaseConfig = FingerprintConfig(),
 ) -> None:
     """
     Levels the file using either of two methods: normalize or average.
@@ -838,6 +839,7 @@ def uniform_level_file(
         width=width,
         overlap_ratio=overlap_ratio,
         exclude_min_db=exclude_min_db,
+        base_config=config,
     )
 
 
@@ -851,6 +853,7 @@ def uniform_level_directory(
     exclude_min_db: float = -70,
     multiprocessing: bool = True,
     num_processors: int = None,
+    config: BaseConfig = FingerprintConfig(),
 ) -> None:
     """
     Levels the file using either of two methods: normalize or average.
@@ -886,6 +889,7 @@ def uniform_level_directory(
         exclude_min_db=exclude_min_db,
         use_multiprocessing=multiprocessing,
         num_processes=num_processors,
+        config=config,
     )
 
 
@@ -897,6 +901,7 @@ def remove_noise_file(
     write_extension: str = None,
     alt_noise_filepath: str = None,
     prop_decrease: float = 1,
+    config: BaseConfig = FingerprintConfig(),
     **kwargs,
 ):
     """Remove noise from audio file by specifying start and end seconds of representative sound sections. Writes file to destination
@@ -920,6 +925,7 @@ def remove_noise_file(
         write_extension=write_extension,
         alt_noise_filepath=alt_noise_filepath,
         prop_decrease=prop_decrease,
+        config=config,
         **kwargs,
     )
 
@@ -934,6 +940,7 @@ def remove_noise_directory(
     prop_decrease: float = 1,
     multiprocessing: bool = True,
     num_processors: int = None,
+    config: BaseConfig = FingerprintConfig(),
     **kwargs,
 ):
     """Remove noise from audio files in directory by specifying start and end seconds of
@@ -962,6 +969,7 @@ def remove_noise_directory(
         prop_decrease=prop_decrease,
         use_multiprocessing=multiprocessing,
         num_processes=num_processors,
+        config=config,
         **kwargs,
     )
 
