@@ -12,30 +12,13 @@ from pydub import AudioSegment, effects
 from pydub.exceptions import CouldntDecodeError
 
 from audalign.config import BaseConfig
+from audalign.config.fingerprint import FingerprintConfig
 
 try:
     import noisereduce
 except ImportError:
     # Optional dependency
     ...
-
-
-cant_write_ext = [".mov", ".mp4", ".m4a"]
-cant_read_ext = [".txt", ".md", ".pkf", ".py", ".pyc"]
-can_read_ext = [
-    ".mov",
-    ".mp4",
-    ".m4a",
-    ".wav",
-    ".WAV",
-    ".mp3",
-    ".MOV",
-    ".ogg",
-    ".aiff",
-    ".aac",
-    ".wma",
-    ".flac",
-]
 
 def _import_optional_dependencies(func):
     @wraps(func)
@@ -135,7 +118,11 @@ def create_audiosegment(
     return audiofile
 
 
-def get_audio_files_directory(directory_path: str, full_path: bool = False) -> list:
+def get_audio_files_directory(directory_path: str, full_path: bool = False,
+        can_read_extensions: list[str] = BaseConfig.can_read_extensions,
+        cant_read_extensions: list[str] = BaseConfig.cant_read_extensions,
+
+                              ) -> list:
     """returns a list of the file paths in directory that are audio
 
     Args:
@@ -146,7 +133,7 @@ def get_audio_files_directory(directory_path: str, full_path: bool = False) -> l
     """
     aud_list = []
     for file_path, ext in find_files(directory_path):
-        if check_is_audio_file(file_path=file_path):
+        if check_is_audio_file(file_path=file_path, can_read_extensions=can_read_extensions, cant_read_extensions=cant_read_extensions):
             if full_path is False:
                 aud_list += [os.path.basename(file_path)]
             else:
@@ -154,12 +141,16 @@ def get_audio_files_directory(directory_path: str, full_path: bool = False) -> l
     return aud_list
 
 
-def check_is_audio_file(file_path: str) -> bool:
+def check_is_audio_file(
+        file_path: str,
+        can_read_extensions: list[str] = BaseConfig.can_read_extensions,
+        cant_read_extensions: list[str] = BaseConfig.cant_read_extensions,
+        ) -> bool:
     ext = os.path.splitext(file_path)[1]
     try:
-        if ext in [".txt", ".json"] or ext in cant_read_ext:
+        if ext in [".txt", ".json"] or ext in cant_read_extensions:
             return False
-        elif ext.lower() not in can_read_ext:
+        elif ext.lower() not in can_read_extensions:
             AudioSegment.from_file(file_path)
     except CouldntDecodeError:
         return False
@@ -172,6 +163,7 @@ def read(
     start_end: tuple = None,
     sample_rate=BaseConfig.sample_rate,
     normalize: bool = BaseConfig.normalize,
+    cant_read_extensions: list[str] = BaseConfig.cant_read_extensions,
 ):
     """
     Reads any file supported by pydub (ffmpeg) and returns a numpy array and the bit depth
@@ -186,7 +178,7 @@ def read(
         frame_rate (int): returns the bit depth
     """
 
-    if os.path.splitext(filename)[1] in cant_read_ext:
+    if os.path.splitext(filename)[1] in cant_read_extensions:
         raise CouldntDecodeError
     audiofile = create_audiosegment(
         filename, start_end=start_end, sample_rate=sample_rate, normalize=normalize
@@ -323,6 +315,7 @@ def _remove_noise(
     write_extension: str = None,
     destination_directory="",
     prop_decrease=1,
+    base_config: BaseConfig = FingerprintConfig(),
     **kwargs,
 ):
 
@@ -343,7 +336,7 @@ def _remove_noise(
 
         file_name = os.path.basename(file_path)
         destination_name = os.path.join(destination_directory, file_name)
-        if os.path.splitext(destination_name)[1].lower() in cant_write_ext:
+        if os.path.splitext(destination_name)[1].lower() in base_config.cant_write_extensions:
             destination_name = os.path.splitext(destination_name)[0] + ".wav"
 
         if write_extension is not None:
@@ -441,6 +434,7 @@ def _uniform_level(
     width: float = 5,
     overlap_ratio=0.5,
     exclude_min_db=-70,
+    base_config: BaseConfig = FingerprintConfig(),
 ):
     assert overlap_ratio < 1 and overlap_ratio >= 0
     try:
@@ -481,7 +475,7 @@ def _uniform_level(
         file_name = os.path.basename(file_path)
         if len(os.path.splitext(destination_name)[1]) == 0:
             destination_name = os.path.join(destination_name, file_name)
-        if os.path.splitext(destination_name)[1].lower() in cant_write_ext:
+        if os.path.splitext(destination_name)[1].lower() in base_config.cant_write_extensions:
             destination_name = os.path.splitext(destination_name)[0] + ".wav"
 
         if write_extension is not None:
@@ -656,6 +650,7 @@ def _shift_write_separate(
     return_files: bool = False,
     unprocessed: bool = False,
     normalize: bool = BaseConfig.normalize,
+    base_config: BaseConfig = FingerprintConfig(),
 ):
     audsegs = _shift_prepend_space_audsegs(
         files_shifts=files_shifts,
@@ -673,6 +668,7 @@ def _shift_write_separate(
             file_path=file_path,
             destination_path=destination_path,
             write_extension=write_extension,
+            base_config=base_config,
         )
 
     audsegs = list(audsegs.values())
@@ -754,12 +750,13 @@ def _write_single_shift(
     file_path: str,
     destination_path: str,
     write_extension: str,
+    base_config: BaseConfig = FingerprintConfig(),
 ):
 
     file_name = os.path.basename(file_path)
     destination_name = os.path.join(destination_path, file_name)  # type: ignore
 
-    if os.path.splitext(destination_name)[1] in cant_write_ext:
+    if os.path.splitext(destination_name)[1] in base_config.cant_write_extensions:
         destination_name = os.path.splitext(destination_name)[0] + ".wav"
 
     if write_extension:

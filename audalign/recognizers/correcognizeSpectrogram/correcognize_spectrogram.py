@@ -360,6 +360,7 @@ def get_array(
             start_end=start_end,
             sample_rate=config.sample_rate,
             normalize=config.normalize,
+            cant_read_extensions=config.cant_read_extensions,
         )[0]
     if sos is not None:
         target_array = signal.sosfilt(sos, target_array)

@@ -49,6 +49,7 @@ class BaseConfig(ABC):
     LOCALITY_SECS = "locality_seconds"
 
     ######################################################################
+    # rankings settings
 
     # Add to ranking if second match is close
     rankings_second_is_close_add: int = 1
@@ -71,3 +72,28 @@ class BaseConfig(ABC):
     # used if rankings_get_top_num_match is not None. (used in visual)
     # subtracts second value from ranking if num matches is above first value
     rankings_num_matches_tups: typing.Optional[tuple] = None
+
+    ######################################################################
+    # filehandling settings
+
+    # file types that can't be read and not explicitly filtered out by
+    # below extention lists will cause a crash
+    fail_on_decode_error = True
+
+    # 
+    cant_write_extensions = [".mov", ".mp4", ".m4a"]
+    cant_read_extensions = [".txt", ".md", ".pkf", ".py", ".pyc"]
+    can_read_extensions = [
+        ".mov",
+        ".mp4",
+        ".m4a",
+        ".wav",
+        ".WAV",
+        ".mp3",
+        ".MOV",
+        ".ogg",
+        ".aiff",
+        ".aac",
+        ".wma",
+        ".flac",
+    ]

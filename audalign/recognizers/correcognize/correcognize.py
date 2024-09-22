@@ -66,6 +66,7 @@ def correcognize(
         _file_audsegs=None,
         sos=sos,
         normalize=config.normalize,
+        cant_read_extensions=config.cant_read_extensions,
     )
     against_array = get_array(
         against_file_path,
@@ -74,6 +75,7 @@ def correcognize(
         _file_audsegs=None,
         sos=sos,
         normalize=config.normalize,
+        cant_read_extensions=config.cant_read_extensions,
     )
 
     t = time.time()
@@ -147,6 +149,7 @@ def correcognize_directory(
             _file_audsegs=_file_audsegs,
             sos=sos,
             normalize=config.normalize,
+            cant_read_extensions=config.cant_read_extensions,
         )
         target_file_path = (target_file_path, target_array)
 
@@ -300,6 +303,7 @@ def _correcognize_dir(
             _file_audsegs=_file_audsegs,
             sos=sos_filter,
             normalize=config.normalize,
+            cant_read_extensions=config.cant_read_extensions,
         )
     else:
         target_file_path, target_array = target_file_path
@@ -316,6 +320,7 @@ def _correcognize_dir(
             _file_audsegs=_file_audsegs,
             sos=sos_filter,
             normalize=config.normalize,
+            cant_read_extensions=config.cant_read_extensions,
         )
         return _correcognize(
             target_array=target_array,
@@ -343,6 +348,7 @@ def get_array(
     _file_audsegs,
     sos,
     normalize: bool,
+    cant_read_extensions: list[str] = CorrelationConfig.cant_read_extensions,
 ):
     if _file_audsegs is not None:
         target_array = get_shifted_file(
@@ -353,7 +359,11 @@ def get_array(
         )
     else:
         target_array = read(
-            file_path, start_end=start_end, sample_rate=sample_rate, normalize=normalize
+            file_path,
+            start_end=start_end,
+            sample_rate=sample_rate,
+            normalize=normalize,
+            cant_read_extensions=cant_read_extensions,
         )[0]
     if sos is not None:
         target_array = signal.sosfilt(sos, target_array)

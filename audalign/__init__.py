@@ -20,6 +20,7 @@ from typing import Optional
 from pydub.utils import mediainfo
 
 import audalign.align as aligner
+from audalign.config.fingerprint import FingerprintConfig
 import audalign.datalign as datalign
 import audalign.filehandler as filehandler
 from audalign.config import BaseConfig
@@ -311,6 +312,7 @@ def write_processed_file(
     start_end: tuple = None,
     sample_rate: int = BaseConfig.sample_rate,
     normalize: bool = BaseConfig.normalize,
+    cant_read_extensions: list[str] = BaseConfig.cant_read_extensions,
 ) -> None:
     """
     writes given file to the destination file after processing for fingerprinting
@@ -329,6 +331,7 @@ def write_processed_file(
         start_end=start_end,
         sample_rate=sample_rate,
         normalize=normalize,
+        cant_read_extensions=cant_read_extensions,
     )
 
 
@@ -695,6 +698,7 @@ def write_shifts_from_results(
     write_multi_channel: bool = False,
     unprocessed: bool = False,
     normalize: bool = BaseConfig.normalize,
+    config: BaseConfig = None,
 ):
     """
     For writing the results of an alignment with alternate source files or unprocessed files
@@ -715,10 +719,12 @@ def write_shifts_from_results(
         unprocessed (bool): If true, writes files without processing. For total files, only doesn't normalize
         normalize (bool): if true, normalizes file when read
     """
+    if config is None:
+        config = FingerprintConfig()
     if isinstance(read_from_dir, str):
         print("Finding audio files")
         read_from_dir = filehandler.get_audio_files_directory(
-            read_from_dir, full_path=True
+            read_from_dir, full_path=True, can_read_extensions=config.can_read_extensions, cant_read_extensions=config.cant_read_extensions
         )
     if read_from_dir is not None:
         results_files = {}
@@ -767,6 +773,7 @@ def convert_audio_file(
     start_end: tuple = None,
     sample_rate: int = None,
     normalize: bool = BaseConfig.normalize,
+    cant_read_extensions: list[str] = BaseConfig.cant_read_extensions,
 ):
     """
     Convert audio file to type specified in destination path
@@ -785,6 +792,7 @@ def convert_audio_file(
         start_end=start_end,
         sample_rate=sample_rate,
         normalize=normalize,
+        cant_read_extensions=cant_read_extensions,
     )
 
 

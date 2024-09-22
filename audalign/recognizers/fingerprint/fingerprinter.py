@@ -47,6 +47,7 @@ def _fingerprint_worker(
                 start_end=config.start_end,
                 sample_rate=config.sample_rate,
                 normalize=config.normalize,
+                cant_read_extensions=config.cant_read_extensions,
             )
         except FileNotFoundError:
             print(f'"{file_path}" not found')
