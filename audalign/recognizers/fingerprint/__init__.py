@@ -10,6 +10,7 @@ from functools import partial
 import pickle
 import json
 import typing
+from pydub.exceptions import CouldntDecodeError
 
 
 class FingerprintRecognizer(BaseRecognizer):
@@ -100,7 +101,7 @@ class FingerprintRecognizer(BaseRecognizer):
         fine_aud_file_dict: typing.Optional[dict],
     ) -> list:
         if target_aligning or file_dir:
-            file_names = filehandler.get_audio_files_directory(file_dir, full_path=True)
+            file_names = filehandler.get_audio_files_directory(file_dir, full_path=True, can_read_extensions=self.config.can_read_extensions, cant_read_extensions=self.config.cant_read_extensions)
         elif fine_aud_file_dict:
             file_names = fine_aud_file_dict.keys()
             for name, fingerprints in zip(self.file_names, self.fingerprinted_files):
@@ -171,12 +172,14 @@ class FingerprintRecognizer(BaseRecognizer):
         if against_path is not None:
             if os.path.isdir(against_path):
                 for path in filehandler.get_audio_files_directory(
-                    against_path, full_path=True
+                    against_path, full_path=True, can_read_extensions=self.config.can_read_extensions, cant_read_extensions=self.config.cant_read_extensions
                 ):
                     if path not in self.file_names and path not in to_fingerprint:
                         to_fingerprint += [path]
             elif os.path.isfile(against_path):
-                if filehandler.check_is_audio_file(against_path):
+                if filehandler.check_is_audio_file(against_path, 
+                                                   self.config.can_read_extensions,
+                                                   self.config.cant_read_extensions):
                     to_fingerprint += [against_path]
         if len(to_fingerprint) > 0:
             self.fingerprint_directory(to_fingerprint)
@@ -264,6 +267,8 @@ class FingerprintRecognizer(BaseRecognizer):
                 print("All files in directory already fingerprinted")
             else:
                 print("Directory contains 0 files or could not be found")
+                if self.config.fail_on_decode_error:
+                    raise CouldntDecodeError("Directory contains 0 files or could not be found")
             return
 
         if _file_audsegs is not None:

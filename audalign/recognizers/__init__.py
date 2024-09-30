@@ -4,6 +4,7 @@ from abc import ABC
 
 import audalign.filehandler as filehandler
 from audalign.config import BaseConfig
+from pydub.exceptions import CouldntDecodeError
 
 
 class BaseRecognizer(ABC):
@@ -46,10 +47,19 @@ class BaseRecognizer(ABC):
         if target_aligning:
             file_names = [os.path.basename(x) for x in file_list]
         elif file_dir:
-            file_names = filehandler.get_audio_files_directory(file_dir)
+            file_names = filehandler.get_audio_files_directory(
+                file_dir,
+                False,
+                self.config.can_read_extensions,
+                self.config.cant_read_extensions,
+            )
         elif fine_aud_file_dict:
+            if fine_aud_file_dict == None or len(fine_aud_file_dict.keys()) == 0:
+                raise CouldntDecodeError("No files found", fine_aud_file_dict)
             file_names = [os.path.basename(x) for x in fine_aud_file_dict.keys()]
         else:
+            if file_list == None or len(file_list) == 0:
+                raise CouldntDecodeError("No files found", file_list)
             file_names = [os.path.basename(x) for x in file_list]
         return file_names
 

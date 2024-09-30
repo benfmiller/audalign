@@ -336,8 +336,10 @@ def _correcognize_dir(
             **kwargs,
         )
 
-    except CouldntDecodeError:
+    except CouldntDecodeError as e:
         print(f'File "{against_file_path}" could not be decoded')
+        if config.fail_on_decode_error:
+            raise e
         return {}
 
 
@@ -360,6 +362,7 @@ def get_array(
             start_end=start_end,
             sample_rate=config.sample_rate,
             normalize=config.normalize,
+            cant_read_extensions=config.cant_read_extensions,
         )[0]
     if sos is not None:
         target_array = signal.sosfilt(sos, target_array)

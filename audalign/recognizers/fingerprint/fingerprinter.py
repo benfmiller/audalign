@@ -47,14 +47,17 @@ def _fingerprint_worker(
                 start_end=config.start_end,
                 sample_rate=config.sample_rate,
                 normalize=config.normalize,
+                cant_read_extensions=config.cant_read_extensions,
             )
         except FileNotFoundError:
             print(f'"{file_path}" not found')
             return None, None
-        except (
-            CouldntDecodeError,
-            IndexError,
-        ):  # Pydub throws IndexErrors for some files on Ubuntu (json, txt, others?)
+        except CouldntDecodeError as e:
+            print(f'File "{file_name}" could not be decoded')
+            if config.fail_on_decode_error:
+                raise e
+            return None, None
+        except IndexError:  # Pydub throws IndexErrors for some files on Ubuntu (json, txt, others?)
             print(f'File "{file_name}" could not be decoded')
             return None, None
     elif type(file_path) == tuple:
