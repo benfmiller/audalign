@@ -24,12 +24,12 @@ keywords = [
     "python",
 ]
 dependencies = [
-    "matplotlib==3.8.2",
-    "numpy==1.26.4",
-    "pydub==0.25.1",
-    "scipy==1.12.0",
-    "setuptools==59.6.0",
-    "tqdm==4.66.2",
+    "matplotlib>=3.8.2",
+    "numpy>=1.26.4",
+    "pydub>=0.25.1",
+    "scipy>=1.12.0",
+    "setuptools>=59.6.0",
+    "tqdm>=4.66.2",
 ]
 
 [project.optional-dependencies]
