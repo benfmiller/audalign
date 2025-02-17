@@ -1,5 +1,17 @@
 # Change Log
 
+## [1.3.1] 2025 - 02 - 16
+
+### Added
+
+- write_files_unprocessed arg to align functions to specify to write files unprocessed
+- check for fail_on_decode_error, configuring in recognizer settings
+
+### Changed
+
+- Align functions by default write files unprocessed
+- Move extension lists to config
+
 ## [1.3.0] 2024 - 06 - 02
 
 ### Changed
