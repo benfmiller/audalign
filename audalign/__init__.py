@@ -95,6 +95,7 @@ def align(
     write_extension: str = None,
     write_multi_channel: bool = False,
     recognizer: BaseRecognizer = None,
+    write_files_unprocessed: bool = True,
 ):
     """
     Finds matches and relative offsets for all files in directory_path, aligns them, and writes them to destination_path
@@ -104,8 +105,9 @@ def align(
         directory_path (str): String of directory for alignment
         destination_path (str): String of path to write alignments to
         write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
-        recognizer (BaseRecognizer, optional): recognizer object
         write_multi_channel (bool): If true, only write out combined file with each input audio file being one channel. If false, write out shifted files separately and total combined file
+        recognizer (BaseRecognizer, optional): recognizer object
+        write_files_unprocessed (bool): If true, writes files without processing. For total files, only doesn't normalize
 
     Returns
     -------
@@ -120,6 +122,7 @@ def align(
         destination_path=destination_path,
         write_extension=write_extension,
         write_multi_channel=write_multi_channel,
+        write_files_unprocessed=write_files_unprocessed,
     )
 
 
@@ -133,6 +136,7 @@ def align_files(
     write_extension: str = None,
     write_multi_channel: bool = False,
     recognizer: BaseRecognizer = None,
+    write_files_unprocessed: bool = True,
 ):
     """
     Finds matches and relative offsets for all files given, aligns them, and writes them to destination_path if given
@@ -148,6 +152,7 @@ def align_files(
         write_extension (str): if given, writes all alignments with given extension (ex. ".wav" or "wav")
         write_multi_channel (bool): If true, only write out combined file with each input audio file being one channel. If false, write out shifted files separately and total combined file
         recognizer (BaseRecognizer, optional): recognizer object
+        write_files_unprocessed (bool): If true, writes files without processing. For total files, only doesn't normalize
 
     Returns
     -------
@@ -163,6 +168,7 @@ def align_files(
         destination_path=destination_path,
         write_extension=write_extension,
         write_multi_channel=write_multi_channel,
+        write_files_unprocessed=write_files_unprocessed,
     )
 
 
@@ -175,6 +181,7 @@ def target_align(
     write_extension: str = None,
     write_multi_channel: bool = False,
     recognizer: BaseRecognizer = None,
+    write_files_unprocessed: bool = True,
 ):
     """matches and relative offsets for all files in directory_path using only target file,
     aligns them, and writes them to destination_path if given. Uses fingerprinting by defualt,
@@ -188,6 +195,7 @@ def target_align(
         write_extension (str, optional): audio file format to write to. Defaults to None.
         write_multi_channel (bool): If true, only write out combined file with each input audio file being one channel. If false, write out shifted files separately and total combined file
         recognizer (BaseRecognizer, optional): recognizer object
+        write_files_unprocessed (bool): If true, writes files without processing. For total files, only doesn't normalize
 
     Returns
     -------
@@ -204,6 +212,7 @@ def target_align(
         target_aligning=True,
         write_extension=write_extension,
         write_multi_channel=write_multi_channel,
+        write_files_unprocessed=write_files_unprocessed,
     )
 
 
@@ -216,6 +225,7 @@ def fine_align(
     write_multi_channel: bool = False,
     match_index: int = 0,
     recognizer: BaseRecognizer = None,
+    write_files_unprocessed: bool = True,
 ):
     """
     Finds matches and relative offsets for all files in directory_path, aligns them, and writes them to destination_path
@@ -228,6 +238,7 @@ def fine_align(
         write_multi_channel (bool): If true, only write out combined file with each input audio file being one channel. If false, write out shifted files separately and total combined file
         match_index (int): reorders the input results to the given match index.
         recognizer (BaseRecognizer, optional): recognizer object
+        write_files_unprocessed (bool): If true, writes files without processing. For total files, only doesn't normalize
 
     Returns
     -------
@@ -296,6 +307,7 @@ def fine_align(
                 write_extension,
                 write_multi_channel=write_multi_channel,
                 normalize=recognizer.config.normalize,
+                unprocessed=write_files_unprocessed,
             )
         except PermissionError:
             print("Permission Denied for write fine_align")

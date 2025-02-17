@@ -54,6 +54,19 @@ class TestAlign:
         assert result
         ad.pretty_print_results(result)
 
+    def test_align_fingerprint_write_processed(self, tmpdir):
+        result = ad.align("test_audio/test_shifts", tmpdir)
+        assert result
+        result = ad.align(
+            "test_audio/test_shifts",
+            tmpdir,
+            write_extension=".wav",
+            recognizer=self.fingerprint_recognizer,
+            write_files_unprocessed=False,
+        )
+        assert result
+        ad.pretty_print_results(result)
+
     def test_align_cor(self, tmpdir):
         result = ad.align(
             "test_audio/test_shifts", tmpdir, recognizer=ad.CorrelationRecognizer()
