@@ -19,6 +19,7 @@ def _align(
     write_multi_channel: bool = False,
     fine_aud_file_dict: dict = None,
     target_aligning: bool = False,
+    write_files_unprocessed: bool = True,
 ):
     if destination_path is not None and not os.path.exists(destination_path):
         raise ValueError(f'destination_path "{destination_path}" does not exist')
@@ -57,6 +58,7 @@ def _align(
         write_multi_channel=write_multi_channel,
         target_aligning=target_aligning,
         fine_aligning=fine_aud_file_dict is not None,
+        write_files_unprocessed=write_files_unprocessed,
     )
 
     recognizer.align_post_hook(
@@ -163,6 +165,7 @@ def calc_final_alignments(
     write_multi_channel: bool,
     target_aligning,
     fine_aligning: bool,
+    write_files_unprocessed: bool,
 ):
     # TODO: refactor into a recursive/graph alignment finding method
     # Would allow for overlaps with overlaps with overlaps
@@ -203,6 +206,7 @@ def calc_final_alignments(
                 file_names_and_paths,
                 write_extension,
                 write_multi_channel,
+                unprocessed=write_files_unprocessed,
             )
         except PermissionError:
             print("Permission Denied for write align")
