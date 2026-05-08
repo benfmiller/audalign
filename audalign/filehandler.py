@@ -764,6 +764,8 @@ def _write_single_shift(
     if os.path.splitext(destination_name)[1] in base_config.cant_write_extensions:
         destination_name = os.path.splitext(destination_name)[0] + ".wav"
 
+    os.makedirs(os.path.dirname(destination_name), exist_ok=True)
+
     if write_extension:
         destination_name = os.path.splitext(destination_name)[0] + write_extension
 
