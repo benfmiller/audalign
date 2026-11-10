@@ -503,6 +503,7 @@ def calculate_comp_values(
             s = ssim(
                 target_arr2d[index_tuple[0] : index_tuple[0] + img_width],
                 against_arr2d[index_tuple[1] : index_tuple[1] + img_width],
+                data_range=2,
             )
             results_list += [(index_tuple[1], index_tuple[0], (m, s))]
         except ZeroDivisionError as e:
