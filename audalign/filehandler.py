@@ -7,7 +7,6 @@ from functools import partial
 from functools import wraps
 
 import numpy as np
-from numpy.core.defchararray import array
 from pydub import AudioSegment, effects
 from pydub.exceptions import CouldntDecodeError
 
@@ -197,7 +196,7 @@ def _floatify_data(audio_segment: AudioSegment):
     return data
 
 
-def _int16ify_data(data: array):
+def _int16ify_data(data: np.ndarray):
     data[np.where(data < 0)] *= 32768
     data[np.where(data > 0)] *= 32767
     return data.astype(np.int16)
