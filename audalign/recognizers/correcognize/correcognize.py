@@ -1,6 +1,7 @@
 import multiprocessing
 import os
 import time
+from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 
 import audalign.recognizers.fingerprint.fingerprinter as fingerprinter
@@ -59,24 +60,30 @@ def correcognize(
         10, config.freq_threshold, "highpass", fs=config.sample_rate, output="sos"
     )
     # sos = signal.butter(10, 0.125, "hp", fs=sample_rate, output="sos")
-    target_array = get_array(
-        target_file_path,
-        start_end=config.start_end,
-        sample_rate=config.sample_rate,
-        _file_audsegs=None,
-        sos=sos,
-        normalize=config.normalize,
-        cant_read_extensions=config.cant_read_extensions,
-    )
-    against_array = get_array(
-        against_file_path,
-        start_end=config.start_end_against,
-        sample_rate=config.sample_rate,
-        _file_audsegs=None,
-        sos=sos,
-        normalize=config.normalize,
-        cant_read_extensions=config.cant_read_extensions,
-    )
+    # Decoding dominates; read both files at once (ffmpeg runs out of process)
+    with ThreadPoolExecutor(2) as executor:
+        target_future = executor.submit(
+            get_array,
+            target_file_path,
+            start_end=config.start_end,
+            sample_rate=config.sample_rate,
+            _file_audsegs=None,
+            sos=sos,
+            normalize=config.normalize,
+            cant_read_extensions=config.cant_read_extensions,
+        )
+        against_future = executor.submit(
+            get_array,
+            against_file_path,
+            start_end=config.start_end_against,
+            sample_rate=config.sample_rate,
+            _file_audsegs=None,
+            sos=sos,
+            normalize=config.normalize,
+            cant_read_extensions=config.cant_read_extensions,
+        )
+        target_array = target_future.result()
+        against_array = against_future.result()
 
     t = time.time()
     file_match = _correcognize(
