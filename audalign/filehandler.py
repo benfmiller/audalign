@@ -10,7 +10,7 @@ from functools import wraps
 
 import numpy as np
 from pydub import AudioSegment, effects
-from pydub.audio_segment import fix_wav_headers
+from pydub.audio_segment import extract_wav_headers, read_wav_audio
 from pydub.exceptions import CouldntDecodeError
 
 from audalign import pcm
@@ -72,16 +72,47 @@ def _from_file(filepath: str) -> AudioSegment:
     if filepath.lower().endswith(".wav"):
         return AudioSegment.from_file(filepath)
     command = [AudioSegment.converter, "-y", "-i", filepath, "-acodec", "pcm_s16le", "-vn", "-f", "wav", "-"]
-    p = subprocess.run(command, stdin=subprocess.DEVNULL, capture_output=True)
-    if p.returncode == 0 and len(p.stdout):
-        streams = _AUDIO_STREAM.findall(p.stderr.decode(errors="ignore").split("Output #0")[0])
+    p = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = p.communicate()
+    if p.returncode == 0 and len(out):
+        streams = _AUDIO_STREAM.findall(err.decode(errors="ignore").split("Output #0")[0])
         if len(streams) == 1:
             codec, sample_fmt = streams[0]
             if (codec in _FLTP_AS_S16 and sample_fmt == "fltp") or (codec == "pcm_s16le" and sample_fmt == "s16"):
-                data = bytearray(p.stdout)
-                fix_wav_headers(data)
-                return AudioSegment(bytes(data))
+                segment = _segment_from_wav_pipe(out)
+                if segment is not None:
+                    return segment
+    del out
     return AudioSegment.from_file(filepath)
+
+
+def _segment_from_wav_pipe(out: bytes):
+    """AudioSegment(bytes(fix_wav_headers(bytearray(out)))), as pydub builds it, with one copy
+    of the samples instead of three.
+
+    fix_wav_headers only rewrites the RIFF size and the data chunk size so that the data chunk
+    runs to the end of the output; the format chunk is untouched. So the format comes from the
+    header and the samples are everything after the data chunk header. Returns None when the
+    output is not plain 16-bit WAV, and the caller falls back to pydub.
+    """
+    headers = extract_wav_headers(out)
+    if not headers or headers[-1].id != b"data":
+        return None
+    if len(out) > 2**32:
+        raise CouldntDecodeError("Unable to process >4GB files")
+    data_start = headers[-1].position + 8
+    wav = read_wav_audio(out[:data_start])  # format fields only; raises like pydub on a bad format
+    if wav.bits_per_sample != 16:
+        return None
+    return AudioSegment(
+        data=out[data_start:],
+        metadata={
+            "channels": wav.channels,
+            "sample_width": 2,
+            "frame_rate": wav.sample_rate,
+            "frame_width": wav.channels * 2,
+        },
+    )
 
 
 def _to_mono_16bit(audiofile: AudioSegment, sample_rate, normalize) -> AudioSegment:

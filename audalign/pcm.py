@@ -9,7 +9,7 @@ import math
 import numpy as np
 from pydub.utils import db_to_float, ratio_to_db
 
-_CHUNK = 1 << 20  # samples per chunk, bounds the float64 temporaries on long files
+_CHUNK = 1 << 16  # samples per chunk: bounds the float64 temporaries (about 10 MB) at no cost in speed
 
 
 def _fbound(val, minval, maxval):
