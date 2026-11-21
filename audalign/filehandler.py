@@ -2,12 +2,15 @@ import fnmatch
 import math
 import multiprocessing
 import os
+import re
+import subprocess
 import typing
 from functools import partial
 from functools import wraps
 
 import numpy as np
 from pydub import AudioSegment, effects
+from pydub.audio_segment import fix_wav_headers
 from pydub.exceptions import CouldntDecodeError
 
 from audalign import pcm
@@ -53,6 +56,34 @@ def find_files(path, extensions=["*"]):
                 yield (p, os.path.splitext(p)[1])
 
 
+# Codecs pydub decodes to pcm_s16le when ffprobe reports fltp (AudioSegment.from_file)
+_FLTP_AS_S16 = ("mp3", "mp4", "aac", "webm", "ogg")
+_AUDIO_STREAM = re.compile(r"Stream #\d+:\d+.*?: Audio: (\w+)[^,]*, \d+ Hz, [^,]+, (\w+)")
+
+
+def _from_file(filepath: str) -> AudioSegment:
+    """AudioSegment.from_file(filepath), without its ffprobe run when the decode is known.
+
+    pydub runs ffprobe to pick the PCM codec, then ffmpeg. For the common cases the codec is
+    pcm_s16le (fltp mp3/aac, 16-bit PCM), so decode straight to it, read the input stream
+    from ffmpeg's own log, and keep the samples only when pydub would have chosen the same
+    codec; otherwise decode again through pydub.
+    """
+    if filepath.lower().endswith(".wav"):
+        return AudioSegment.from_file(filepath)
+    command = [AudioSegment.converter, "-y", "-i", filepath, "-acodec", "pcm_s16le", "-vn", "-f", "wav", "-"]
+    p = subprocess.run(command, stdin=subprocess.DEVNULL, capture_output=True)
+    if p.returncode == 0 and len(p.stdout):
+        streams = _AUDIO_STREAM.findall(p.stderr.decode(errors="ignore").split("Output #0")[0])
+        if len(streams) == 1:
+            codec, sample_fmt = streams[0]
+            if (codec in _FLTP_AS_S16 and sample_fmt == "fltp") or (codec == "pcm_s16le" and sample_fmt == "s16"):
+                data = bytearray(p.stdout)
+                fix_wav_headers(data)
+                return AudioSegment(bytes(data))
+    return AudioSegment.from_file(filepath)
+
+
 def _to_mono_16bit(audiofile: AudioSegment, sample_rate, normalize) -> AudioSegment:
     """set_frame_rate, set_sample_width(2), set_channels(1) and effects.normalize, as pydub
     does them, with the audioop work done by audalign.pcm in numpy for 16-bit mono/stereo."""
@@ -92,7 +123,7 @@ def create_audiosegment(
     if os.path.splitext(filepath)[1] in [".txt", ".json"]:
         raise CouldntDecodeError
     if len(filepath) > 0:
-        audiofile = AudioSegment.from_file(filepath)
+        audiofile = _from_file(filepath)
     else:
         if length is None:
             audiofile = AudioSegment.silent(duration=0, frame_rate=sample_rate)
