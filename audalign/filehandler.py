@@ -10,6 +10,7 @@ import numpy as np
 from pydub import AudioSegment, effects
 from pydub.exceptions import CouldntDecodeError
 
+from audalign import pcm
 from audalign.config import BaseConfig
 from audalign.config.fingerprint import FingerprintConfig
 
@@ -52,6 +53,32 @@ def find_files(path, extensions=["*"]):
                 yield (p, os.path.splitext(p)[1])
 
 
+def _to_mono_16bit(audiofile: AudioSegment, sample_rate, normalize) -> AudioSegment:
+    """set_frame_rate, set_sample_width(2), set_channels(1) and effects.normalize, as pydub
+    does them, with the audioop work done by audalign.pcm in numpy for 16-bit mono/stereo."""
+    if (
+        audiofile.sample_width != 2
+        or audiofile.channels not in (1, 2)
+        or len(audiofile._data) % audiofile.frame_width
+    ):
+        audiofile = audiofile.set_frame_rate(sample_rate)
+        audiofile = audiofile.set_sample_width(2)
+        audiofile = audiofile.set_channels(1)
+        if normalize:
+            audiofile = effects.normalize(audiofile)
+        return audiofile
+    frames = np.frombuffer(audiofile._data, np.int16).reshape(-1, audiofile.channels)
+    if audiofile.frame_rate != sample_rate and len(frames):
+        frames = pcm.ratecv(frames, audiofile.frame_rate, sample_rate)
+    samples = pcm.tomono(frames) if audiofile.channels == 2 else frames[:, 0]
+    if normalize:
+        samples = pcm.normalize(samples)
+    return audiofile._spawn(
+        data=samples.tobytes(),
+        overrides={"frame_rate": sample_rate, "channels": 1, "frame_width": 2},
+    )
+
+
 def create_audiosegment(
     filepath: str,
     start_end: tuple = None,
@@ -72,11 +99,7 @@ def create_audiosegment(
         else:
             audiofile = AudioSegment.silent(duration=length, frame_rate=sample_rate)
     if not unprocessed:
-        audiofile = audiofile.set_frame_rate(sample_rate)
-        audiofile = audiofile.set_sample_width(2)
-        audiofile = audiofile.set_channels(1)
-        if normalize:
-            audiofile = effects.normalize(audiofile)
+        audiofile = _to_mono_16bit(audiofile, sample_rate, normalize)
     else:
         sample_rate = audiofile.frame_rate
     if start_end is not None:
