@@ -75,8 +75,10 @@ def _from_file(filepath: str) -> AudioSegment:
     p = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate()
     if p.returncode == 0 and len(out):
-        streams = _AUDIO_STREAM.findall(err.decode(errors="ignore").split("Output #0")[0])
-        if len(streams) == 1:
+        log = err.decode(errors="ignore").split("Output #0")[0]
+        streams = _AUDIO_STREAM.findall(log)
+        # exactly one audio stream, and it is the one parsed (pydub decides from the first one)
+        if len(streams) == 1 and log.count(": Audio: ") == 1:
             codec, sample_fmt = streams[0]
             if (codec in _FLTP_AS_S16 and sample_fmt == "fltp") or (codec == "pcm_s16le" and sample_fmt == "s16"):
                 segment = _segment_from_wav_pipe(out)
