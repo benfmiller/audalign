@@ -1,5 +1,15 @@
 # Change Log
 
+## [Unreleased]
+
+### Changed
+
+- Faster file reading and correlation recognition with identical results:
+  - the target and against files are decoded concurrently in correlation and correlation spectrogram recognition
+  - resampling, downmixing and normalizing 16-bit audio is done with numpy (`audalign.pcm`) instead of pydub/audioop calls
+  - mp3, aac and 16-bit PCM files are decoded without pydub's extra ffprobe run
+  - correlation peaks are sorted with numpy
+
 ## [1.3.2] 2026 - 11 - 11
 
 ### Changed

@@ -1,6 +1,7 @@
 import multiprocessing
 import os
 import time
+from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 
 import audalign.recognizers.fingerprint.fingerprinter as fingerprinter
@@ -59,24 +60,30 @@ def correcognize(
         10, config.freq_threshold, "highpass", fs=config.sample_rate, output="sos"
     )
     # sos = signal.butter(10, 0.125, "hp", fs=sample_rate, output="sos")
-    target_array = get_array(
-        target_file_path,
-        start_end=config.start_end,
-        sample_rate=config.sample_rate,
-        _file_audsegs=None,
-        sos=sos,
-        normalize=config.normalize,
-        cant_read_extensions=config.cant_read_extensions,
-    )
-    against_array = get_array(
-        against_file_path,
-        start_end=config.start_end_against,
-        sample_rate=config.sample_rate,
-        _file_audsegs=None,
-        sos=sos,
-        normalize=config.normalize,
-        cant_read_extensions=config.cant_read_extensions,
-    )
+    # Decoding dominates; read both files at once (ffmpeg runs out of process)
+    with ThreadPoolExecutor(2) as executor:
+        target_future = executor.submit(
+            get_array,
+            target_file_path,
+            start_end=config.start_end,
+            sample_rate=config.sample_rate,
+            _file_audsegs=None,
+            sos=sos,
+            normalize=config.normalize,
+            cant_read_extensions=config.cant_read_extensions,
+        )
+        against_future = executor.submit(
+            get_array,
+            against_file_path,
+            start_end=config.start_end_against,
+            sample_rate=config.sample_rate,
+            _file_audsegs=None,
+            sos=sos,
+            normalize=config.normalize,
+            cant_read_extensions=config.cant_read_extensions,
+        )
+        target_array = target_future.result()
+        against_array = against_future.result()
 
     t = time.time()
     file_match = _correcognize(
@@ -519,14 +526,16 @@ def _find_peaks(
 
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.find_peaks.html
     peaks, properties = signal.find_peaks(correlation, height=filter_matches, **kwargs)
-    peaks = [lag_array[x] for x in peaks]
-    peaks_tuples = zip(peaks, properties["peak_heights"])
-    peaks_tuples = sorted(peaks_tuples, key=lambda x: x[1], reverse=True)
+    heights = properties["peak_heights"]
+    # Stable sort by height, descending, done in numpy: same order as sorted(reverse=True)
+    # over (lag, height) tuples, without building a Python tuple for every peak.
+    order = np.argsort(-heights, kind="stable")
 
     if match_len_filter is None:
         match_len_filter = 30
-    if len(peaks_tuples) > match_len_filter:
-        peaks_tuples = peaks_tuples[:match_len_filter]
+    if len(order) > match_len_filter:
+        order = order[:match_len_filter]
+    peaks_tuples = list(zip(lag_array[peaks[order]], heights[order]))
     return peaks_tuples, scaling_factor
 
 

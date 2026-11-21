@@ -2,14 +2,18 @@ import fnmatch
 import math
 import multiprocessing
 import os
+import re
+import subprocess
 import typing
 from functools import partial
 from functools import wraps
 
 import numpy as np
 from pydub import AudioSegment, effects
+from pydub.audio_segment import extract_wav_headers, read_wav_audio
 from pydub.exceptions import CouldntDecodeError
 
+from audalign import pcm
 from audalign.config import BaseConfig
 from audalign.config.fingerprint import FingerprintConfig
 
@@ -52,6 +56,93 @@ def find_files(path, extensions=["*"]):
                 yield (p, os.path.splitext(p)[1])
 
 
+# Codecs pydub decodes to pcm_s16le when ffprobe reports fltp (AudioSegment.from_file)
+_FLTP_AS_S16 = ("mp3", "mp4", "aac", "webm", "ogg")
+_AUDIO_STREAM = re.compile(r"Stream #\d+:\d+.*?: Audio: (\w+)[^,]*, \d+ Hz, [^,]+, (\w+)")
+
+
+def _from_file(filepath: str) -> AudioSegment:
+    """AudioSegment.from_file(filepath), without its ffprobe run when the decode is known.
+
+    pydub runs ffprobe to pick the PCM codec, then ffmpeg. For the common cases the codec is
+    pcm_s16le (fltp mp3/aac, 16-bit PCM), so decode straight to it, read the input stream
+    from ffmpeg's own log, and keep the samples only when pydub would have chosen the same
+    codec; otherwise decode again through pydub.
+    """
+    if filepath.lower().endswith(".wav"):
+        return AudioSegment.from_file(filepath)
+    command = [AudioSegment.converter, "-y", "-i", filepath, "-acodec", "pcm_s16le", "-vn", "-f", "wav", "-"]
+    p = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = p.communicate()
+    if p.returncode == 0 and len(out):
+        log = err.decode(errors="ignore").split("Output #0")[0]
+        streams = _AUDIO_STREAM.findall(log)
+        # exactly one audio stream, and it is the one parsed (pydub decides from the first one)
+        if len(streams) == 1 and log.count(": Audio: ") == 1:
+            codec, sample_fmt = streams[0]
+            if (codec in _FLTP_AS_S16 and sample_fmt == "fltp") or (codec == "pcm_s16le" and sample_fmt == "s16"):
+                segment = _segment_from_wav_pipe(out)
+                if segment is not None:
+                    return segment
+    del out
+    return AudioSegment.from_file(filepath)
+
+
+def _segment_from_wav_pipe(out: bytes):
+    """AudioSegment(bytes(fix_wav_headers(bytearray(out)))), as pydub builds it, with one copy
+    of the samples instead of three.
+
+    fix_wav_headers only rewrites the RIFF size and the data chunk size so that the data chunk
+    runs to the end of the output; the format chunk is untouched. So the format comes from the
+    header and the samples are everything after the data chunk header. Returns None when the
+    output is not plain 16-bit WAV, and the caller falls back to pydub.
+    """
+    headers = extract_wav_headers(out)
+    if not headers or headers[-1].id != b"data":
+        return None
+    if len(out) > 2**32:
+        raise CouldntDecodeError("Unable to process >4GB files")
+    data_start = headers[-1].position + 8
+    wav = read_wav_audio(out[:data_start])  # format fields only; raises like pydub on a bad format
+    if wav.bits_per_sample != 16:
+        return None
+    return AudioSegment(
+        data=out[data_start:],
+        metadata={
+            "channels": wav.channels,
+            "sample_width": 2,
+            "frame_rate": wav.sample_rate,
+            "frame_width": wav.channels * 2,
+        },
+    )
+
+
+def _to_mono_16bit(audiofile: AudioSegment, sample_rate, normalize) -> AudioSegment:
+    """set_frame_rate, set_sample_width(2), set_channels(1) and effects.normalize, as pydub
+    does them, with the audioop work done by audalign.pcm in numpy for 16-bit mono/stereo."""
+    if (
+        audiofile.sample_width != 2
+        or audiofile.channels not in (1, 2)
+        or len(audiofile._data) % audiofile.frame_width
+    ):
+        audiofile = audiofile.set_frame_rate(sample_rate)
+        audiofile = audiofile.set_sample_width(2)
+        audiofile = audiofile.set_channels(1)
+        if normalize:
+            audiofile = effects.normalize(audiofile)
+        return audiofile
+    frames = np.frombuffer(audiofile._data, np.int16).reshape(-1, audiofile.channels)
+    if audiofile.frame_rate != sample_rate and len(frames):
+        frames = pcm.ratecv(frames, audiofile.frame_rate, sample_rate)
+    samples = pcm.tomono(frames) if audiofile.channels == 2 else frames[:, 0]
+    if normalize:
+        samples = pcm.normalize(samples)
+    return audiofile._spawn(
+        data=samples.tobytes(),
+        overrides={"frame_rate": sample_rate, "channels": 1, "frame_width": 2},
+    )
+
+
 def create_audiosegment(
     filepath: str,
     start_end: tuple = None,
@@ -65,18 +156,14 @@ def create_audiosegment(
     if os.path.splitext(filepath)[1] in [".txt", ".json"]:
         raise CouldntDecodeError
     if len(filepath) > 0:
-        audiofile = AudioSegment.from_file(filepath)
+        audiofile = _from_file(filepath)
     else:
         if length is None:
             audiofile = AudioSegment.silent(duration=0, frame_rate=sample_rate)
         else:
             audiofile = AudioSegment.silent(duration=length, frame_rate=sample_rate)
     if not unprocessed:
-        audiofile = audiofile.set_frame_rate(sample_rate)
-        audiofile = audiofile.set_sample_width(2)
-        audiofile = audiofile.set_channels(1)
-        if normalize:
-            audiofile = effects.normalize(audiofile)
+        audiofile = _to_mono_16bit(audiofile, sample_rate, normalize)
     else:
         sample_rate = audiofile.frame_rate
     if start_end is not None:
